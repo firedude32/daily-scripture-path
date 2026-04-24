@@ -1,18 +1,26 @@
 import { createFileRoute, useNavigate } from "@tanstack/react-router";
 import { motion } from "framer-motion";
 import { useEffect } from "react";
-import { ArrowRight, Plus } from "lucide-react";
 import { Screen } from "@/components/Screen";
 import { PhoneFrame } from "@/components/PhoneFrame";
 import { Heatmap } from "@/components/Heatmap";
-import { useAppState, useClientReady, nextChapterFor, chaptersReadToday } from "@/state/store";
+import { GoldMotif, dailyMotif } from "@/components/GoldMotif";
+import { SmallCaps } from "@/components/ui-lectio/SmallCaps";
+import { EditorialButton } from "@/components/ui-lectio/EditorialButton";
+import { Rule } from "@/components/ui-lectio/Rule";
+import {
+  useAppState,
+  useClientReady,
+  nextChapterFor,
+  chaptersReadToday,
+} from "@/state/store";
 import { bookById } from "@/data/books";
 
 export const Route = createFileRoute("/")({
   head: () => ({
     meta: [
-      { title: "Today — Bible Reading Habit Tracker" },
-      { name: "description", content: "Your streak, your next chapter, and today's reading." },
+      { title: "Today — Lectio" },
+      { name: "description", content: "Your streak, your next chapter, today's reading." },
     ],
   }),
   component: HomePage,
@@ -23,11 +31,8 @@ function HomePage() {
   const ready = useClientReady();
   const state = useAppState();
 
-  // Redirect to onboarding if first launch
   useEffect(() => {
-    if (ready && !state.onboarded) {
-      navigate({ to: "/onboarding" });
-    }
+    if (ready && !state.onboarded) navigate({ to: "/onboarding" });
   }, [ready, state.onboarded, navigate]);
 
   if (!ready) {
@@ -44,79 +49,113 @@ function HomePage() {
   const nextBook = bookById(next.bookId)!;
   const readToday = chaptersReadToday(state);
   const goalHit = readToday >= state.user.dailyGoal;
+  const today = new Date();
+  const dateLabel = today
+    .toLocaleDateString("en-US", { month: "long", day: "numeric" })
+    .toUpperCase();
 
   return (
     <PhoneFrame>
       <Screen>
-        <div className="px-6 pt-12 pb-8">
-          {/* Header */}
-          <div className="flex items-center justify-between">
-            <div>
-              <p className="text-xs uppercase tracking-wider text-muted-foreground font-medium">
-                {new Date().toLocaleDateString(undefined, { weekday: "long" })}
-              </p>
-              <p className="text-sm text-muted-foreground mt-0.5">
-                {new Date().toLocaleDateString(undefined, { month: "long", day: "numeric" })}
-              </p>
-            </div>
+        <div className="px-7 pt-14 pb-10">
+          {/* Top row */}
+          <div className="flex items-start justify-between">
+            <SmallCaps>Today · {dateLabel}</SmallCaps>
+            <GoldMotif name={dailyMotif(today)} size={44} />
           </div>
 
           {/* Hero streak */}
           <motion.div
-            initial={{ opacity: 0, y: 8 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.4, ease: "easeOut" }}
-            className="mt-10 text-center"
+            initial={{ opacity: 0, scale: 0.96 }}
+            animate={{ opacity: 1, scale: 1 }}
+            transition={{ duration: 0.5, ease: [0.22, 1, 0.36, 1] }}
+            className="mt-12 text-center"
           >
             {state.currentStreak > 0 ? (
               <>
-                <div className="font-serif font-bold text-primary tabular leading-none" style={{ fontSize: 88 }}>
+                <div
+                  className="font-display tabular leading-none"
+                  style={{
+                    fontSize: 96,
+                    color: "var(--color-gold)",
+                    fontWeight: 300,
+                    letterSpacing: "-0.02em",
+                  }}
+                >
                   {state.currentStreak}
                 </div>
-                <p className="mt-2 text-sm uppercase tracking-widest text-muted-foreground">
-                  day streak
-                </p>
+                <div className="mt-3">
+                  <SmallCaps tone="ink">Day Streak</SmallCaps>
+                </div>
               </>
             ) : (
-              <p className="text-2xl font-serif text-foreground">Start your streak today.</p>
+              <>
+                <div
+                  className="font-display tabular leading-none"
+                  style={{ fontSize: 96, color: "var(--color-ink)", fontWeight: 300 }}
+                >
+                  0
+                </div>
+                <div className="mt-3">
+                  <SmallCaps tone="ink">Start your streak today</SmallCaps>
+                </div>
+              </>
             )}
           </motion.div>
 
           {/* Status */}
-          <p className="mt-8 text-center text-base text-muted-foreground">
+          <p
+            className="mt-10 text-center font-body text-[color:var(--color-ink-soft)]"
+            style={{ fontSize: 17, lineHeight: 1.5 }}
+          >
             {goalHit
-              ? `${readToday} chapters read today`
+              ? `${readToday} chapters read today.`
               : readToday > 0
-                ? `${readToday} of ${state.user.dailyGoal} chapters today`
+                ? `${readToday} of ${state.user.dailyGoal} chapters today.`
                 : "Pick up where you left off."}
           </p>
 
           {/* CTA */}
-          <motion.button
-            whileTap={{ scale: 0.97 }}
-            onClick={() => navigate({ to: "/read" })}
-            className="mt-6 w-full rounded-2xl bg-primary text-primary-foreground py-5 text-base font-semibold flex items-center justify-center gap-2 shadow-sm"
-          >
-            {goalHit ? "Read more" : "Start Reading"}
-            <ArrowRight size={18} />
-          </motion.button>
+          <div className="mt-7">
+            {goalHit ? (
+              <EditorialButton
+                variant="secondary"
+                onClick={() => navigate({ to: "/read" })}
+              >
+                Read More
+              </EditorialButton>
+            ) : (
+              <EditorialButton
+                variant="gold"
+                onClick={() => navigate({ to: "/read" })}
+              >
+                Start Today's Reading
+              </EditorialButton>
+            )}
+          </div>
 
-          <p className="mt-4 text-center text-sm text-muted-foreground">
-            Up next: <span className="font-serif text-foreground">{nextBook.name} {next.chapter}</span>
-          </p>
+          {/* Up next */}
+          <div className="mt-5 text-center">
+            <SmallCaps>
+              Up Next · {nextBook.name} {next.chapter}
+            </SmallCaps>
+          </div>
+
+          {/* Divider */}
+          <div className="mt-10">
+            <Rule />
+          </div>
 
           {/* Heatmap */}
-          <div className="mt-10">
-            <div className="flex items-baseline justify-between mb-3">
-              <p className="text-xs uppercase tracking-wider text-muted-foreground font-medium">
-                Last 13 weeks
-              </p>
-              <p className="text-xs text-muted-foreground">
-                Longest: <span className="tabular text-foreground">{state.longestStreak}</span>
-              </p>
+          <div className="mt-7">
+            <div className="flex items-baseline justify-between mb-4">
+              <SmallCaps>The Last Thirteen Weeks</SmallCaps>
+              <span className="font-ui text-[11px] tabular text-[color:var(--color-ink-muted)] tracking-wider">
+                Longest · {state.longestStreak}
+              </span>
             </div>
-            <div className="rounded-xl bg-surface border border-border p-4 overflow-x-auto">
-              <Heatmap weeks={13} />
+            <div className="overflow-x-auto -mx-1 px-1">
+              <Heatmap weeks={13} cell={14} gap={2} />
             </div>
           </div>
         </div>

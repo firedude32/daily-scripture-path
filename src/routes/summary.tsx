@@ -6,11 +6,15 @@ import { PhoneFrame } from "@/components/PhoneFrame";
 import { Screen } from "@/components/Screen";
 import { bookById } from "@/data/books";
 import { useAppState, clearPendingCelebration, clearPendingRankUp } from "@/state/store";
+import { EditorialButton } from "@/components/ui-lectio/EditorialButton";
+import { SmallCaps } from "@/components/ui-lectio/SmallCaps";
+import { Rule } from "@/components/ui-lectio/Rule";
+import { staggerUp } from "@/lib/motion";
 
 export const Route = createFileRoute("/summary")({
   head: () => ({
     meta: [
-      { title: "Session complete — Bible Reading Habit Tracker" },
+      { title: "Session complete — Lectio" },
       { name: "description", content: "A summary of your reading session." },
     ],
   }),
@@ -29,7 +33,20 @@ interface SummaryData {
   };
 }
 
-const HEADLINES = ["Nicely done.", "One chapter closer.", "That counts.", "Steady work."];
+const HEADLINES = [
+  "Nicely done.",
+  "One chapter closer.",
+  "Steady work.",
+  "That counts.",
+];
+
+const NUMBER_WORDS = [
+  "Zero", "One", "Two", "Three", "Four", "Five", "Six", "Seven", "Eight",
+  "Nine", "Ten", "Eleven", "Twelve", "Thirteen", "Fourteen", "Fifteen",
+  "Sixteen", "Seventeen", "Eighteen", "Nineteen", "Twenty", "Twenty-One",
+  "Twenty-Two", "Twenty-Three", "Twenty-Four", "Twenty-Five", "Twenty-Six",
+  "Twenty-Seven", "Twenty-Eight", "Twenty-Nine", "Thirty",
+];
 
 function SummaryPage() {
   const navigate = useNavigate();
@@ -46,44 +63,49 @@ function SummaryPage() {
     setData(JSON.parse(raw) as SummaryData);
   }, [navigate]);
 
-  if (!data) return <PhoneFrame><Screen noTabs><div /></Screen></PhoneFrame>;
+  if (!data) {
+    return (
+      <PhoneFrame>
+        <Screen noTabs>
+          <div />
+        </Screen>
+      </PhoneFrame>
+    );
+  }
 
   const book = bookById(data.bookId)!;
   const bp = state.bookProgress[data.bookId];
-  const chaptersIn = bp ? (bp.readThroughs > 0 ? book.chapters : bp.inProgressChapters.length) : 0;
+  const chaptersIn = bp
+    ? bp.readThroughs > 0
+      ? book.chapters
+      : bp.inProgressChapters.length
+    : 0;
   const progressPct = Math.min(100, (chaptersIn / book.chapters) * 100);
 
   const min = Math.floor(data.durationSec / 60);
   const sec = data.durationSec % 60;
+  const nextChapter = data.chapter + 1 <= book.chapters ? data.chapter + 1 : 1;
 
   function done() {
     sessionStorage.removeItem("brt:summary");
     sessionStorage.removeItem("brt:lastSession");
-    if (state.pendingCelebration) {
-      navigate({ to: "/celebration/book" });
-    } else if (state.pendingRankUp) {
-      navigate({ to: "/celebration/rank" });
-    } else {
-      navigate({ to: "/" });
-    }
-    // clear any stale flags if neither matched
+    if (state.pendingCelebration) navigate({ to: "/celebration/book" });
+    else if (state.pendingRankUp) navigate({ to: "/celebration/rank" });
+    else navigate({ to: "/" });
     if (!state.pendingCelebration) clearPendingCelebration();
     if (!state.pendingRankUp) clearPendingRankUp();
   }
 
-  const stagger = (i: number) => ({
-    initial: { opacity: 0, y: 8 },
-    animate: { opacity: 1, y: 0 },
-    transition: { duration: 0.35, delay: i * 0.08, ease: "easeOut" as const },
-  });
-
   return (
     <PhoneFrame>
       <Screen noTabs>
-        <div className="h-full flex flex-col px-6 pt-12 pb-10">
-          <div className="flex justify-end">
-            <button className="p-2 -mr-2 text-muted-foreground" aria-label="Share">
-              <Share2 size={20} />
+        <div className="h-full flex flex-col px-7 pt-12 pb-10">
+          <div className="flex justify-between items-center">
+            <SmallCaps tone="gold">
+              Chapter {NUMBER_WORDS[data.chapter] ?? data.chapter} · Complete
+            </SmallCaps>
+            <button className="p-2 -mr-2 text-[color:var(--color-ink-muted)]" aria-label="Share">
+              <Share2 size={18} />
             </button>
           </div>
 
@@ -91,62 +113,89 @@ function SummaryPage() {
             <motion.div
               initial={{ scale: 0.6, opacity: 0 }}
               animate={{ scale: 1, opacity: 1 }}
-              transition={{ duration: 0.5, ease: "backOut" }}
-              className="rounded-full flex items-center justify-center"
-              style={{ width: 72, height: 72, background: "var(--color-primary)" }}
+              transition={{ duration: 0.45, ease: [0.22, 1, 0.36, 1] }}
+              className="mt-6"
             >
-              <Check size={36} className="text-primary-foreground" strokeWidth={3} />
+              <Check size={56} strokeWidth={1.5} color="var(--color-gold)" />
             </motion.div>
 
-            <motion.h1 {...stagger(2)} className="mt-6 font-serif text-3xl text-foreground">
+            <motion.h1
+              {...staggerUp(2)}
+              className="mt-6 font-display"
+              style={{ fontSize: 40, fontWeight: 400, color: "var(--color-ink)", lineHeight: 1.1 }}
+            >
               {headline}
             </motion.h1>
-            <motion.p {...stagger(3)} className="mt-2 text-sm text-muted-foreground">
-              You logged a chapter from <span className="font-serif text-foreground">{book.name}</span>.
+            <motion.p
+              {...staggerUp(3)}
+              className="mt-3 font-body italic text-[color:var(--color-ink-soft)]"
+              style={{ fontSize: 16 }}
+            >
+              Tomorrow, chapter {NUMBER_WORDS[nextChapter]?.toLowerCase() ?? nextChapter}.
             </motion.p>
 
-            <motion.div {...stagger(4)} className="mt-10 grid grid-cols-2 gap-4 w-full max-w-xs">
-              <Stat label="Time" value={`${min}m ${sec}s`} />
-              <Stat label="Chapter" value={`${book.name} ${data.chapter}`} serif />
-              <Stat label="Streak" value={`${data.result.streak} days`} />
-              <Stat label="XP earned" value={`+${data.result.xpEarned}`} />
+            <motion.div {...staggerUp(4)} className="mt-9 w-full">
+              <Rule />
             </motion.div>
 
-            <motion.div {...stagger(6)} className="mt-10 w-full max-w-xs">
-              <div className="flex justify-between text-xs text-muted-foreground mb-2">
-                <span className="font-serif text-foreground">{book.name}</span>
-                <span className="tabular">{chaptersIn} of {book.chapters}</span>
+            <motion.div {...staggerUp(5)} className="mt-6 w-full max-w-xs space-y-4">
+              <StatRow label="Time Read" value={`${min} min ${sec.toString().padStart(2, "0")} sec`} />
+              <StatRow label="Chapter" value={`${book.name} ${data.chapter}`} />
+              <StatRow
+                label="Streak"
+                value={`${data.result.streak} ${data.result.streak === 1 ? "day" : "days"} — extended`}
+              />
+              <StatRow
+                label="Book Progress"
+                value={`${chaptersIn} of ${book.chapters} chapters`}
+              />
+            </motion.div>
+
+            {/* Hairline gold progress fill */}
+            <motion.div {...staggerUp(7)} className="mt-9 w-full max-w-xs">
+              <div className="flex items-baseline justify-between mb-3">
+                <span
+                  className="font-display text-[color:var(--color-ink)]"
+                  style={{ fontSize: 18, fontWeight: 400 }}
+                >
+                  {book.name}
+                </span>
+                <span className="font-ui text-[11px] tabular text-[color:var(--color-ink-muted)] tracking-wider">
+                  {chaptersIn} / {book.chapters}
+                </span>
               </div>
-              <div className="h-2 rounded-full bg-muted overflow-hidden">
+              <div style={{ height: 2, background: "var(--color-rule)" }}>
                 <motion.div
                   initial={{ width: 0 }}
                   animate={{ width: `${progressPct}%` }}
-                  transition={{ duration: 1.2, delay: 0.6, ease: "easeOut" }}
-                  className="h-full bg-primary"
+                  transition={{ duration: 1.2, delay: 0.7, ease: [0.22, 1, 0.36, 1] }}
+                  style={{ height: 2, background: "var(--color-gold)" }}
                 />
               </div>
             </motion.div>
           </div>
 
-          <motion.button
-            {...stagger(8)}
-            whileTap={{ scale: 0.97 }}
-            onClick={done}
-            className="w-full rounded-2xl bg-primary text-primary-foreground py-5 text-base font-semibold"
-          >
-            Done
-          </motion.button>
+          <motion.div {...staggerUp(9)}>
+            <EditorialButton variant="primary" onClick={done}>
+              Done
+            </EditorialButton>
+          </motion.div>
         </div>
       </Screen>
     </PhoneFrame>
   );
 }
 
-function Stat({ label, value, serif }: { label: string; value: string; serif?: boolean }) {
+function StatRow({ label, value }: { label: string; value: string }) {
   return (
-    <div className="rounded-xl bg-surface border border-border p-4 text-left">
-      <p className="text-[10px] uppercase tracking-widest text-muted-foreground font-medium">{label}</p>
-      <p className={`mt-1 text-base text-foreground tabular ${serif ? "font-serif" : ""}`}>{value}</p>
+    <div className="flex items-baseline justify-between gap-4 text-left">
+      <SmallCaps>{label}</SmallCaps>
+      <span
+        className="font-display text-[color:var(--color-ink)] tabular text-right"
+        style={{ fontSize: 17, fontWeight: 400 }}
+      >
+        {value}
+      </span>
     </div>
   );
 }

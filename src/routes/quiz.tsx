@@ -7,11 +7,14 @@ import { Screen } from "@/components/Screen";
 import { getQuiz, type QuizQuestion } from "@/data/quiz";
 import { bookById } from "@/data/books";
 import { recordSession } from "@/state/store";
+import { EditorialButton } from "@/components/ui-lectio/EditorialButton";
+import { EditorialCard } from "@/components/ui-lectio/EditorialCard";
+import { SmallCaps } from "@/components/ui-lectio/SmallCaps";
 
 export const Route = createFileRoute("/quiz")({
   head: () => ({
     meta: [
-      { title: "Quiz — Bible Reading Habit Tracker" },
+      { title: "Quiz — Lectio" },
       { name: "description", content: "Five quick questions to verify your reading." },
     ],
   }),
@@ -23,6 +26,14 @@ interface PendingSession {
   chapter: number;
   durationSec: number;
 }
+
+const NUMBER_WORDS = [
+  "Zero", "One", "Two", "Three", "Four", "Five", "Six", "Seven", "Eight",
+  "Nine", "Ten", "Eleven", "Twelve", "Thirteen", "Fourteen", "Fifteen",
+  "Sixteen", "Seventeen", "Eighteen", "Nineteen", "Twenty", "Twenty-One",
+  "Twenty-Two", "Twenty-Three", "Twenty-Four", "Twenty-Five", "Twenty-Six",
+  "Twenty-Seven", "Twenty-Eight", "Twenty-Nine", "Thirty",
+];
 
 function shuffle<T>(arr: T[]): T[] {
   const a = [...arr];
@@ -39,9 +50,12 @@ function QuizPage() {
   const [questions, setQuestions] = useState<QuizQuestion[]>([]);
   const [idx, setIdx] = useState(0);
   const [picked, setPicked] = useState<number | null>(null);
-  const [wrong, setWrong] = useState(false);
+  const [pickedCorrect, setPickedCorrect] = useState(false);
+  const [hasWrong, setHasWrong] = useState(false);
+  const [wrongScreen, setWrongScreen] = useState(false);
   const [cooldown, setCooldown] = useState(0);
   const [attempt, setAttempt] = useState(0);
+  const [passing, setPassing] = useState(false);
 
   useEffect(() => {
     const raw = sessionStorage.getItem("brt:lastSession");
@@ -54,7 +68,6 @@ function QuizPage() {
     setQuestions(getQuiz(p.bookId, p.chapter));
   }, [navigate]);
 
-  // refresh question order on each attempt
   const shuffledOptions = useMemo(() => {
     if (!questions[idx]) return [];
     const q = questions[idx];
@@ -74,7 +87,13 @@ function QuizPage() {
   }, [cooldown]);
 
   if (!pending || questions.length === 0) {
-    return <PhoneFrame><Screen noTabs><div /></Screen></PhoneFrame>;
+    return (
+      <PhoneFrame>
+        <Screen noTabs>
+          <div />
+        </Screen>
+      </PhoneFrame>
+    );
   }
 
   const book = bookById(pending.bookId)!;
@@ -82,23 +101,31 @@ function QuizPage() {
   function pick(i: number, correct: boolean) {
     if (picked !== null) return;
     setPicked(i);
+    setPickedCorrect(correct);
+    if (!correct) setHasWrong(true);
     setTimeout(() => {
-      if (!correct) {
-        setWrong(true);
-        setCooldown(30);
-        return;
-      }
+      // Quiz advances regardless of correctness — failure only revealed at end.
+      // (Spec: don't tell users which questions were wrong.)
       if (idx + 1 >= questions.length) {
+        if (hasWrong || !correct) {
+          setWrongScreen(true);
+          setCooldown(30);
+          return;
+        }
         // pass
-        const result = recordSession(pending!.bookId, pending!.chapter, pending!.durationSec);
-        sessionStorage.setItem("brt:summary", JSON.stringify({
-          ...pending,
-          result,
-        }));
-        navigate({ to: "/summary" });
+        setPassing(true);
+        setTimeout(() => {
+          const result = recordSession(pending!.bookId, pending!.chapter, pending!.durationSec);
+          sessionStorage.setItem(
+            "brt:summary",
+            JSON.stringify({ ...pending, result }),
+          );
+          navigate({ to: "/summary" });
+        }, 700);
       } else {
-        setIdx((i) => i + 1);
+        setIdx((n) => n + 1);
         setPicked(null);
+        setPickedCorrect(false);
       }
     }, 400);
   }
@@ -106,32 +133,72 @@ function QuizPage() {
   function retake() {
     setIdx(0);
     setPicked(null);
-    setWrong(false);
+    setPickedCorrect(false);
+    setHasWrong(false);
+    setWrongScreen(false);
     setAttempt((a) => a + 1);
   }
 
-  if (wrong) {
+  if (passing) {
+    return (
+      <PhoneFrame>
+        <Screen noTabs>
+          <div className="h-full flex items-center justify-center">
+            <motion.div
+              initial={{ scale: 0.5, opacity: 0 }}
+              animate={{ scale: 1, opacity: 1 }}
+              transition={{ duration: 0.5, ease: [0.22, 1, 0.36, 1] }}
+              style={{
+                width: 96,
+                height: 96,
+                borderRadius: "9999px",
+                background: "var(--color-gold)",
+              }}
+              className="flex items-center justify-center"
+            >
+              <Check size={48} strokeWidth={2} color="var(--color-ink)" />
+            </motion.div>
+          </div>
+        </Screen>
+      </PhoneFrame>
+    );
+  }
+
+  if (wrongScreen) {
+    const cdPct = ((30 - cooldown) / 30) * 100;
     return (
       <PhoneFrame>
         <Screen noTabs>
           <div className="h-full flex flex-col items-center justify-center px-8 text-center">
-            <h1 className="font-serif text-3xl text-foreground">Not quite.</h1>
-            <p className="mt-4 text-base text-muted-foreground max-w-xs">
-              Give it another try. Take a moment with the chapter first.
+            <h1
+              className="font-display text-[color:var(--color-ink)]"
+              style={{ fontSize: 36, fontWeight: 400, lineHeight: 1.15 }}
+            >
+              Not quite — give it another try.
+            </h1>
+            <p className="mt-6 font-body text-[color:var(--color-ink-soft)]" style={{ fontSize: 17 }}>
+              Take a moment with the chapter first.
             </p>
-            <div className="mt-12">
-              {cooldown > 0 ? (
-                <p className="text-sm text-muted-foreground tabular">
-                  You can retry in {cooldown}s
-                </p>
-              ) : (
-                <button
-                  onClick={retake}
-                  className="rounded-2xl bg-primary text-primary-foreground px-8 py-4 text-base font-semibold"
-                >
-                  Retake quiz
-                </button>
-              )}
+            <div className="mt-12 w-full max-w-xs">
+              <SmallCaps>
+                {cooldown > 0 ? `You can retry in ${cooldown} seconds` : "Ready when you are"}
+              </SmallCaps>
+              <div
+                className="mt-3 w-full"
+                style={{ height: 2, background: "var(--color-rule)" }}
+              >
+                <motion.div
+                  initial={false}
+                  animate={{ width: `${cdPct}%` }}
+                  transition={{ duration: 1, ease: "linear" }}
+                  style={{ height: 2, background: "var(--color-gold)" }}
+                />
+              </div>
+            </div>
+            <div className="mt-12 w-full max-w-xs">
+              <EditorialButton variant="primary" disabled={cooldown > 0} onClick={retake}>
+                Retake Quiz
+              </EditorialButton>
             </div>
           </div>
         </Screen>
@@ -144,70 +211,88 @@ function QuizPage() {
   return (
     <PhoneFrame>
       <Screen noTabs>
-        <div className="h-full flex flex-col px-6 pt-10 pb-10">
-          <div className="text-center">
-            <p className="text-xs uppercase tracking-widest text-muted-foreground font-serif">
-              {book.name} {pending.chapter}
-            </p>
-            <div className="mt-4 flex items-center justify-center gap-2">
+        <div className="h-full flex flex-col px-7 pt-12 pb-10">
+          <div>
+            <SmallCaps>
+              Question {NUMBER_WORDS[idx + 1]} of {NUMBER_WORDS[questions.length]}
+            </SmallCaps>
+            {/* Five-dot progress */}
+            <div className="mt-3 flex items-center gap-2">
               {questions.map((_, i) => (
                 <div
                   key={i}
-                  className="rounded-full transition-all"
                   style={{
-                    width: i === idx ? 18 : 6,
-                    height: 6,
-                    background: i < idx ? "var(--color-primary)" : i === idx ? "var(--color-primary)" : "var(--color-border)",
+                    width: 8,
+                    height: 8,
+                    borderRadius: "9999px",
+                    background:
+                      i <= idx ? "var(--color-gold)" : "var(--color-rule)",
                   }}
                 />
               ))}
             </div>
-            <p className="mt-3 text-xs text-muted-foreground">Question {idx + 1} of {questions.length}</p>
+            <div className="mt-5">
+              <SmallCaps tone="ink">
+                {book.name} · Chapter {NUMBER_WORDS[pending.chapter]}
+              </SmallCaps>
+            </div>
           </div>
 
           <AnimatePresence mode="wait">
-            <motion.div
+            <motion.h2
               key={idx + "-" + attempt}
               initial={{ opacity: 0, y: 8 }}
               animate={{ opacity: 1, y: 0 }}
               exit={{ opacity: 0, y: -8 }}
-              transition={{ duration: 0.25 }}
-              className="mt-8"
+              transition={{ duration: 0.3, ease: [0.22, 1, 0.36, 1] }}
+              className="mt-7 font-display"
+              style={{
+                fontSize: 26,
+                fontWeight: 400,
+                lineHeight: 1.2,
+                color: "var(--color-ink)",
+              }}
             >
-              <h2 className="font-serif text-xl leading-snug text-foreground">
-                {q.q}
-              </h2>
-            </motion.div>
+              {q.q}
+            </motion.h2>
           </AnimatePresence>
 
-          <div className="mt-6 flex flex-col gap-3 flex-1">
+          <div className="mt-7 flex flex-col gap-3 flex-1">
             {shuffledOptions.map((opt, i) => {
               const isPicked = picked === i;
               return (
-                <motion.button
+                <EditorialCard
                   key={i + "-" + idx + "-" + attempt}
-                  whileTap={{ scale: 0.97 }}
+                  interactive
+                  selected={isPicked}
+                  padding="md"
                   onClick={() => pick(i, opt.correct)}
-                  disabled={picked !== null}
-                  className="w-full text-left rounded-2xl border border-border bg-surface p-4 flex items-start gap-3 transition-colors"
-                  style={{
-                    borderColor: isPicked ? "var(--color-primary)" : undefined,
-                    background: isPicked ? "color-mix(in oklab, var(--color-primary) 6%, var(--color-surface))" : undefined,
-                  }}
+                  style={{ cursor: picked === null ? "pointer" : "default" }}
                 >
-                  <div
-                    className="mt-0.5 shrink-0 rounded-full border flex items-center justify-center"
-                    style={{
-                      width: 22,
-                      height: 22,
-                      borderColor: isPicked ? "var(--color-primary)" : "var(--color-border)",
-                      background: isPicked ? "var(--color-primary)" : "transparent",
-                    }}
-                  >
-                    {isPicked && <Check size={14} className="text-primary-foreground" />}
+                  <div className="flex items-start gap-3">
+                    <span
+                      className="font-body text-[color:var(--color-ink)] flex-1"
+                      style={{ fontSize: 16, lineHeight: 1.45 }}
+                    >
+                      {opt.text}
+                    </span>
+                    <AnimatePresence>
+                      {isPicked && (
+                        <motion.div
+                          initial={{ opacity: 0, scale: 0.6 }}
+                          animate={{ opacity: 1, scale: 1 }}
+                          transition={{ duration: 0.2 }}
+                        >
+                          <Check
+                            size={18}
+                            strokeWidth={2.25}
+                            color={pickedCorrect ? "var(--color-gold)" : "var(--color-gold)"}
+                          />
+                        </motion.div>
+                      )}
+                    </AnimatePresence>
                   </div>
-                  <span className="text-sm text-foreground leading-snug">{opt.text}</span>
-                </motion.button>
+                </EditorialCard>
               );
             })}
           </div>

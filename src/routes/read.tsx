@@ -1,21 +1,35 @@
 import { createFileRoute, useNavigate } from "@tanstack/react-router";
 import { motion, AnimatePresence } from "framer-motion";
 import { useEffect, useState } from "react";
-import { X } from "lucide-react";
 import { PhoneFrame } from "@/components/PhoneFrame";
 import { Screen } from "@/components/Screen";
 import { useAppState, useClientReady, nextChapterFor } from "@/state/store";
 import { bookById } from "@/data/books";
+import { breath } from "@/lib/motion";
+import { EditorialButton } from "@/components/ui-lectio/EditorialButton";
+import { SmallCaps } from "@/components/ui-lectio/SmallCaps";
 
 export const Route = createFileRoute("/read")({
   head: () => ({
     meta: [
-      { title: "Reading — Bible Reading Habit Tracker" },
+      { title: "Reading — Lectio" },
       { name: "description", content: "A focused reading session." },
     ],
   }),
   component: ReadPage,
 });
+
+const NUMBER_WORDS = [
+  "Zero", "One", "Two", "Three", "Four", "Five", "Six", "Seven", "Eight",
+  "Nine", "Ten", "Eleven", "Twelve", "Thirteen", "Fourteen", "Fifteen",
+  "Sixteen", "Seventeen", "Eighteen", "Nineteen", "Twenty", "Twenty-One",
+  "Twenty-Two", "Twenty-Three", "Twenty-Four", "Twenty-Five", "Twenty-Six",
+  "Twenty-Seven", "Twenty-Eight", "Twenty-Nine", "Thirty",
+];
+
+function chapterWord(n: number): string {
+  return NUMBER_WORDS[n] ?? String(n);
+}
 
 function ReadPage() {
   const navigate = useNavigate();
@@ -29,67 +43,92 @@ function ReadPage() {
     return () => clearInterval(t);
   }, []);
 
-  if (!ready) return <PhoneFrame><Screen noTabs><div /></Screen></PhoneFrame>;
+  if (!ready) {
+    return (
+      <PhoneFrame>
+        <Screen noTabs>
+          <div />
+        </Screen>
+      </PhoneFrame>
+    );
+  }
 
   const next = nextChapterFor(state);
   const book = bookById(next.bookId)!;
-
   const mm = Math.floor(seconds / 60).toString().padStart(2, "0");
   const ss = (seconds % 60).toString().padStart(2, "0");
 
   function finish() {
-    sessionStorage.setItem("brt:lastSession", JSON.stringify({
-      bookId: next.bookId,
-      chapter: next.chapter,
-      durationSec: seconds,
-    }));
+    sessionStorage.setItem(
+      "brt:lastSession",
+      JSON.stringify({
+        bookId: next.bookId,
+        chapter: next.chapter,
+        durationSec: seconds,
+      }),
+    );
     navigate({ to: "/quiz" });
   }
 
   return (
     <PhoneFrame>
       <Screen noTabs>
-        <div className="h-full flex flex-col px-6 pt-10 pb-10">
+        <motion.div
+          initial={{ opacity: 0, x: 24 }}
+          animate={{ opacity: 1, x: 0 }}
+          transition={{ duration: 0.45, ease: [0.22, 1, 0.36, 1] }}
+          className="h-full flex flex-col px-7 pt-12 pb-10"
+        >
           {/* Cancel */}
           <button
             onClick={() => setConfirming(true)}
-            className="self-start p-2 -ml-2 text-muted-foreground"
-            aria-label="Cancel session"
+            className="self-start font-ui uppercase tracking-[0.14em] text-[11px] text-[color:var(--color-ink-muted)] hover:text-[color:var(--color-ink)] py-1"
           >
-            <X size={22} />
+            Cancel
           </button>
 
           {/* Title */}
-          <div className="mt-2 text-center">
-            <p className="text-xs uppercase tracking-widest text-muted-foreground">Reading</p>
-            <h1 className="mt-2 font-serif text-4xl text-foreground">
+          <div className="mt-8 text-center">
+            <SmallCaps>Chapter {chapterWord(next.chapter)}</SmallCaps>
+            <h1
+              className="mt-3 font-display"
+              style={{
+                fontSize: 56,
+                color: "var(--color-gold)",
+                fontWeight: 300,
+                letterSpacing: "-0.02em",
+                lineHeight: 1,
+              }}
+            >
               {book.name} {next.chapter}
             </h1>
           </div>
 
           {/* Timer + breathing dot */}
           <div className="flex-1 flex flex-col items-center justify-center">
-            <motion.div
-              animate={{ opacity: [0.4, 1, 0.4] }}
-              transition={{ duration: 2.4, repeat: Infinity, ease: "easeInOut" }}
-              className="rounded-full bg-primary"
-              style={{ width: 12, height: 12 }}
-            />
-            <div className="mt-10 font-serif tabular text-foreground" style={{ fontSize: 72, fontWeight: 500 }}>
+            <div
+              className="font-display tabular text-[color:var(--color-ink)]"
+              style={{ fontSize: 88, fontWeight: 300, letterSpacing: "-0.01em" }}
+            >
               {mm}:{ss}
             </div>
-            <p className="mt-4 text-sm text-muted-foreground">Read at your own pace.</p>
+            <motion.div
+              {...breath}
+              className="mt-10"
+              style={{
+                width: 10,
+                height: 10,
+                borderRadius: "9999px",
+                background: "var(--color-gold)",
+              }}
+            />
           </div>
 
           {/* Finish */}
-          <motion.button
-            whileTap={{ scale: 0.97 }}
-            onClick={finish}
-            className="w-full rounded-2xl bg-primary text-primary-foreground py-5 text-base font-semibold"
-          >
+          <EditorialButton variant="gold" onClick={finish}>
             I'm Finished
-          </motion.button>
-        </div>
+          </EditorialButton>
+        </motion.div>
 
         {/* Cancel confirm */}
         <AnimatePresence>
@@ -98,33 +137,37 @@ function ReadPage() {
               initial={{ opacity: 0 }}
               animate={{ opacity: 1 }}
               exit={{ opacity: 0 }}
-              className="absolute inset-0 z-50 flex items-end bg-black/30"
+              className="absolute inset-0 z-50 flex items-end"
+              style={{ background: "rgba(28, 25, 21, 0.4)" }}
               onClick={() => setConfirming(false)}
             >
               <motion.div
                 initial={{ y: 60 }}
                 animate={{ y: 0 }}
                 exit={{ y: 60 }}
+                transition={{ duration: 0.3, ease: [0.22, 1, 0.36, 1] }}
                 onClick={(e) => e.stopPropagation()}
-                className="w-full bg-surface rounded-t-3xl p-6 pb-8"
+                className="w-full px-7 pt-7 pb-10"
+                style={{
+                  background: "var(--color-paper)",
+                  borderTopLeftRadius: 24,
+                  borderTopRightRadius: 24,
+                  borderTop: "1px solid var(--color-rule)",
+                }}
               >
-                <h2 className="font-serif text-xl text-foreground">Cancel this session?</h2>
-                <p className="mt-2 text-sm text-muted-foreground">
+                <h2 className="font-display text-2xl text-[color:var(--color-ink)]">
+                  Cancel this session?
+                </h2>
+                <p className="mt-3 font-body text-[color:var(--color-ink-soft)]">
                   No progress will be saved.
                 </p>
-                <div className="mt-6 flex gap-3">
-                  <button
-                    onClick={() => setConfirming(false)}
-                    className="flex-1 rounded-xl border border-border py-3 text-sm font-medium"
-                  >
-                    Keep reading
-                  </button>
-                  <button
-                    onClick={() => navigate({ to: "/" })}
-                    className="flex-1 rounded-xl bg-foreground text-background py-3 text-sm font-medium"
-                  >
-                    Cancel session
-                  </button>
+                <div className="mt-7 flex gap-3">
+                  <EditorialButton variant="secondary" onClick={() => setConfirming(false)}>
+                    Keep Reading
+                  </EditorialButton>
+                  <EditorialButton variant="primary" onClick={() => navigate({ to: "/" })}>
+                    Cancel Session
+                  </EditorialButton>
                 </div>
               </motion.div>
             </motion.div>
