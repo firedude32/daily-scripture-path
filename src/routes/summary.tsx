@@ -1,7 +1,7 @@
 import { createFileRoute, useNavigate } from "@tanstack/react-router";
 import { motion } from "framer-motion";
 import { useEffect, useState } from "react";
-import { Check, Share2 } from "lucide-react";
+import { Check, Share2, Copy, Twitter, MessageCircle } from "lucide-react";
 import { PhoneFrame } from "@/components/PhoneFrame";
 import { Screen } from "@/components/Screen";
 import { bookById } from "@/data/books";
@@ -9,6 +9,7 @@ import { useAppState, clearPendingCelebration, clearPendingRankUp } from "@/stat
 import { EditorialButton } from "@/components/ui-lectio/EditorialButton";
 import { SmallCaps } from "@/components/ui-lectio/SmallCaps";
 import { Rule } from "@/components/ui-lectio/Rule";
+import { BottomSheet } from "@/components/ui-lectio/BottomSheet";
 import { staggerUp } from "@/lib/motion";
 
 export const Route = createFileRoute("/summary")({
@@ -53,6 +54,8 @@ function SummaryPage() {
   const state = useAppState();
   const [data, setData] = useState<SummaryData | null>(null);
   const [headline] = useState(() => HEADLINES[Math.floor(Math.random() * HEADLINES.length)]);
+  const [shareOpen, setShareOpen] = useState(false);
+  const [copied, setCopied] = useState(false);
 
   useEffect(() => {
     const raw = sessionStorage.getItem("brt:summary");
@@ -104,7 +107,11 @@ function SummaryPage() {
             <SmallCaps tone="gold">
               Chapter {NUMBER_WORDS[data.chapter] ?? data.chapter} · Complete
             </SmallCaps>
-            <button className="p-2 -mr-2 text-[color:var(--color-ink-muted)]" aria-label="Share">
+            <button
+              onClick={() => setShareOpen(true)}
+              className="p-2 -mr-2 text-[color:var(--color-ink-muted)] hover:text-[color:var(--color-ink)] transition-colors"
+              aria-label="Share"
+            >
               <Share2 size={18} />
             </button>
           </div>
@@ -181,8 +188,69 @@ function SummaryPage() {
             </EditorialButton>
           </motion.div>
         </div>
+
+        <BottomSheet
+          open={shareOpen}
+          onClose={() => { setShareOpen(false); setCopied(false); }}
+          eyebrow="Quietly"
+          title="Share this milestone"
+        >
+          <p className="font-body text-[color:var(--color-ink-soft)]" style={{ fontSize: 15, lineHeight: 1.55 }}>
+            A short note about today's reading — no scores, no quiz answers.
+          </p>
+          <div
+            className="mt-5 p-5 border font-body text-[color:var(--color-ink)]"
+            style={{ background: "var(--color-paper-light)", borderColor: "var(--color-rule)", fontSize: 14, lineHeight: 1.55 }}
+          >
+            {`Read ${book.name} ${data.chapter} today. Day ${data.result.streak} of the streak. — Lectio`}
+          </div>
+          <div className="mt-6 grid grid-cols-3 gap-3">
+            <ShareBtn
+              icon={<Copy size={16} />}
+              label={copied ? "Copied" : "Copy"}
+              onClick={async () => {
+                const text = `Read ${book.name} ${data.chapter} today. Day ${data.result.streak} of the streak. — Lectio`;
+                try {
+                  await navigator.clipboard?.writeText(text);
+                  setCopied(true);
+                  setTimeout(() => setCopied(false), 1800);
+                } catch {
+                  setCopied(false);
+                }
+              }}
+            />
+            <ShareBtn
+              icon={<MessageCircle size={16} />}
+              label="Message"
+              onClick={() => setShareOpen(false)}
+            />
+            <ShareBtn
+              icon={<Twitter size={16} />}
+              label="Post"
+              onClick={() => setShareOpen(false)}
+            />
+          </div>
+          <div className="mt-7">
+            <EditorialButton variant="secondary" onClick={() => setShareOpen(false)}>
+              Close
+            </EditorialButton>
+          </div>
+        </BottomSheet>
       </Screen>
     </PhoneFrame>
+  );
+}
+
+function ShareBtn({ icon, label, onClick }: { icon: React.ReactNode; label: string; onClick: () => void }) {
+  return (
+    <button
+      onClick={onClick}
+      className="flex flex-col items-center gap-2 py-4 rounded-[12px] border hover:bg-[color:var(--color-paper-light)] transition-colors"
+      style={{ borderColor: "var(--color-rule)", color: "var(--color-ink)" }}
+    >
+      {icon}
+      <span className="font-ui uppercase tracking-[0.14em] text-[10px] font-medium">{label}</span>
+    </button>
   );
 }
 

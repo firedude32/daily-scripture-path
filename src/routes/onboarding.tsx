@@ -92,7 +92,11 @@ function OnboardingPage() {
     answers.time === "5 minutes" ? 1 :
     answers.time === "30 minutes" ? 4 :
     answers.time === "As long as it takes" ? 5 : 2;
-  const markDays = Math.ceil(16 / dailyChapters);
+
+  // Pick the starting book from the answers — not always Mark.
+  const pathBookId = pickStartingBook(answers);
+  const pathBook = bookById(pathBookId)!;
+  const pathDays = Math.ceil(pathBook.chapters / dailyChapters);
   const ntDays = Math.ceil(NT_CHAPTERS / dailyChapters);
 
   function finish() {
@@ -102,7 +106,7 @@ function OnboardingPage() {
       translation: answers.translation || "ESV",
       dailyGoal: dailyChapters,
       reminderTime: reminderOn ? reminder : "",
-      pathBookId: "mrk",
+      pathBookId,
     });
     navigate({ to: "/read" });
   }
@@ -261,7 +265,7 @@ function OnboardingPage() {
                     className="mt-5 font-display uppercase"
                     style={{ fontSize: 72, color: "var(--color-gold)", fontWeight: 300, letterSpacing: "-0.02em", lineHeight: 1 }}
                   >
-                    {bookById("mrk")!.name}
+                    {pathBook.name}
                   </motion.h1>
                   <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ delay: 0.7 }} className="mt-6 mx-auto w-24">
                     <Rule />
@@ -273,7 +277,7 @@ function OnboardingPage() {
                     className="mt-6 font-body italic text-[color:var(--color-ink-soft)] max-w-xs mx-auto"
                     style={{ fontSize: 16, lineHeight: 1.55 }}
                   >
-                    Short, fast-paced, and the clearest look at the life of Jesus — a great place to begin.
+                    {bookBlurb(pathBookId)}
                   </motion.p>
                   <motion.div
                     initial={{ opacity: 0, y: 10 }}
@@ -284,7 +288,7 @@ function OnboardingPage() {
                   >
                     <SmallCaps>At your pace</SmallCaps>
                     <ul className="mt-4 space-y-2.5 font-body text-[color:var(--color-ink)]" style={{ fontSize: 15 }}>
-                      <li className="flex justify-between"><span>Mark in</span><span className="tabular">{markDays} days</span></li>
+                      <li className="flex justify-between"><span>{pathBook.name} in</span><span className="tabular">{pathDays} days</span></li>
                       <li className="flex justify-between"><span>The New Testament in</span><span className="tabular">{ntDays} days</span></li>
                     </ul>
                   </motion.div>
@@ -354,10 +358,10 @@ function OnboardingPage() {
                     You're all set.
                   </h1>
                   <div className="mt-10 mx-auto max-w-xs w-full text-left space-y-4 p-6 border" style={{ background: "var(--color-paper-light)", borderColor: "var(--color-rule)" }}>
-                    <Row label="Plan" value="New Testament" />
+                    <Row label="Plan" value={planLabel(pathBookId)} />
                     <Row label="Goal" value={`${dailyChapters} chapter${dailyChapters > 1 ? "s" : ""} daily`} />
                     <Row label="Translation" value={answers.translation || "ESV"} />
-                    <Row label="First Chapter" value="Mark 1" />
+                    <Row label="First Chapter" value={`${pathBook.name} 1`} />
                   </div>
                 </div>
                 <EditorialButton variant="gold" onClick={finish}>
@@ -409,3 +413,55 @@ function Row({ label, value }: { label: string; value: string }) {
     </div>
   );
 }
+
+/**
+ * Pick a starting book based on familiarity + draws.
+ * - Brand-new readers → Mark (short, fast Gospel).
+ * - Familiar readers who want stories → Genesis.
+ * - Familiar readers drawn to wisdom/prayer → Psalms or Proverbs.
+ * - Familiar readers drawn to teaching → John or Romans.
+ * - Cover-to-cover readers → Genesis (fresh OT pass).
+ */
+function pickStartingBook(answers: Record<string, string>): string {
+  const fam = answers.familiarity ?? "";
+  const draws = answers.draws ?? "";
+
+  if (fam === "I've barely opened it") return "mrk";
+  if (fam === "Cover to cover") return "gen";
+
+  if (draws === "Stories and history") return "gen";
+  if (draws === "Wisdom for daily life") return "pro";
+  if (draws === "Prayer and poetry") return "psa";
+  if (draws === "Teaching and doctrine") {
+    return fam === "I've read most of it" ? "rom" : "jhn";
+  }
+
+  // Default: Mark.
+  return "mrk";
+}
+
+function bookBlurb(id: string): string {
+  switch (id) {
+    case "mrk":
+      return "Short, fast-paced, and the clearest look at the life of Jesus — a great place to begin.";
+    case "gen":
+      return "The beginning of everything — creation, covenant, and the family God chose.";
+    case "psa":
+      return "The prayer book of the Bible. Honest, raw, and full of God.";
+    case "pro":
+      return "Hard-won wisdom for ordinary days. One chapter at a time.";
+    case "jhn":
+      return "John walks slowly through who Jesus is, and what believing in Him means.";
+    case "rom":
+      return "Paul's deepest letter — the gospel laid out, brick by brick.";
+    default:
+      return "A good place to begin.";
+  }
+}
+
+function planLabel(id: string): string {
+  if (id === "gen") return "Old Testament";
+  if (id === "psa" || id === "pro") return "Wisdom Literature";
+  return "New Testament";
+}
+
