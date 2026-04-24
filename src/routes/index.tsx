@@ -160,6 +160,53 @@ function HomePage() {
             </div>
           </div>
         </div>
+
+        {/* Half-Bible unlock modal — fires once when 33+ books complete */}
+        <AnimatePresence>
+          {state.silverGoldUnlocked && !state.silverGoldAcknowledged && (
+            <motion.div
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              exit={{ opacity: 0 }}
+              className="absolute inset-0 z-50 flex items-center justify-center px-7"
+              style={{ background: "rgba(28, 25, 21, 0.55)" }}
+            >
+              <motion.div
+                initial={{ y: 20, opacity: 0 }}
+                animate={{ y: 0, opacity: 1 }}
+                exit={{ y: 20, opacity: 0 }}
+                transition={{ duration: 0.4, ease: [0.22, 1, 0.36, 1] }}
+                className="w-full max-w-sm p-8 text-center"
+                style={{
+                  background: "var(--color-paper)",
+                  border: "1px solid var(--color-gold)",
+                  borderRadius: 16,
+                }}
+              >
+                <SmallCaps tone="gold">A Milestone</SmallCaps>
+                <h2
+                  className="mt-5 font-display text-[color:var(--color-ink)]"
+                  style={{ fontSize: 30, fontWeight: 400, lineHeight: 1.15 }}
+                >
+                  You've completed half the Bible.
+                </h2>
+                <div className="mt-6 mx-auto w-16"><Rule /></div>
+                <p className="mt-6 font-body text-[color:var(--color-ink-soft)]" style={{ fontSize: 15, lineHeight: 1.55 }}>
+                  Books you've already finished can now be read again — earning silver
+                  on the second pass, gold on the third. A new way to keep going.
+                </p>
+                <p className="mt-5 font-ui uppercase tracking-[0.16em] text-[11px] text-[color:var(--color-gold)]">
+                  A New Way to Keep Going
+                </p>
+                <div className="mt-8">
+                  <EditorialButton variant="gold" onClick={acknowledgeSilverGold}>
+                    Continue
+                  </EditorialButton>
+                </div>
+              </motion.div>
+            </motion.div>
+          )}
+        </AnimatePresence>
       </Screen>
     </PhoneFrame>
   );
