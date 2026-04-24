@@ -481,3 +481,5 @@ export function totalReadingDays(state: AppState): number {
   return Object.keys(state.dailyCounts).filter((k) => (state.dailyCounts[k] ?? 0) > 0).length;
 }
 
+export { todayKey, daysBetween };
+
