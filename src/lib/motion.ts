@@ -18,11 +18,12 @@ export const pageTurnTransition: Transition = {
 };
 
 /** Fade + 8px up; use with custom delay (`0.08 * i`) for staggered rows. */
-export const staggerUp = (i = 0): { initial: object; animate: object; transition: Transition } => ({
-  initial: { opacity: 0, y: 8 },
-  animate: { opacity: 1, y: 0 },
-  transition: { duration: 0.35, delay: i * 0.08, ease: EASE_OUT },
-});
+export const staggerUp = (i = 0) =>
+  ({
+    initial: { opacity: 0, y: 8 },
+    animate: { opacity: 1, y: 0 },
+    transition: { duration: 0.35, delay: i * 0.08, ease: EASE_OUT },
+  }) as const;
 
 /** Breathing dot — opacity 40%↔100% over 2s, repeats forever. */
 export const breath = {
