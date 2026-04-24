@@ -92,7 +92,11 @@ function OnboardingPage() {
     answers.time === "5 minutes" ? 1 :
     answers.time === "30 minutes" ? 4 :
     answers.time === "As long as it takes" ? 5 : 2;
-  const markDays = Math.ceil(16 / dailyChapters);
+
+  // Pick the starting book from the answers — not always Mark.
+  const pathBookId = pickStartingBook(answers);
+  const pathBook = bookById(pathBookId)!;
+  const pathDays = Math.ceil(pathBook.chapters / dailyChapters);
   const ntDays = Math.ceil(NT_CHAPTERS / dailyChapters);
 
   function finish() {
@@ -102,7 +106,7 @@ function OnboardingPage() {
       translation: answers.translation || "ESV",
       dailyGoal: dailyChapters,
       reminderTime: reminderOn ? reminder : "",
-      pathBookId: "mrk",
+      pathBookId,
     });
     navigate({ to: "/read" });
   }
