@@ -265,7 +265,7 @@ function OnboardingPage() {
                     className="mt-5 font-display uppercase"
                     style={{ fontSize: 72, color: "var(--color-gold)", fontWeight: 300, letterSpacing: "-0.02em", lineHeight: 1 }}
                   >
-                    {bookById("mrk")!.name}
+                    {pathBook.name}
                   </motion.h1>
                   <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ delay: 0.7 }} className="mt-6 mx-auto w-24">
                     <Rule />
@@ -277,7 +277,7 @@ function OnboardingPage() {
                     className="mt-6 font-body italic text-[color:var(--color-ink-soft)] max-w-xs mx-auto"
                     style={{ fontSize: 16, lineHeight: 1.55 }}
                   >
-                    Short, fast-paced, and the clearest look at the life of Jesus — a great place to begin.
+                    {bookBlurb(pathBookId)}
                   </motion.p>
                   <motion.div
                     initial={{ opacity: 0, y: 10 }}
@@ -288,7 +288,7 @@ function OnboardingPage() {
                   >
                     <SmallCaps>At your pace</SmallCaps>
                     <ul className="mt-4 space-y-2.5 font-body text-[color:var(--color-ink)]" style={{ fontSize: 15 }}>
-                      <li className="flex justify-between"><span>Mark in</span><span className="tabular">{markDays} days</span></li>
+                      <li className="flex justify-between"><span>{pathBook.name} in</span><span className="tabular">{pathDays} days</span></li>
                       <li className="flex justify-between"><span>The New Testament in</span><span className="tabular">{ntDays} days</span></li>
                     </ul>
                   </motion.div>
@@ -358,10 +358,10 @@ function OnboardingPage() {
                     You're all set.
                   </h1>
                   <div className="mt-10 mx-auto max-w-xs w-full text-left space-y-4 p-6 border" style={{ background: "var(--color-paper-light)", borderColor: "var(--color-rule)" }}>
-                    <Row label="Plan" value="New Testament" />
+                    <Row label="Plan" value={planLabel(pathBookId)} />
                     <Row label="Goal" value={`${dailyChapters} chapter${dailyChapters > 1 ? "s" : ""} daily`} />
                     <Row label="Translation" value={answers.translation || "ESV"} />
-                    <Row label="First Chapter" value="Mark 1" />
+                    <Row label="First Chapter" value={`${pathBook.name} 1`} />
                   </div>
                 </div>
                 <EditorialButton variant="gold" onClick={finish}>
