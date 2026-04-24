@@ -407,6 +407,27 @@ export function setReminder(time: string) {
   });
 }
 
+export function setTranslation(translation: string) {
+  setState((s) => {
+    s.user = { ...s.user, translation };
+    return s;
+  });
+}
+
+export function setUserName(name: string) {
+  setState((s) => {
+    s.user = { ...s.user, name };
+    return s;
+  });
+}
+
+export function setUserEmail(email: string) {
+  setState((s) => {
+    s.user = { ...s.user, email };
+    return s;
+  });
+}
+
 export function acknowledgeSilverGold() {
   setState((s) => {
     s.silverGoldAcknowledged = true;
