@@ -384,4 +384,100 @@ export function bookTier(state: AppState, bookId: string): "none" | "in_progress
   return "gold";
 }
 
-export { todayKey, daysBetween };
+// ---- Settings setters ----
+
+export function setProgressView(view: "simple" | "detailed") {
+  setState((s) => {
+    s.user = { ...s.user, progressView: view };
+    return s;
+  });
+}
+
+export function setDailyGoal(goal: number) {
+  setState((s) => {
+    s.user = { ...s.user, dailyGoal: Math.max(1, Math.min(20, Math.round(goal))) };
+    return s;
+  });
+}
+
+export function setReminder(time: string) {
+  setState((s) => {
+    s.user = { ...s.user, reminderTime: time };
+    return s;
+  });
+}
+
+export function acknowledgeSilverGold() {
+  setState((s) => {
+    s.silverGoldAcknowledged = true;
+    return s;
+  });
+}
+
+// ---- Analytics helpers ----
+
+import { avgVersesPerChapter } from "@/data/verses";
+
+export function firstSessionDate(state: AppState): number | null {
+  if (state.sessions.length === 0) return null;
+  return Math.min(...state.sessions.map((s) => s.completedAt));
+}
+
+/** Returns the daily chapter counts for the last `n` days (oldest → newest). */
+export function lastNDayCounts(state: AppState, n: number): { date: string; count: number }[] {
+  const out: { date: string; count: number }[] = [];
+  const today = new Date();
+  for (let i = n - 1; i >= 0; i--) {
+    const d = new Date(today);
+    d.setDate(today.getDate() - i);
+    const k = todayKey(d);
+    out.push({ date: k, count: state.dailyCounts[k] ?? 0 });
+  }
+  return out;
+}
+
+export function avgStartTimeLabel(state: AppState): string {
+  const sessions = state.sessions;
+  if (sessions.length === 0) return "—";
+  let totalMin = 0;
+  for (const s of sessions) {
+    const start = new Date(s.completedAt - s.durationSec * 1000);
+    totalMin += start.getHours() * 60 + start.getMinutes();
+  }
+  const avg = Math.round(totalMin / sessions.length);
+  const h = Math.floor(avg / 60);
+  const m = avg % 60;
+  const period = h >= 12 ? "PM" : "AM";
+  const h12 = ((h + 11) % 12) + 1;
+  return `${h12}:${m.toString().padStart(2, "0")} ${period}`;
+}
+
+export function avgSessionMinutes(state: AppState): number {
+  if (state.sessions.length === 0) return 0;
+  const totalSec = state.sessions.reduce((a, s) => a + s.durationSec, 0);
+  return Math.round(totalSec / state.sessions.length / 60);
+}
+
+export function longestSessionMinutes(state: AppState): number {
+  if (state.sessions.length === 0) return 0;
+  return Math.max(...state.sessions.map((s) => Math.round(s.durationSec / 60)));
+}
+
+export function totalHoursRead(state: AppState): number {
+  const totalSec = state.sessions.reduce((a, s) => a + s.durationSec, 0);
+  return totalSec / 3600;
+}
+
+export function versesRead(state: AppState): number {
+  // Count sessions per chapter; multiply by avg verse count.
+  let total = 0;
+  for (const s of state.sessions) {
+    total += avgVersesPerChapter(s.bookId);
+  }
+  return total;
+}
+
+export function totalReadingDays(state: AppState): number {
+  return Object.keys(state.dailyCounts).filter((k) => (state.dailyCounts[k] ?? 0) > 0).length;
+}
+
