@@ -413,3 +413,55 @@ function Row({ label, value }: { label: string; value: string }) {
     </div>
   );
 }
+
+/**
+ * Pick a starting book based on familiarity + draws.
+ * - Brand-new readers → Mark (short, fast Gospel).
+ * - Familiar readers who want stories → Genesis.
+ * - Familiar readers drawn to wisdom/prayer → Psalms or Proverbs.
+ * - Familiar readers drawn to teaching → John or Romans.
+ * - Cover-to-cover readers → Genesis (fresh OT pass).
+ */
+function pickStartingBook(answers: Record<string, string>): string {
+  const fam = answers.familiarity ?? "";
+  const draws = answers.draws ?? "";
+
+  if (fam === "I've barely opened it") return "mrk";
+  if (fam === "Cover to cover") return "gen";
+
+  if (draws === "Stories and history") return "gen";
+  if (draws === "Wisdom for daily life") return "pro";
+  if (draws === "Prayer and poetry") return "psa";
+  if (draws === "Teaching and doctrine") {
+    return fam === "I've read most of it" ? "rom" : "jhn";
+  }
+
+  // Default: Mark.
+  return "mrk";
+}
+
+function bookBlurb(id: string): string {
+  switch (id) {
+    case "mrk":
+      return "Short, fast-paced, and the clearest look at the life of Jesus — a great place to begin.";
+    case "gen":
+      return "The beginning of everything — creation, covenant, and the family God chose.";
+    case "psa":
+      return "The prayer book of the Bible. Honest, raw, and full of God.";
+    case "pro":
+      return "Hard-won wisdom for ordinary days. One chapter at a time.";
+    case "jhn":
+      return "John walks slowly through who Jesus is, and what believing in Him means.";
+    case "rom":
+      return "Paul's deepest letter — the gospel laid out, brick by brick.";
+    default:
+      return "A good place to begin.";
+  }
+}
+
+function planLabel(id: string): string {
+  if (id === "gen") return "Old Testament";
+  if (id === "psa" || id === "pro") return "Wisdom Literature";
+  return "New Testament";
+}
+
