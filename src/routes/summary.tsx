@@ -1,7 +1,7 @@
 import { createFileRoute, useNavigate } from "@tanstack/react-router";
 import { motion } from "framer-motion";
 import { useEffect, useState } from "react";
-import { Check, Share2 } from "lucide-react";
+import { Check, Share2, Copy, Twitter, MessageCircle } from "lucide-react";
 import { PhoneFrame } from "@/components/PhoneFrame";
 import { Screen } from "@/components/Screen";
 import { bookById } from "@/data/books";
@@ -9,6 +9,7 @@ import { useAppState, clearPendingCelebration, clearPendingRankUp } from "@/stat
 import { EditorialButton } from "@/components/ui-lectio/EditorialButton";
 import { SmallCaps } from "@/components/ui-lectio/SmallCaps";
 import { Rule } from "@/components/ui-lectio/Rule";
+import { BottomSheet } from "@/components/ui-lectio/BottomSheet";
 import { staggerUp } from "@/lib/motion";
 
 export const Route = createFileRoute("/summary")({
