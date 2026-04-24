@@ -1,16 +1,21 @@
 import { createFileRoute, useNavigate } from "@tanstack/react-router";
 import { motion, AnimatePresence } from "framer-motion";
 import { useEffect, useState } from "react";
-import { ArrowRight, ArrowLeft } from "lucide-react";
+import { ArrowLeft } from "lucide-react";
 import { PhoneFrame } from "@/components/PhoneFrame";
 import { Screen } from "@/components/Screen";
 import { completeOnboarding, useAppState, useClientReady } from "@/state/store";
 import { bookById, NT_CHAPTERS } from "@/data/books";
+import { Mascot } from "@/components/Mascot";
+import { EditorialButton } from "@/components/ui-lectio/EditorialButton";
+import { EditorialCard } from "@/components/ui-lectio/EditorialCard";
+import { SmallCaps } from "@/components/ui-lectio/SmallCaps";
+import { Rule } from "@/components/ui-lectio/Rule";
 
 export const Route = createFileRoute("/onboarding")({
   head: () => ({
     meta: [
-      { title: "Welcome — Bible Reading Habit Tracker" },
+      { title: "Welcome — Lectio" },
       { name: "description", content: "Find the right starting point." },
     ],
   }),
@@ -21,27 +26,47 @@ const QUESTIONS = [
   {
     key: "familiarity",
     title: "How familiar are you with the Bible?",
-    options: ["I've barely opened it", "I've read parts of it", "I've read most of it", "I've read it cover to cover"],
+    options: [
+      { label: "I've barely opened it", desc: "Starting fresh." },
+      { label: "I've read parts of it", desc: "Some books, here and there." },
+      { label: "I've read most of it", desc: "Familiar with the whole." },
+      { label: "Cover to cover", desc: "Already once through." },
+    ],
   },
   {
     key: "goal",
     title: "What's your main goal?",
-    options: ["Build a daily habit", "Read the whole Bible", "Go deeper on what I know", "Prepare for ministry"],
+    options: [
+      { label: "Build a daily habit", desc: "Consistency above all." },
+      { label: "Read the whole Bible", desc: "Cover to cover." },
+      { label: "Go deeper", desc: "On what you already know." },
+      { label: "Prepare for ministry", desc: "Teaching or leading others." },
+    ],
   },
   {
     key: "time",
     title: "How long do you want to read each day?",
-    options: ["5 minutes", "15 minutes", "30 minutes", "As long as it takes"],
+    options: [
+      { label: "5 minutes", desc: "One short chapter." },
+      { label: "15 minutes", desc: "Two chapters, unhurried." },
+      { label: "30 minutes", desc: "Four chapters, focused." },
+      { label: "As long as it takes", desc: "Read until you stop." },
+    ],
   },
   {
     key: "draws",
     title: "What draws you most?",
-    options: ["Stories and history", "Wisdom for daily life", "Teaching and doctrine", "Prayer and poetry"],
+    options: [
+      { label: "Stories and history", desc: "The narrative arc." },
+      { label: "Wisdom for daily life", desc: "Practical guidance." },
+      { label: "Teaching and doctrine", desc: "What and why." },
+      { label: "Prayer and poetry", desc: "Psalms and prayer." },
+    ],
   },
   {
     key: "translation",
     title: "Preferred translation?",
-    options: ["ESV", "NIV", "KJV", "NKJV", "NLT", "NASB", "CSB", "NRSV", "MSG", "AMP"],
+    options: ["ESV", "NIV", "KJV", "NKJV", "NLT", "NASB", "CSB", "NRSV", "MSG", "AMP"].map((t) => ({ label: t, desc: "" })),
   },
 ];
 
@@ -63,7 +88,10 @@ function OnboardingPage() {
     if (ready && state.onboarded) navigate({ to: "/" });
   }, [ready, state.onboarded, navigate]);
 
-  const dailyChapters = answers.time === "5 minutes" ? 1 : answers.time === "30 minutes" ? 4 : answers.time === "As long as it takes" ? 5 : 2;
+  const dailyChapters =
+    answers.time === "5 minutes" ? 1 :
+    answers.time === "30 minutes" ? 4 :
+    answers.time === "As long as it takes" ? 5 : 2;
   const markDays = Math.ceil(16 / dailyChapters);
   const ntDays = Math.ceil(NT_CHAPTERS / dailyChapters);
 
@@ -79,38 +107,45 @@ function OnboardingPage() {
     navigate({ to: "/read" });
   }
 
+  const progress = ((qIdx + 1) / QUESTIONS.length) * 100;
+
   return (
     <PhoneFrame>
       <Screen noTabs>
         <AnimatePresence mode="wait">
           <motion.div
             key={step + (step === "q" ? qIdx : "")}
-            initial={{ opacity: 0, x: 20 }}
+            initial={{ opacity: 0, x: 24 }}
             animate={{ opacity: 1, x: 0 }}
-            exit={{ opacity: 0, x: -20 }}
-            transition={{ duration: 0.25 }}
-            className="h-full flex flex-col px-6 pt-14 pb-10"
+            exit={{ opacity: 0, x: -24 }}
+            transition={{ duration: 0.4, ease: [0.22, 1, 0.36, 1] }}
+            className="h-full flex flex-col px-7 pt-14 pb-10"
           >
             {step === "welcome" && (
               <>
                 <div className="flex-1 flex flex-col justify-center text-center">
-                  <p className="text-xs uppercase tracking-[0.3em] text-muted-foreground">Daily Reader</p>
-                  <h1 className="mt-12 font-serif text-3xl leading-tight text-foreground">
+                  <p
+                    className="font-display uppercase mx-auto"
+                    style={{ color: "var(--color-gold)", fontSize: 22, letterSpacing: "0.32em", fontWeight: 400 }}
+                  >
+                    Lectio
+                  </p>
+                  <h1
+                    className="mt-16 font-display text-[color:var(--color-ink)]"
+                    style={{ fontSize: 38, lineHeight: 1.1, fontWeight: 400, letterSpacing: "-0.01em" }}
+                  >
                     Become the reader you've always wanted to be.
                   </h1>
-                  <p className="mt-6 text-base text-muted-foreground max-w-xs mx-auto">
+                  <p className="mt-7 font-body text-[color:var(--color-ink-soft)] max-w-xs mx-auto" style={{ fontSize: 17, lineHeight: 1.5 }}>
                     An honest tool for building a daily Bible reading habit.
                   </p>
                 </div>
-                <button
-                  onClick={() => setStep("account")}
-                  className="w-full rounded-2xl bg-primary text-primary-foreground py-5 font-semibold"
-                >
+                <EditorialButton variant="gold" onClick={() => setStep("account")}>
                   Get Started
-                </button>
+                </EditorialButton>
                 <button
                   onClick={() => setStep("account")}
-                  className="mt-4 text-sm text-muted-foreground"
+                  className="mt-5 font-ui uppercase tracking-[0.14em] text-[11px] text-[color:var(--color-ink-muted)] hover:text-[color:var(--color-ink)]"
                 >
                   I already have an account
                 </button>
@@ -121,75 +156,92 @@ function OnboardingPage() {
               <>
                 <BackBtn onClick={() => setStep("welcome")} />
                 <div className="mt-8">
-                  <h1 className="font-serif text-2xl text-foreground">Create your account</h1>
-                  <p className="mt-2 text-sm text-muted-foreground">It takes a moment.</p>
+                  <h1 className="font-display text-[color:var(--color-ink)]" style={{ fontSize: 28, fontWeight: 400 }}>
+                    Create your account.
+                  </h1>
                 </div>
-                <div className="mt-10 space-y-5">
-                  <Field label="Your name" value={name} onChange={setName} placeholder="Sam" />
+                <div className="mt-12 space-y-8">
+                  <Field label="Your Name" value={name} onChange={setName} placeholder="Sam" />
                   <Field label="Email" value={email} onChange={setEmail} placeholder="you@example.com" />
                 </div>
                 <div className="flex-1" />
-                <button
-                  onClick={() => setStep("intro")}
-                  className="w-full rounded-2xl bg-primary text-primary-foreground py-5 font-semibold"
-                >
+                <EditorialButton variant="primary" onClick={() => setStep("intro")}>
                   Continue
-                </button>
+                </EditorialButton>
               </>
             )}
 
             {step === "intro" && (
               <>
                 <div className="flex-1 flex flex-col justify-center text-center">
-                  <Mascot />
-                  <h1 className="mt-8 font-serif text-2xl text-foreground">
+                  <Mascot size={104} />
+                  <h1 className="mt-10 font-display text-[color:var(--color-ink)]" style={{ fontSize: 30, fontWeight: 400, lineHeight: 1.15 }}>
                     Let's find the right starting point for you.
                   </h1>
-                  <p className="mt-3 text-sm text-muted-foreground">Five quick questions. No wrong answers.</p>
+                  <p className="mt-5 font-body text-[color:var(--color-ink-soft)]" style={{ fontSize: 16 }}>
+                    Five quick questions. No wrong answers.
+                  </p>
                 </div>
-                <button
-                  onClick={() => { setStep("q"); setQIdx(0); }}
-                  className="w-full rounded-2xl bg-primary text-primary-foreground py-5 font-semibold"
-                >
+                <EditorialButton variant="primary" onClick={() => { setStep("q"); setQIdx(0); }}>
                   Begin
-                </button>
+                </EditorialButton>
               </>
             )}
 
             {step === "q" && (
               <>
-                <BackBtn onClick={() => qIdx === 0 ? setStep("intro") : setQIdx((i) => i - 1)} />
-                <div className="mt-6">
-                  <p className="text-xs uppercase tracking-widest text-muted-foreground">
-                    {qIdx + 1} of {QUESTIONS.length}
-                  </p>
-                  <h1 className="mt-3 font-serif text-2xl text-foreground leading-snug">
-                    {QUESTIONS[qIdx].title}
-                  </h1>
+                <div className="flex items-center gap-4">
+                  <BackBtn onClick={() => qIdx === 0 ? setStep("intro") : setQIdx((i) => i - 1)} inline />
+                  <div className="flex-1">
+                    <SmallCaps>
+                      Question {qIdx + 1} of {QUESTIONS.length}
+                    </SmallCaps>
+                    <div className="mt-2 w-full" style={{ height: 1.5, background: "var(--color-rule)" }}>
+                      <motion.div
+                        initial={false}
+                        animate={{ width: `${progress}%` }}
+                        transition={{ duration: 0.4 }}
+                        style={{ height: 1.5, background: "var(--color-gold)" }}
+                      />
+                    </div>
+                  </div>
                 </div>
-                <div className="mt-8 flex flex-col gap-3 flex-1 overflow-y-auto">
+                <h1
+                  className="mt-10 font-display text-[color:var(--color-ink)]"
+                  style={{ fontSize: 28, fontWeight: 400, lineHeight: 1.2 }}
+                >
+                  {QUESTIONS[qIdx].title}
+                </h1>
+                <div className="mt-8 flex flex-col gap-3 flex-1 overflow-y-auto pb-4">
                   {QUESTIONS[qIdx].options.map((opt) => {
-                    const selected = answers[QUESTIONS[qIdx].key] === opt;
+                    const selected = answers[QUESTIONS[qIdx].key] === opt.label;
                     return (
-                      <motion.button
-                        key={opt}
-                        whileTap={{ scale: 0.97 }}
+                      <EditorialCard
+                        key={opt.label}
+                        interactive
+                        selected={selected}
+                        padding="sm"
                         onClick={() => {
-                          const next = { ...answers, [QUESTIONS[qIdx].key]: opt };
+                          const next = { ...answers, [QUESTIONS[qIdx].key]: opt.label };
                           setAnswers(next);
                           setTimeout(() => {
                             if (qIdx + 1 >= QUESTIONS.length) setStep("reveal");
                             else setQIdx(qIdx + 1);
-                          }, 250);
+                          }, 280);
                         }}
-                        className="rounded-2xl border bg-surface p-4 text-left text-sm text-foreground"
-                        style={{
-                          borderColor: selected ? "var(--color-primary)" : "var(--color-border)",
-                          background: selected ? "color-mix(in oklab, var(--color-primary) 6%, var(--color-surface))" : undefined,
-                        }}
+                        style={{ cursor: "pointer" }}
                       >
-                        {opt}
-                      </motion.button>
+                        <div>
+                          <p className="font-display text-[color:var(--color-ink)]" style={{ fontSize: 17, fontWeight: 400 }}>
+                            {opt.label}
+                          </p>
+                          {opt.desc && (
+                            <p className="mt-1 font-ui text-[12px] text-[color:var(--color-ink-muted)]">
+                              {opt.desc}
+                            </p>
+                          )}
+                        </div>
+                      </EditorialCard>
                     );
                   })}
                 </div>
@@ -199,52 +251,47 @@ function OnboardingPage() {
             {step === "reveal" && (
               <>
                 <div className="flex-1 flex flex-col justify-center text-center">
-                  <motion.p
-                    initial={{ opacity: 0 }}
-                    animate={{ opacity: 1 }}
-                    transition={{ delay: 0.1 }}
-                    className="text-xs uppercase tracking-widest text-muted-foreground"
-                  >
-                    Your starting point
-                  </motion.p>
+                  <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ delay: 0.15 }}>
+                    <SmallCaps>We're starting you in</SmallCaps>
+                  </motion.div>
                   <motion.h1
-                    initial={{ opacity: 0, y: 10 }}
+                    initial={{ opacity: 0, y: 12 }}
                     animate={{ opacity: 1, y: 0 }}
-                    transition={{ delay: 0.25, duration: 0.5 }}
-                    className="mt-4 font-serif text-4xl text-foreground"
+                    transition={{ delay: 0.35, duration: 0.7, ease: [0.22, 1, 0.36, 1] }}
+                    className="mt-5 font-display uppercase"
+                    style={{ fontSize: 72, color: "var(--color-gold)", fontWeight: 300, letterSpacing: "-0.02em", lineHeight: 1 }}
                   >
                     {bookById("mrk")!.name}
                   </motion.h1>
+                  <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ delay: 0.7 }} className="mt-6 mx-auto w-24">
+                    <Rule />
+                  </motion.div>
                   <motion.p
                     initial={{ opacity: 0 }}
                     animate={{ opacity: 1 }}
-                    transition={{ delay: 0.5 }}
-                    className="mt-6 text-sm text-muted-foreground max-w-xs mx-auto leading-relaxed"
+                    transition={{ delay: 0.85 }}
+                    className="mt-6 font-body italic text-[color:var(--color-ink-soft)] max-w-xs mx-auto"
+                    style={{ fontSize: 16, lineHeight: 1.55 }}
                   >
                     Short, fast-paced, and the clearest look at the life of Jesus — a great place to begin.
                   </motion.p>
-
                   <motion.div
                     initial={{ opacity: 0, y: 10 }}
                     animate={{ opacity: 1, y: 0 }}
-                    transition={{ delay: 0.75 }}
-                    className="mt-10 mx-auto rounded-2xl bg-surface border border-border p-5 text-left max-w-xs w-full"
+                    transition={{ delay: 1.05 }}
+                    className="mt-10 mx-auto max-w-xs w-full text-left p-6 border"
+                    style={{ background: "var(--color-paper-light)", borderColor: "var(--color-rule)" }}
                   >
-                    <p className="text-xs uppercase tracking-widest text-muted-foreground">
-                      At {dailyChapters} chapter{dailyChapters > 1 ? "s" : ""} per day
-                    </p>
-                    <ul className="mt-3 space-y-2 text-sm text-foreground">
-                      <li className="flex justify-between"><span>Finish Mark</span><span className="tabular text-muted-foreground">{markDays} days</span></li>
-                      <li className="flex justify-between"><span>Finish New Testament</span><span className="tabular text-muted-foreground">{ntDays} days</span></li>
+                    <SmallCaps>At your pace</SmallCaps>
+                    <ul className="mt-4 space-y-2.5 font-body text-[color:var(--color-ink)]" style={{ fontSize: 15 }}>
+                      <li className="flex justify-between"><span>Mark in</span><span className="tabular">{markDays} days</span></li>
+                      <li className="flex justify-between"><span>The New Testament in</span><span className="tabular">{ntDays} days</span></li>
                     </ul>
                   </motion.div>
                 </div>
-                <button
-                  onClick={() => setStep("reminder")}
-                  className="w-full rounded-2xl bg-primary text-primary-foreground py-5 font-semibold flex items-center justify-center gap-2"
-                >
-                  Let's go <ArrowRight size={18} />
-                </button>
+                <EditorialButton variant="gold" onClick={() => setStep("reminder")}>
+                  Let's Go
+                </EditorialButton>
               </>
             )}
 
@@ -252,65 +299,70 @@ function OnboardingPage() {
               <>
                 <BackBtn onClick={() => setStep("reveal")} />
                 <div className="mt-8">
-                  <h1 className="font-serif text-2xl text-foreground">When do you want to read?</h1>
-                  <p className="mt-2 text-sm text-muted-foreground">A small nudge at the right time.</p>
+                  <h1 className="font-display text-[color:var(--color-ink)]" style={{ fontSize: 28, fontWeight: 400 }}>
+                    When do you want to read?
+                  </h1>
                 </div>
-
-                <div className="mt-10 rounded-2xl bg-surface border border-border p-5">
-                  <label className="text-xs uppercase tracking-widest text-muted-foreground">Reminder time</label>
+                <div className="mt-12">
+                  <SmallCaps>Reminder Time</SmallCaps>
                   <input
                     type="time"
                     value={reminder}
                     onChange={(e) => setReminder(e.target.value)}
-                    className="mt-2 w-full bg-transparent text-2xl font-serif text-foreground tabular focus:outline-none"
+                    className="mt-3 w-full bg-transparent font-display tabular text-[color:var(--color-ink)] focus:outline-none border-b py-2"
+                    style={{ fontSize: 36, fontWeight: 400, borderColor: "var(--color-rule)" }}
                   />
                 </div>
-
                 <button
                   onClick={() => setReminderOn((v) => !v)}
-                  className="mt-4 flex items-center justify-between w-full p-4 rounded-2xl border border-border"
+                  className="mt-6 flex items-center justify-between w-full py-4 border-b"
+                  style={{ borderColor: "var(--color-rule)" }}
                 >
-                  <span className="text-sm text-foreground">Remind me</span>
+                  <span className="font-body text-[color:var(--color-ink)]" style={{ fontSize: 15 }}>
+                    Remind me at this time
+                  </span>
                   <span
                     className="rounded-full p-0.5 transition-colors"
-                    style={{ width: 44, height: 26, background: reminderOn ? "var(--color-primary)" : "var(--color-border)" }}
+                    style={{
+                      width: 44,
+                      height: 26,
+                      background: reminderOn ? "var(--color-ink)" : "var(--color-rule)",
+                    }}
                   >
                     <motion.span
                       animate={{ x: reminderOn ? 18 : 0 }}
                       transition={{ duration: 0.2 }}
-                      className="block bg-white rounded-full"
-                      style={{ width: 22, height: 22 }}
+                      className="block rounded-full"
+                      style={{ width: 22, height: 22, background: "var(--color-paper)" }}
                     />
                   </span>
                 </button>
-
+                <p className="mt-4 font-body italic text-[color:var(--color-ink-muted)]" style={{ fontSize: 13 }}>
+                  One notification. Never more.
+                </p>
                 <div className="flex-1" />
-                <button
-                  onClick={() => setStep("ready")}
-                  className="w-full rounded-2xl bg-primary text-primary-foreground py-5 font-semibold"
-                >
+                <EditorialButton variant="primary" onClick={() => setStep("ready")}>
                   Continue
-                </button>
+                </EditorialButton>
               </>
             )}
 
             {step === "ready" && (
               <>
                 <div className="flex-1 flex flex-col justify-center text-center">
-                  <h1 className="font-serif text-3xl text-foreground">You're all set.</h1>
-                  <div className="mt-8 mx-auto rounded-2xl bg-surface border border-border p-5 text-left max-w-xs w-full space-y-3">
-                    <Row label="Reading plan" value="New Testament first" />
-                    <Row label="Daily goal" value={`${dailyChapters} chapter${dailyChapters > 1 ? "s" : ""}`} />
+                  <h1 className="font-display text-[color:var(--color-ink)]" style={{ fontSize: 36, fontWeight: 400 }}>
+                    You're all set.
+                  </h1>
+                  <div className="mt-10 mx-auto max-w-xs w-full text-left space-y-4 p-6 border" style={{ background: "var(--color-paper-light)", borderColor: "var(--color-rule)" }}>
+                    <Row label="Plan" value="New Testament" />
+                    <Row label="Goal" value={`${dailyChapters} chapter${dailyChapters > 1 ? "s" : ""} daily`} />
                     <Row label="Translation" value={answers.translation || "ESV"} />
-                    <Row label="First chapter" value="Mark 1" serif />
+                    <Row label="First Chapter" value="Mark 1" />
                   </div>
                 </div>
-                <button
-                  onClick={finish}
-                  className="w-full rounded-2xl bg-primary text-primary-foreground py-5 font-semibold"
-                >
+                <EditorialButton variant="gold" onClick={finish}>
                   Start My First Reading
-                </button>
+                </EditorialButton>
               </>
             )}
           </motion.div>
@@ -320,10 +372,14 @@ function OnboardingPage() {
   );
 }
 
-function BackBtn({ onClick }: { onClick: () => void }) {
+function BackBtn({ onClick, inline }: { onClick: () => void; inline?: boolean }) {
   return (
-    <button onClick={onClick} className="self-start -ml-2 p-2 text-muted-foreground" aria-label="Back">
-      <ArrowLeft size={20} />
+    <button
+      onClick={onClick}
+      className={`${inline ? "" : "self-start"} -ml-2 p-2 text-[color:var(--color-ink-muted)] hover:text-[color:var(--color-ink)]`}
+      aria-label="Back"
+    >
+      <ArrowLeft size={18} />
     </button>
   );
 }
@@ -331,41 +387,25 @@ function BackBtn({ onClick }: { onClick: () => void }) {
 function Field({ label, value, onChange, placeholder }: { label: string; value: string; onChange: (v: string) => void; placeholder?: string }) {
   return (
     <div>
-      <label className="text-xs uppercase tracking-widest text-muted-foreground">{label}</label>
+      <SmallCaps>{label}</SmallCaps>
       <input
         value={value}
         onChange={(e) => onChange(e.target.value)}
         placeholder={placeholder}
-        className="mt-2 w-full bg-transparent border-b border-border py-3 text-base text-foreground focus:outline-none focus:border-primary"
+        className="mt-2 w-full bg-transparent border-b py-3 font-body text-[color:var(--color-ink)] focus:outline-none"
+        style={{ fontSize: 17, borderColor: "var(--color-rule)" }}
       />
     </div>
   );
 }
 
-function Row({ label, value, serif }: { label: string; value: string; serif?: boolean }) {
+function Row({ label, value }: { label: string; value: string }) {
   return (
-    <div className="flex justify-between">
-      <span className="text-xs uppercase tracking-widest text-muted-foreground">{label}</span>
-      <span className={`text-sm text-foreground ${serif ? "font-serif" : ""}`}>{value}</span>
-    </div>
-  );
-}
-
-function Mascot() {
-  // Placeholder geometric mascot — no religious decoration.
-  return (
-    <div className="mx-auto" style={{ width: 96, height: 96 }}>
-      <motion.svg
-        viewBox="0 0 96 96"
-        animate={{ y: [0, -4, 0] }}
-        transition={{ duration: 3, repeat: Infinity, ease: "easeInOut" }}
-      >
-        <circle cx="48" cy="52" r="36" fill="var(--color-primary)" />
-        <circle cx="38" cy="48" r="4" fill="var(--color-background)" />
-        <circle cx="58" cy="48" r="4" fill="var(--color-background)" />
-        <path d="M 38 64 Q 48 70 58 64" stroke="var(--color-background)" strokeWidth="3" strokeLinecap="round" fill="none" />
-        <circle cx="48" cy="20" r="6" fill="var(--color-secondary)" />
-      </motion.svg>
+    <div className="flex justify-between items-baseline">
+      <SmallCaps>{label}</SmallCaps>
+      <span className="font-display text-[color:var(--color-ink)]" style={{ fontSize: 15, fontWeight: 400 }}>
+        {value}
+      </span>
     </div>
   );
 }
