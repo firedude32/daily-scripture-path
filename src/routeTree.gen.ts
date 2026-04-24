@@ -9,38 +9,228 @@
 // Additionally, you should also exclude this file from your linter and/or formatter to prevent it from being checked or modified.
 
 import { Route as rootRouteImport } from './routes/__root'
+import { Route as SummaryRouteImport } from './routes/summary'
+import { Route as ResourcesRouteImport } from './routes/resources'
+import { Route as ReadRouteImport } from './routes/read'
+import { Route as QuizRouteImport } from './routes/quiz'
+import { Route as ProgressRouteImport } from './routes/progress'
+import { Route as ProfileRouteImport } from './routes/profile'
+import { Route as OnboardingRouteImport } from './routes/onboarding'
+import { Route as FriendsRouteImport } from './routes/friends'
 import { Route as IndexRouteImport } from './routes/index'
+import { Route as CelebrationRankRouteImport } from './routes/celebration.rank'
+import { Route as CelebrationBookRouteImport } from './routes/celebration.book'
 
+const SummaryRoute = SummaryRouteImport.update({
+  id: '/summary',
+  path: '/summary',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ResourcesRoute = ResourcesRouteImport.update({
+  id: '/resources',
+  path: '/resources',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ReadRoute = ReadRouteImport.update({
+  id: '/read',
+  path: '/read',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const QuizRoute = QuizRouteImport.update({
+  id: '/quiz',
+  path: '/quiz',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ProgressRoute = ProgressRouteImport.update({
+  id: '/progress',
+  path: '/progress',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ProfileRoute = ProfileRouteImport.update({
+  id: '/profile',
+  path: '/profile',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const OnboardingRoute = OnboardingRouteImport.update({
+  id: '/onboarding',
+  path: '/onboarding',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const FriendsRoute = FriendsRouteImport.update({
+  id: '/friends',
+  path: '/friends',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const IndexRoute = IndexRouteImport.update({
   id: '/',
   path: '/',
   getParentRoute: () => rootRouteImport,
 } as any)
+const CelebrationRankRoute = CelebrationRankRouteImport.update({
+  id: '/celebration/rank',
+  path: '/celebration/rank',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const CelebrationBookRoute = CelebrationBookRouteImport.update({
+  id: '/celebration/book',
+  path: '/celebration/book',
+  getParentRoute: () => rootRouteImport,
+} as any)
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
+  '/friends': typeof FriendsRoute
+  '/onboarding': typeof OnboardingRoute
+  '/profile': typeof ProfileRoute
+  '/progress': typeof ProgressRoute
+  '/quiz': typeof QuizRoute
+  '/read': typeof ReadRoute
+  '/resources': typeof ResourcesRoute
+  '/summary': typeof SummaryRoute
+  '/celebration/book': typeof CelebrationBookRoute
+  '/celebration/rank': typeof CelebrationRankRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
+  '/friends': typeof FriendsRoute
+  '/onboarding': typeof OnboardingRoute
+  '/profile': typeof ProfileRoute
+  '/progress': typeof ProgressRoute
+  '/quiz': typeof QuizRoute
+  '/read': typeof ReadRoute
+  '/resources': typeof ResourcesRoute
+  '/summary': typeof SummaryRoute
+  '/celebration/book': typeof CelebrationBookRoute
+  '/celebration/rank': typeof CelebrationRankRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
   '/': typeof IndexRoute
+  '/friends': typeof FriendsRoute
+  '/onboarding': typeof OnboardingRoute
+  '/profile': typeof ProfileRoute
+  '/progress': typeof ProgressRoute
+  '/quiz': typeof QuizRoute
+  '/read': typeof ReadRoute
+  '/resources': typeof ResourcesRoute
+  '/summary': typeof SummaryRoute
+  '/celebration/book': typeof CelebrationBookRoute
+  '/celebration/rank': typeof CelebrationRankRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
-  fullPaths: '/'
+  fullPaths:
+    | '/'
+    | '/friends'
+    | '/onboarding'
+    | '/profile'
+    | '/progress'
+    | '/quiz'
+    | '/read'
+    | '/resources'
+    | '/summary'
+    | '/celebration/book'
+    | '/celebration/rank'
   fileRoutesByTo: FileRoutesByTo
-  to: '/'
-  id: '__root__' | '/'
+  to:
+    | '/'
+    | '/friends'
+    | '/onboarding'
+    | '/profile'
+    | '/progress'
+    | '/quiz'
+    | '/read'
+    | '/resources'
+    | '/summary'
+    | '/celebration/book'
+    | '/celebration/rank'
+  id:
+    | '__root__'
+    | '/'
+    | '/friends'
+    | '/onboarding'
+    | '/profile'
+    | '/progress'
+    | '/quiz'
+    | '/read'
+    | '/resources'
+    | '/summary'
+    | '/celebration/book'
+    | '/celebration/rank'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
+  FriendsRoute: typeof FriendsRoute
+  OnboardingRoute: typeof OnboardingRoute
+  ProfileRoute: typeof ProfileRoute
+  ProgressRoute: typeof ProgressRoute
+  QuizRoute: typeof QuizRoute
+  ReadRoute: typeof ReadRoute
+  ResourcesRoute: typeof ResourcesRoute
+  SummaryRoute: typeof SummaryRoute
+  CelebrationBookRoute: typeof CelebrationBookRoute
+  CelebrationRankRoute: typeof CelebrationRankRoute
 }
 
 declare module '@tanstack/react-router' {
   interface FileRoutesByPath {
+    '/summary': {
+      id: '/summary'
+      path: '/summary'
+      fullPath: '/summary'
+      preLoaderRoute: typeof SummaryRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/resources': {
+      id: '/resources'
+      path: '/resources'
+      fullPath: '/resources'
+      preLoaderRoute: typeof ResourcesRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/read': {
+      id: '/read'
+      path: '/read'
+      fullPath: '/read'
+      preLoaderRoute: typeof ReadRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/quiz': {
+      id: '/quiz'
+      path: '/quiz'
+      fullPath: '/quiz'
+      preLoaderRoute: typeof QuizRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/progress': {
+      id: '/progress'
+      path: '/progress'
+      fullPath: '/progress'
+      preLoaderRoute: typeof ProgressRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/profile': {
+      id: '/profile'
+      path: '/profile'
+      fullPath: '/profile'
+      preLoaderRoute: typeof ProfileRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/onboarding': {
+      id: '/onboarding'
+      path: '/onboarding'
+      fullPath: '/onboarding'
+      preLoaderRoute: typeof OnboardingRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/friends': {
+      id: '/friends'
+      path: '/friends'
+      fullPath: '/friends'
+      preLoaderRoute: typeof FriendsRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/': {
       id: '/'
       path: '/'
@@ -48,21 +238,36 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof IndexRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/celebration/rank': {
+      id: '/celebration/rank'
+      path: '/celebration/rank'
+      fullPath: '/celebration/rank'
+      preLoaderRoute: typeof CelebrationRankRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/celebration/book': {
+      id: '/celebration/book'
+      path: '/celebration/book'
+      fullPath: '/celebration/book'
+      preLoaderRoute: typeof CelebrationBookRouteImport
+      parentRoute: typeof rootRouteImport
+    }
   }
 }
 
 const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
+  FriendsRoute: FriendsRoute,
+  OnboardingRoute: OnboardingRoute,
+  ProfileRoute: ProfileRoute,
+  ProgressRoute: ProgressRoute,
+  QuizRoute: QuizRoute,
+  ReadRoute: ReadRoute,
+  ResourcesRoute: ResourcesRoute,
+  SummaryRoute: SummaryRoute,
+  CelebrationBookRoute: CelebrationBookRoute,
+  CelebrationRankRoute: CelebrationRankRoute,
 }
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)
   ._addFileTypes<FileRouteTypes>()
-
-import type { getRouter } from './router.tsx'
-import type { createStart } from '@tanstack/react-start'
-declare module '@tanstack/react-start' {
-  interface Register {
-    ssr: true
-    router: Awaited<ReturnType<typeof getRouter>>
-  }
-}
