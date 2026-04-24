@@ -1,5 +1,5 @@
 import { createFileRoute, useNavigate } from "@tanstack/react-router";
-import { motion } from "framer-motion";
+import { motion, AnimatePresence } from "framer-motion";
 import { useEffect } from "react";
 import { Screen } from "@/components/Screen";
 import { PhoneFrame } from "@/components/PhoneFrame";
@@ -13,6 +13,7 @@ import {
   useClientReady,
   nextChapterFor,
   chaptersReadToday,
+  acknowledgeSilverGold,
 } from "@/state/store";
 import { bookById } from "@/data/books";
 
