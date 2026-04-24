@@ -29,6 +29,7 @@ export interface AppState {
     dailyGoal: number; // chapters per day
     reminderTime: string; // "07:00"
     pathBookId: string; // currently reading book
+    progressView: "simple" | "detailed";
   };
   xp: number;
   currentStreak: number;
@@ -40,6 +41,7 @@ export interface AppState {
   sessions: ReadingSession[];
   // celebration unlocks
   silverGoldUnlocked: boolean;
+  silverGoldAcknowledged: boolean;
   // pending celebration to show after a session
   pendingCelebration: null | {
     bookId: string;
@@ -121,6 +123,7 @@ function defaultState(): AppState {
       dailyGoal: 2,
       reminderTime: "07:00",
       pathBookId: "mrk",
+      progressView: "simple",
     },
     xp: 1840,
     currentStreak: 23,
@@ -128,10 +131,16 @@ function defaultState(): AppState {
     lastReadDate: todayKey(new Date(Date.now() - 86400000)), // yesterday so today CTA active
     dailyCounts,
     bookProgress: {
+      // Three completed books (Philippians at gold, James at silver, Jude at green)
+      // demo the tier system. Plus 14 chapters into Mark.
       mrk: { inProgressChapters: inProgress, readThroughs: 0 },
+      php: { inProgressChapters: [], readThroughs: 3 },
+      jas: { inProgressChapters: [], readThroughs: 2 },
+      jud: { inProgressChapters: [], readThroughs: 1 },
     },
     sessions,
     silverGoldUnlocked: false,
+    silverGoldAcknowledged: false,
     pendingCelebration: null,
     pendingRankUp: null,
   };
@@ -139,6 +148,21 @@ function defaultState(): AppState {
 
 let memoryState: AppState | null = null;
 const listeners = new Set<() => void>();
+
+function migrate(state: AppState): AppState {
+  // Forward-compatibility shim: merge any new defaults onto stored state.
+  const def = defaultState();
+  const merged: AppState = {
+    ...def,
+    ...state,
+    user: { ...def.user, ...state.user },
+  };
+  // Ensure new boolean field exists.
+  if (typeof merged.silverGoldAcknowledged !== "boolean") {
+    merged.silverGoldAcknowledged = false;
+  }
+  return merged;
+}
 
 function load(): AppState {
   if (memoryState) return memoryState;
@@ -149,7 +173,7 @@ function load(): AppState {
   try {
     const raw = localStorage.getItem(STORAGE_KEY);
     if (raw) {
-      memoryState = JSON.parse(raw) as AppState;
+      memoryState = migrate(JSON.parse(raw) as AppState);
       return memoryState;
     }
   } catch {
