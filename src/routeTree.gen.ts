@@ -12,7 +12,10 @@ import { Route as rootRouteImport } from './routes/__root'
 import { Route as SummaryRouteImport } from './routes/summary'
 import { Route as ReadRouteImport } from './routes/read'
 import { Route as QuizRouteImport } from './routes/quiz'
+import { Route as OnboardingRouteImport } from './routes/onboarding'
 import { Route as IndexRouteImport } from './routes/index'
+import { Route as CelebrationRankRouteImport } from './routes/celebration.rank'
+import { Route as CelebrationBookRouteImport } from './routes/celebration.book'
 
 const SummaryRoute = SummaryRouteImport.update({
   id: '/summary',
@@ -29,44 +32,93 @@ const QuizRoute = QuizRouteImport.update({
   path: '/quiz',
   getParentRoute: () => rootRouteImport,
 } as any)
+const OnboardingRoute = OnboardingRouteImport.update({
+  id: '/onboarding',
+  path: '/onboarding',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const IndexRoute = IndexRouteImport.update({
   id: '/',
   path: '/',
   getParentRoute: () => rootRouteImport,
 } as any)
+const CelebrationRankRoute = CelebrationRankRouteImport.update({
+  id: '/celebration/rank',
+  path: '/celebration/rank',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const CelebrationBookRoute = CelebrationBookRouteImport.update({
+  id: '/celebration/book',
+  path: '/celebration/book',
+  getParentRoute: () => rootRouteImport,
+} as any)
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
+  '/onboarding': typeof OnboardingRoute
   '/quiz': typeof QuizRoute
   '/read': typeof ReadRoute
   '/summary': typeof SummaryRoute
+  '/celebration/book': typeof CelebrationBookRoute
+  '/celebration/rank': typeof CelebrationRankRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
+  '/onboarding': typeof OnboardingRoute
   '/quiz': typeof QuizRoute
   '/read': typeof ReadRoute
   '/summary': typeof SummaryRoute
+  '/celebration/book': typeof CelebrationBookRoute
+  '/celebration/rank': typeof CelebrationRankRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
   '/': typeof IndexRoute
+  '/onboarding': typeof OnboardingRoute
   '/quiz': typeof QuizRoute
   '/read': typeof ReadRoute
   '/summary': typeof SummaryRoute
+  '/celebration/book': typeof CelebrationBookRoute
+  '/celebration/rank': typeof CelebrationRankRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
-  fullPaths: '/' | '/quiz' | '/read' | '/summary'
+  fullPaths:
+    | '/'
+    | '/onboarding'
+    | '/quiz'
+    | '/read'
+    | '/summary'
+    | '/celebration/book'
+    | '/celebration/rank'
   fileRoutesByTo: FileRoutesByTo
-  to: '/' | '/quiz' | '/read' | '/summary'
-  id: '__root__' | '/' | '/quiz' | '/read' | '/summary'
+  to:
+    | '/'
+    | '/onboarding'
+    | '/quiz'
+    | '/read'
+    | '/summary'
+    | '/celebration/book'
+    | '/celebration/rank'
+  id:
+    | '__root__'
+    | '/'
+    | '/onboarding'
+    | '/quiz'
+    | '/read'
+    | '/summary'
+    | '/celebration/book'
+    | '/celebration/rank'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
+  OnboardingRoute: typeof OnboardingRoute
   QuizRoute: typeof QuizRoute
   ReadRoute: typeof ReadRoute
   SummaryRoute: typeof SummaryRoute
+  CelebrationBookRoute: typeof CelebrationBookRoute
+  CelebrationRankRoute: typeof CelebrationRankRoute
 }
 
 declare module '@tanstack/react-router' {
@@ -92,6 +144,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof QuizRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/onboarding': {
+      id: '/onboarding'
+      path: '/onboarding'
+      fullPath: '/onboarding'
+      preLoaderRoute: typeof OnboardingRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/': {
       id: '/'
       path: '/'
@@ -99,14 +158,31 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof IndexRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/celebration/rank': {
+      id: '/celebration/rank'
+      path: '/celebration/rank'
+      fullPath: '/celebration/rank'
+      preLoaderRoute: typeof CelebrationRankRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/celebration/book': {
+      id: '/celebration/book'
+      path: '/celebration/book'
+      fullPath: '/celebration/book'
+      preLoaderRoute: typeof CelebrationBookRouteImport
+      parentRoute: typeof rootRouteImport
+    }
   }
 }
 
 const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
+  OnboardingRoute: OnboardingRoute,
   QuizRoute: QuizRoute,
   ReadRoute: ReadRoute,
   SummaryRoute: SummaryRoute,
+  CelebrationBookRoute: CelebrationBookRoute,
+  CelebrationRankRoute: CelebrationRankRoute,
 }
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)

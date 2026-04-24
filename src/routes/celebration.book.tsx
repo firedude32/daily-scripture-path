@@ -42,8 +42,8 @@ function BookCelebration() {
   const book = bookById(cel.bookId)!;
 
   function done() {
+    if (!cel) return;
     clearPendingCelebration();
-    // Half-Bible unlock just happened?
     const justUnlocked = state.silverGoldUnlocked && cel.tier === "green";
     // Show educational modal once when crossing 33 books
     const totalCompleted = Object.values(state.bookProgress).filter((b) => b.readThroughs >= 1).length;
