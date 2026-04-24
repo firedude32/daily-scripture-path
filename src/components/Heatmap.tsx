@@ -1,19 +1,26 @@
-import { useAppState } from "@/state/store";
-import { todayKey } from "@/state/store";
+import { useAppState, todayKey } from "@/state/store";
 
 /**
  * GitHub-style heatmap. Renders `weeks` columns of 7 days ending today.
+ * Cells are Gold at 30/50/75/100% opacity over Rule for empty days.
+ * Sharp 2px squares, 2px gap, no rounding — editorial.
  */
-export function Heatmap({ weeks = 13, cell = 14, gap = 4 }: { weeks?: number; cell?: number; gap?: number }) {
+export function Heatmap({
+  weeks = 13,
+  cell = 14,
+  gap = 2,
+}: {
+  weeks?: number;
+  cell?: number;
+  gap?: number;
+}) {
   const state = useAppState();
   const today = new Date();
   const cols: { date: string; count: number }[][] = [];
 
-  // start from the Sunday of the week that includes "today - (weeks-1)*7" days ago
   const totalDays = weeks * 7;
   const start = new Date(today);
   start.setDate(today.getDate() - (totalDays - 1));
-  // align to Sunday
   while (start.getDay() !== 0) start.setDate(start.getDate() - 1);
 
   for (let w = 0; w < weeks; w++) {
@@ -33,11 +40,11 @@ export function Heatmap({ weeks = 13, cell = 14, gap = 4 }: { weeks?: number; ce
 
   function color(count: number): string {
     if (count < 0) return "transparent";
-    if (count === 0) return "var(--color-heat-0)";
-    if (count === 1) return "var(--color-heat-1)";
-    if (count === 2) return "var(--color-heat-2)";
-    if (count <= 4) return "var(--color-heat-3)";
-    return "var(--color-heat-4)";
+    if (count === 0) return "var(--color-rule)";
+    if (count === 1) return "rgba(184, 134, 11, 0.30)";
+    if (count === 2) return "rgba(184, 134, 11, 0.50)";
+    if (count <= 4) return "rgba(184, 134, 11, 0.75)";
+    return "var(--color-gold)";
   }
 
   return (
@@ -51,9 +58,8 @@ export function Heatmap({ weeks = 13, cell = 14, gap = 4 }: { weeks?: number; ce
                 width: cell,
                 height: cell,
                 background: color(c.count),
-                borderRadius: 3,
               }}
-              title={c.date ? `${c.date}: ${c.count} chapters` : ""}
+              title={c.date ? `${c.date}: ${c.count} chapter${c.count === 1 ? "" : "s"}` : ""}
             />
           ))}
         </div>

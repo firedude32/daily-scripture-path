@@ -5,14 +5,17 @@
 @custom-variant dark (&:is(.dark *));
 
 /*
- * Bible Reading Habit Tracker — Design System
- * Light mode only. Warm off-white, deep forest green, warm tan.
- * No blue. No religious decoration. Generous whitespace.
+ * Lectio — Bible Reading Habit Tracker
+ * Swiss editorial brutalism. Paper and ink, with one flat gold accent.
+ * No blue. No pure black or pure white. Generous whitespace.
  */
 
 @theme inline {
   --font-sans: "Inter", -apple-system, BlinkMacSystemFont, sans-serif;
-  --font-serif: "Source Serif 4", "Source Serif Pro", Georgia, serif;
+  --font-display: "Playfair Display", "Cormorant Garamond", Georgia, serif;
+  --font-body: "Source Serif 4", "Lora", Georgia, serif;
+  /* Keep --font-serif for any legacy refs; map to body serif */
+  --font-serif: "Source Serif 4", "Lora", Georgia, serif;
 
   --radius-sm: calc(var(--radius) - 4px);
   --radius-md: calc(var(--radius) - 2px);
@@ -42,9 +45,20 @@
   --color-border: var(--border);
   --color-input: var(--input);
   --color-ring: var(--ring);
+
+  /* Lectio palette */
+  --color-paper: var(--paper);
+  --color-paper-light: var(--paper-light);
+  --color-ink: var(--ink);
+  --color-ink-soft: var(--ink-soft);
+  --color-ink-muted: var(--ink-muted);
+  --color-rule: var(--rule);
+  --color-gold: var(--gold);
+
   --color-tier-green: var(--tier-green);
   --color-tier-silver: var(--tier-silver);
   --color-tier-gold: var(--tier-gold);
+
   --color-heat-0: var(--heat-0);
   --color-heat-1: var(--heat-1);
   --color-heat-2: var(--heat-2);
@@ -55,50 +69,59 @@
 :root {
   --radius: 0.75rem;
 
-  /* Warm off-white background, never pure white */
-  --background: oklch(0.974 0.012 85);
-  --surface: oklch(1 0 0);
-  --foreground: oklch(0.255 0.005 60);
+  /* Lectio paper-and-ink */
+  --paper: #F5F0E6;
+  --paper-light: #FAF7F2;
+  --card-white: #FFFFFF;
+  --ink: #1C1915;
+  --ink-soft: #4A453E;
+  --ink-muted: #8A847A;
+  --rule: #D4CEC2;
+  --gold: #B8860B;
 
-  --card: oklch(1 0 0);
-  --card-foreground: oklch(0.255 0.005 60);
-  --popover: oklch(1 0 0);
-  --popover-foreground: oklch(0.255 0.005 60);
+  /* Tier colors (for celebration screens + book tiles) */
+  --tier-green: #4A6B4E;
+  --tier-silver: #9A9389;
+  --tier-gold: #B8860B;
 
-  /* Deep forest green */
-  --primary: oklch(0.34 0.05 155);
-  --primary-foreground: oklch(0.974 0.012 85);
+  /* shadcn aliases */
+  --background: var(--paper);
+  --surface: var(--paper-light);
+  --foreground: var(--ink);
 
-  /* Warm tan secondary */
-  --secondary: oklch(0.71 0.07 75);
-  --secondary-foreground: oklch(0.255 0.005 60);
+  --card: var(--paper-light);
+  --card-foreground: var(--ink);
+  --popover: var(--paper-light);
+  --popover-foreground: var(--ink);
 
-  --muted: oklch(0.93 0.012 80);
-  --muted-foreground: oklch(0.46 0.012 70);
+  /* Primary = Ink (deep warm black). Solid Ink buttons are the default. */
+  --primary: var(--ink);
+  --primary-foreground: var(--paper);
 
-  --accent: oklch(0.93 0.018 80);
-  --accent-foreground: oklch(0.255 0.005 60);
+  --secondary: var(--paper-light);
+  --secondary-foreground: var(--ink);
+
+  --muted: var(--rule);
+  --muted-foreground: var(--ink-muted);
+
+  --accent: var(--gold);
+  --accent-foreground: var(--ink);
 
   --destructive: oklch(0.55 0.18 28);
-  --destructive-foreground: oklch(0.98 0.005 80);
+  --destructive-foreground: #FAF7F2;
 
-  --success: oklch(0.5 0.1 150);
+  --success: var(--tier-green);
 
-  --border: oklch(0.9 0.012 80);
-  --input: oklch(0.9 0.012 80);
-  --ring: oklch(0.34 0.05 155);
+  --border: var(--rule);
+  --input: var(--rule);
+  --ring: var(--gold);
 
-  /* Book completion tiers */
-  --tier-green: oklch(0.5 0.1 150);
-  --tier-silver: oklch(0.65 0.005 250);
-  --tier-gold: oklch(0.72 0.13 80);
-
-  /* Heatmap intensity */
-  --heat-0: oklch(0.92 0.012 80);
-  --heat-1: oklch(0.82 0.05 150);
-  --heat-2: oklch(0.65 0.08 150);
-  --heat-3: oklch(0.5 0.1 150);
-  --heat-4: oklch(0.34 0.05 155);
+  /* Heatmap intensity — Gold opacity over Rule */
+  --heat-0: var(--rule);
+  --heat-1: rgba(184, 134, 11, 0.30);
+  --heat-2: rgba(184, 134, 11, 0.50);
+  --heat-3: rgba(184, 134, 11, 0.75);
+  --heat-4: rgba(184, 134, 11, 1.00);
 }
 
 @layer base {
@@ -107,17 +130,49 @@
   }
 
   html, body {
-    background-color: oklch(0.18 0.005 60);
+    /* Soft warm gray surround for the desktop phone frame; Paper inside. */
+    background-color: #2A2622;
     color: var(--color-foreground);
     font-family: var(--font-sans);
     -webkit-font-smoothing: antialiased;
+    text-rendering: optimizeLegibility;
   }
 
   .tabular {
     font-variant-numeric: tabular-nums;
   }
 
+  /* Type utilities */
+  .font-display {
+    font-family: var(--font-display);
+    font-weight: 400;
+    letter-spacing: -0.01em;
+  }
+  .font-body {
+    font-family: var(--font-body);
+  }
+  .font-ui {
+    font-family: var(--font-sans);
+  }
+  /* Legacy mapping: existing font-serif usages render in body serif */
   .font-serif {
-    font-family: var(--font-serif);
+    font-family: var(--font-body);
+  }
+
+  .smallcaps {
+    font-family: var(--font-sans);
+    font-weight: 500;
+    text-transform: uppercase;
+    letter-spacing: 0.14em;
+    font-size: 11px;
+    color: var(--color-ink-muted);
+  }
+  .smallcaps-sm {
+    font-family: var(--font-sans);
+    font-weight: 500;
+    text-transform: uppercase;
+    letter-spacing: 0.12em;
+    font-size: 10px;
+    color: var(--color-ink-muted);
   }
 }

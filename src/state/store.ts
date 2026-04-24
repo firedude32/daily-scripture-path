@@ -29,6 +29,7 @@ export interface AppState {
     dailyGoal: number; // chapters per day
     reminderTime: string; // "07:00"
     pathBookId: string; // currently reading book
+    progressView: "simple" | "detailed";
   };
   xp: number;
   currentStreak: number;
@@ -40,6 +41,7 @@ export interface AppState {
   sessions: ReadingSession[];
   // celebration unlocks
   silverGoldUnlocked: boolean;
+  silverGoldAcknowledged: boolean;
   // pending celebration to show after a session
   pendingCelebration: null | {
     bookId: string;
@@ -121,6 +123,7 @@ function defaultState(): AppState {
       dailyGoal: 2,
       reminderTime: "07:00",
       pathBookId: "mrk",
+      progressView: "simple",
     },
     xp: 1840,
     currentStreak: 23,
@@ -128,10 +131,16 @@ function defaultState(): AppState {
     lastReadDate: todayKey(new Date(Date.now() - 86400000)), // yesterday so today CTA active
     dailyCounts,
     bookProgress: {
+      // Three completed books (Philippians at gold, James at silver, Jude at green)
+      // demo the tier system. Plus 14 chapters into Mark.
       mrk: { inProgressChapters: inProgress, readThroughs: 0 },
+      php: { inProgressChapters: [], readThroughs: 3 },
+      jas: { inProgressChapters: [], readThroughs: 2 },
+      jud: { inProgressChapters: [], readThroughs: 1 },
     },
     sessions,
     silverGoldUnlocked: false,
+    silverGoldAcknowledged: false,
     pendingCelebration: null,
     pendingRankUp: null,
   };
@@ -139,6 +148,21 @@ function defaultState(): AppState {
 
 let memoryState: AppState | null = null;
 const listeners = new Set<() => void>();
+
+function migrate(state: AppState): AppState {
+  // Forward-compatibility shim: merge any new defaults onto stored state.
+  const def = defaultState();
+  const merged: AppState = {
+    ...def,
+    ...state,
+    user: { ...def.user, ...state.user },
+  };
+  // Ensure new boolean field exists.
+  if (typeof merged.silverGoldAcknowledged !== "boolean") {
+    merged.silverGoldAcknowledged = false;
+  }
+  return merged;
+}
 
 function load(): AppState {
   if (memoryState) return memoryState;
@@ -149,7 +173,7 @@ function load(): AppState {
   try {
     const raw = localStorage.getItem(STORAGE_KEY);
     if (raw) {
-      memoryState = JSON.parse(raw) as AppState;
+      memoryState = migrate(JSON.parse(raw) as AppState);
       return memoryState;
     }
   } catch {
@@ -360,4 +384,102 @@ export function bookTier(state: AppState, bookId: string): "none" | "in_progress
   return "gold";
 }
 
+// ---- Settings setters ----
+
+export function setProgressView(view: "simple" | "detailed") {
+  setState((s) => {
+    s.user = { ...s.user, progressView: view };
+    return s;
+  });
+}
+
+export function setDailyGoal(goal: number) {
+  setState((s) => {
+    s.user = { ...s.user, dailyGoal: Math.max(1, Math.min(20, Math.round(goal))) };
+    return s;
+  });
+}
+
+export function setReminder(time: string) {
+  setState((s) => {
+    s.user = { ...s.user, reminderTime: time };
+    return s;
+  });
+}
+
+export function acknowledgeSilverGold() {
+  setState((s) => {
+    s.silverGoldAcknowledged = true;
+    return s;
+  });
+}
+
+// ---- Analytics helpers ----
+
+import { avgVersesPerChapter } from "@/data/verses";
+
+export function firstSessionDate(state: AppState): number | null {
+  if (state.sessions.length === 0) return null;
+  return Math.min(...state.sessions.map((s) => s.completedAt));
+}
+
+/** Returns the daily chapter counts for the last `n` days (oldest → newest). */
+export function lastNDayCounts(state: AppState, n: number): { date: string; count: number }[] {
+  const out: { date: string; count: number }[] = [];
+  const today = new Date();
+  for (let i = n - 1; i >= 0; i--) {
+    const d = new Date(today);
+    d.setDate(today.getDate() - i);
+    const k = todayKey(d);
+    out.push({ date: k, count: state.dailyCounts[k] ?? 0 });
+  }
+  return out;
+}
+
+export function avgStartTimeLabel(state: AppState): string {
+  const sessions = state.sessions;
+  if (sessions.length === 0) return "—";
+  let totalMin = 0;
+  for (const s of sessions) {
+    const start = new Date(s.completedAt - s.durationSec * 1000);
+    totalMin += start.getHours() * 60 + start.getMinutes();
+  }
+  const avg = Math.round(totalMin / sessions.length);
+  const h = Math.floor(avg / 60);
+  const m = avg % 60;
+  const period = h >= 12 ? "PM" : "AM";
+  const h12 = ((h + 11) % 12) + 1;
+  return `${h12}:${m.toString().padStart(2, "0")} ${period}`;
+}
+
+export function avgSessionMinutes(state: AppState): number {
+  if (state.sessions.length === 0) return 0;
+  const totalSec = state.sessions.reduce((a, s) => a + s.durationSec, 0);
+  return Math.round(totalSec / state.sessions.length / 60);
+}
+
+export function longestSessionMinutes(state: AppState): number {
+  if (state.sessions.length === 0) return 0;
+  return Math.max(...state.sessions.map((s) => Math.round(s.durationSec / 60)));
+}
+
+export function totalHoursRead(state: AppState): number {
+  const totalSec = state.sessions.reduce((a, s) => a + s.durationSec, 0);
+  return totalSec / 3600;
+}
+
+export function versesRead(state: AppState): number {
+  // Count sessions per chapter; multiply by avg verse count.
+  let total = 0;
+  for (const s of state.sessions) {
+    total += avgVersesPerChapter(s.bookId);
+  }
+  return total;
+}
+
+export function totalReadingDays(state: AppState): number {
+  return Object.keys(state.dailyCounts).filter((k) => (state.dailyCounts[k] ?? 0) > 0).length;
+}
+
 export { todayKey, daysBetween };
+
