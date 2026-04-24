@@ -10,9 +10,13 @@
 
 import { Route as rootRouteImport } from './routes/__root'
 import { Route as SummaryRouteImport } from './routes/summary'
+import { Route as ResourcesRouteImport } from './routes/resources'
 import { Route as ReadRouteImport } from './routes/read'
 import { Route as QuizRouteImport } from './routes/quiz'
+import { Route as ProgressRouteImport } from './routes/progress'
+import { Route as ProfileRouteImport } from './routes/profile'
 import { Route as OnboardingRouteImport } from './routes/onboarding'
+import { Route as FriendsRouteImport } from './routes/friends'
 import { Route as IndexRouteImport } from './routes/index'
 import { Route as CelebrationRankRouteImport } from './routes/celebration.rank'
 import { Route as CelebrationBookRouteImport } from './routes/celebration.book'
@@ -20,6 +24,11 @@ import { Route as CelebrationBookRouteImport } from './routes/celebration.book'
 const SummaryRoute = SummaryRouteImport.update({
   id: '/summary',
   path: '/summary',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ResourcesRoute = ResourcesRouteImport.update({
+  id: '/resources',
+  path: '/resources',
   getParentRoute: () => rootRouteImport,
 } as any)
 const ReadRoute = ReadRouteImport.update({
@@ -32,9 +41,24 @@ const QuizRoute = QuizRouteImport.update({
   path: '/quiz',
   getParentRoute: () => rootRouteImport,
 } as any)
+const ProgressRoute = ProgressRouteImport.update({
+  id: '/progress',
+  path: '/progress',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ProfileRoute = ProfileRouteImport.update({
+  id: '/profile',
+  path: '/profile',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const OnboardingRoute = OnboardingRouteImport.update({
   id: '/onboarding',
   path: '/onboarding',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const FriendsRoute = FriendsRouteImport.update({
+  id: '/friends',
+  path: '/friends',
   getParentRoute: () => rootRouteImport,
 } as any)
 const IndexRoute = IndexRouteImport.update({
@@ -55,18 +79,26 @@ const CelebrationBookRoute = CelebrationBookRouteImport.update({
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
+  '/friends': typeof FriendsRoute
   '/onboarding': typeof OnboardingRoute
+  '/profile': typeof ProfileRoute
+  '/progress': typeof ProgressRoute
   '/quiz': typeof QuizRoute
   '/read': typeof ReadRoute
+  '/resources': typeof ResourcesRoute
   '/summary': typeof SummaryRoute
   '/celebration/book': typeof CelebrationBookRoute
   '/celebration/rank': typeof CelebrationRankRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
+  '/friends': typeof FriendsRoute
   '/onboarding': typeof OnboardingRoute
+  '/profile': typeof ProfileRoute
+  '/progress': typeof ProgressRoute
   '/quiz': typeof QuizRoute
   '/read': typeof ReadRoute
+  '/resources': typeof ResourcesRoute
   '/summary': typeof SummaryRoute
   '/celebration/book': typeof CelebrationBookRoute
   '/celebration/rank': typeof CelebrationRankRoute
@@ -74,9 +106,13 @@ export interface FileRoutesByTo {
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
   '/': typeof IndexRoute
+  '/friends': typeof FriendsRoute
   '/onboarding': typeof OnboardingRoute
+  '/profile': typeof ProfileRoute
+  '/progress': typeof ProgressRoute
   '/quiz': typeof QuizRoute
   '/read': typeof ReadRoute
+  '/resources': typeof ResourcesRoute
   '/summary': typeof SummaryRoute
   '/celebration/book': typeof CelebrationBookRoute
   '/celebration/rank': typeof CelebrationRankRoute
@@ -85,27 +121,39 @@ export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
   fullPaths:
     | '/'
+    | '/friends'
     | '/onboarding'
+    | '/profile'
+    | '/progress'
     | '/quiz'
     | '/read'
+    | '/resources'
     | '/summary'
     | '/celebration/book'
     | '/celebration/rank'
   fileRoutesByTo: FileRoutesByTo
   to:
     | '/'
+    | '/friends'
     | '/onboarding'
+    | '/profile'
+    | '/progress'
     | '/quiz'
     | '/read'
+    | '/resources'
     | '/summary'
     | '/celebration/book'
     | '/celebration/rank'
   id:
     | '__root__'
     | '/'
+    | '/friends'
     | '/onboarding'
+    | '/profile'
+    | '/progress'
     | '/quiz'
     | '/read'
+    | '/resources'
     | '/summary'
     | '/celebration/book'
     | '/celebration/rank'
@@ -113,9 +161,13 @@ export interface FileRouteTypes {
 }
 export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
+  FriendsRoute: typeof FriendsRoute
   OnboardingRoute: typeof OnboardingRoute
+  ProfileRoute: typeof ProfileRoute
+  ProgressRoute: typeof ProgressRoute
   QuizRoute: typeof QuizRoute
   ReadRoute: typeof ReadRoute
+  ResourcesRoute: typeof ResourcesRoute
   SummaryRoute: typeof SummaryRoute
   CelebrationBookRoute: typeof CelebrationBookRoute
   CelebrationRankRoute: typeof CelebrationRankRoute
@@ -128,6 +180,13 @@ declare module '@tanstack/react-router' {
       path: '/summary'
       fullPath: '/summary'
       preLoaderRoute: typeof SummaryRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/resources': {
+      id: '/resources'
+      path: '/resources'
+      fullPath: '/resources'
+      preLoaderRoute: typeof ResourcesRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/read': {
@@ -144,11 +203,32 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof QuizRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/progress': {
+      id: '/progress'
+      path: '/progress'
+      fullPath: '/progress'
+      preLoaderRoute: typeof ProgressRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/profile': {
+      id: '/profile'
+      path: '/profile'
+      fullPath: '/profile'
+      preLoaderRoute: typeof ProfileRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/onboarding': {
       id: '/onboarding'
       path: '/onboarding'
       fullPath: '/onboarding'
       preLoaderRoute: typeof OnboardingRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/friends': {
+      id: '/friends'
+      path: '/friends'
+      fullPath: '/friends'
+      preLoaderRoute: typeof FriendsRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/': {
@@ -177,9 +257,13 @@ declare module '@tanstack/react-router' {
 
 const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
+  FriendsRoute: FriendsRoute,
   OnboardingRoute: OnboardingRoute,
+  ProfileRoute: ProfileRoute,
+  ProgressRoute: ProgressRoute,
   QuizRoute: QuizRoute,
   ReadRoute: ReadRoute,
+  ResourcesRoute: ResourcesRoute,
   SummaryRoute: SummaryRoute,
   CelebrationBookRoute: CelebrationBookRoute,
   CelebrationRankRoute: CelebrationRankRoute,
