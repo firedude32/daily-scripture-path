@@ -188,8 +188,69 @@ function SummaryPage() {
             </EditorialButton>
           </motion.div>
         </div>
+
+        <BottomSheet
+          open={shareOpen}
+          onClose={() => { setShareOpen(false); setCopied(false); }}
+          eyebrow="Quietly"
+          title="Share this milestone"
+        >
+          <p className="font-body text-[color:var(--color-ink-soft)]" style={{ fontSize: 15, lineHeight: 1.55 }}>
+            A short note about today's reading — no scores, no quiz answers.
+          </p>
+          <div
+            className="mt-5 p-5 border font-body text-[color:var(--color-ink)]"
+            style={{ background: "var(--color-paper-light)", borderColor: "var(--color-rule)", fontSize: 14, lineHeight: 1.55 }}
+          >
+            {`Read ${book.name} ${data.chapter} today. Day ${data.result.streak} of the streak. — Lectio`}
+          </div>
+          <div className="mt-6 grid grid-cols-3 gap-3">
+            <ShareBtn
+              icon={<Copy size={16} />}
+              label={copied ? "Copied" : "Copy"}
+              onClick={async () => {
+                const text = `Read ${book.name} ${data.chapter} today. Day ${data.result.streak} of the streak. — Lectio`;
+                try {
+                  await navigator.clipboard?.writeText(text);
+                  setCopied(true);
+                  setTimeout(() => setCopied(false), 1800);
+                } catch {
+                  setCopied(false);
+                }
+              }}
+            />
+            <ShareBtn
+              icon={<MessageCircle size={16} />}
+              label="Message"
+              onClick={() => setShareOpen(false)}
+            />
+            <ShareBtn
+              icon={<Twitter size={16} />}
+              label="Post"
+              onClick={() => setShareOpen(false)}
+            />
+          </div>
+          <div className="mt-7">
+            <EditorialButton variant="secondary" onClick={() => setShareOpen(false)}>
+              Close
+            </EditorialButton>
+          </div>
+        </BottomSheet>
       </Screen>
     </PhoneFrame>
+  );
+}
+
+function ShareBtn({ icon, label, onClick }: { icon: React.ReactNode; label: string; onClick: () => void }) {
+  return (
+    <button
+      onClick={onClick}
+      className="flex flex-col items-center gap-2 py-4 rounded-[12px] border hover:bg-[color:var(--color-paper-light)] transition-colors"
+      style={{ borderColor: "var(--color-rule)", color: "var(--color-ink)" }}
+    >
+      {icon}
+      <span className="font-ui uppercase tracking-[0.14em] text-[10px] font-medium">{label}</span>
+    </button>
   );
 }
 
