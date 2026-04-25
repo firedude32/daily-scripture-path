@@ -8,6 +8,7 @@ import { GoldMotif, dailyMotif } from "@/components/GoldMotif";
 
 import { SmallCaps } from "@/components/ui-lectio/SmallCaps";
 import { TodaysNote } from "@/components/TodaysNote";
+import { FriendActivity } from "@/components/FriendActivity";
 import { EditorialButton } from "@/components/ui-lectio/EditorialButton";
 import { Rule } from "@/components/ui-lectio/Rule";
 import {
