@@ -18,7 +18,7 @@ import {
   totalReadingDays,
   totalChaptersRead,
   todayKey,
-  daysBetween,
+  useAppState,
 } from "@/state/store";
 import { bookById } from "@/data/books";
 import { FRIENDS } from "@/data/friends";
@@ -246,9 +246,7 @@ function ordinal(n: number): string {
 export function TodaysNote() {
   const navigate = useNavigate();
   const today = useMemo(() => new Date(), []);
-  // Read state directly via store hook
-  const stateModule = require("@/state/store") as typeof import("@/state/store");
-  const state = stateModule.useAppState();
+  const state = useAppState();
 
   const note = useMemo(() => pickVariant(state, today), [state, today]);
 
