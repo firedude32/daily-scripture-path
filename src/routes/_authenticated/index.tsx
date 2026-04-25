@@ -1,6 +1,6 @@
 import { createFileRoute, useNavigate } from "@tanstack/react-router";
 import { motion, AnimatePresence } from "framer-motion";
-import { useEffect } from "react";
+import { useEffect, useState } from "react";
 import { Screen } from "@/components/Screen";
 import { PhoneFrame } from "@/components/PhoneFrame";
 import { Heatmap } from "@/components/Heatmap";
@@ -11,6 +11,8 @@ import { TodaysNote } from "@/components/TodaysNote";
 import { FriendActivity } from "@/components/FriendActivity";
 import { EditorialButton } from "@/components/ui-lectio/EditorialButton";
 import { Rule } from "@/components/ui-lectio/Rule";
+import { ChapterPickerSheet } from "@/components/ChapterPickerSheet";
+import { setReadOverride, clearReadOverride } from "@/lib/readOverride";
 import {
   useAppState,
   useClientReady,
@@ -34,10 +36,22 @@ function HomePage() {
   const navigate = useNavigate();
   const ready = useClientReady();
   const state = useAppState();
+  const [pickerOpen, setPickerOpen] = useState(false);
 
   useEffect(() => {
     if (ready && !state.onboarded) navigate({ to: "/onboarding" });
   }, [ready, state.onboarded, navigate]);
+
+  function startRecommended() {
+    clearReadOverride();
+    navigate({ to: "/read" });
+  }
+
+  function startChosen(bookId: string, chapter: number) {
+    setReadOverride(bookId, chapter);
+    setPickerOpen(false);
+    navigate({ to: "/read" });
+  }
 
   if (!ready) {
     return (
@@ -137,17 +151,11 @@ function HomePage() {
           {/* CTA */}
           <div className="mt-7">
             {goalHit ? (
-              <EditorialButton
-                variant="secondary"
-                onClick={() => navigate({ to: "/read" })}
-              >
+              <EditorialButton variant="secondary" onClick={startRecommended}>
                 Read More
               </EditorialButton>
             ) : (
-              <EditorialButton
-                variant="gold"
-                onClick={() => navigate({ to: "/read" })}
-              >
+              <EditorialButton variant="gold" onClick={startRecommended}>
                 Start Today's Reading
               </EditorialButton>
             )}
@@ -158,7 +166,21 @@ function HomePage() {
             <SmallCaps>
               Up Next · {nextBook.name} {next.chapter}
             </SmallCaps>
+            <div className="mt-2">
+              <button
+                onClick={() => setPickerOpen(true)}
+                className="font-ui uppercase tracking-[0.16em] text-[11px] text-[color:var(--color-gold)] hover:opacity-80 py-1"
+              >
+                Choose a Different Chapter
+              </button>
+            </div>
           </div>
+
+          <ChapterPickerSheet
+            open={pickerOpen}
+            onClose={() => setPickerOpen(false)}
+            onSelect={startChosen}
+          />
 
           {/* Today's Note rotating slot */}
           <div className="mt-11">
