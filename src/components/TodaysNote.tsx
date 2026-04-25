@@ -1,6 +1,5 @@
 import { useMemo } from "react";
 import { motion } from "framer-motion";
-import { useNavigate } from "@tanstack/react-router";
 import {
   Bookmark,
   BookOpen,
@@ -39,7 +38,6 @@ interface NoteContent {
   body: string;
   italic?: boolean;
   bottom: string;
-  to: string;
 }
 
 // Deterministic daily seed → integer
@@ -244,7 +242,6 @@ function ordinal(n: number): string {
 }
 
 export function TodaysNote() {
-  const navigate = useNavigate();
   const today = useMemo(() => new Date(), []);
   const state = useAppState();
 
@@ -255,13 +252,10 @@ export function TodaysNote() {
   const Icon = note.Icon;
 
   return (
-    <motion.button
-      type="button"
-      onClick={() => navigate({ to: note.to })}
+    <motion.div
       initial={{ opacity: 0 }}
       animate={{ opacity: 1 }}
       transition={{ duration: 0.2, ease: "easeOut" }}
-      whileTap={{ scale: 0.98 }}
       className="block w-full text-left rounded-xl"
       style={{
         background: "var(--color-paper-light, #FAF7F2)",
