@@ -203,7 +203,13 @@ function ReadPage() {
                   <EditorialButton variant="secondary" onClick={() => setConfirming(false)}>
                     Keep Reading
                   </EditorialButton>
-                  <EditorialButton variant="primary" onClick={() => navigate({ to: "/" })}>
+                  <EditorialButton
+                    variant="primary"
+                    onClick={() => {
+                      clearReadOverride();
+                      navigate({ to: "/" });
+                    }}
+                  >
                     Cancel Session
                   </EditorialButton>
                 </div>
