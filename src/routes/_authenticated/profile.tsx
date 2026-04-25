@@ -14,6 +14,7 @@ import {
   setTranslation,
   setUserName,
   setUserEmail,
+  setUsername,
 } from "@/state/store";
 import { getRank, getNextRank, RANKS } from "@/data/ranks";
 import { NT_CHAPTERS, TOTAL_CHAPTERS, bookById } from "@/data/books";
