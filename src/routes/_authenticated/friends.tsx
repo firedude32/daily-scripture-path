@@ -43,14 +43,17 @@ function FriendsPage() {
   const [openCreate, setOpenCreate] = useState(false);
   const [openJoin, setOpenJoin] = useState(false);
   const [rows, setRows] = useState<FriendRow[]>([]);
+  const [groups, setGroups] = useState<Group[]>([]);
   const [loading, setLoading] = useState(true);
+  const [openGroup, setOpenGroup] = useState<Group | null>(null);
 
   const refresh = useCallback(async () => {
     if (!userId) return;
     setLoading(true);
     try {
-      const r = await listFriendships(userId);
+      const [r, g] = await Promise.all([listFriendships(userId), listMyGroups(userId)]);
       setRows(r);
+      setGroups(g);
     } catch (e) {
       console.error(e);
     } finally {
