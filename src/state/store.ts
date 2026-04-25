@@ -488,6 +488,22 @@ export function setUserEmail(email: string) {
   void persistProfile({ email });
 }
 
+export async function setUsername(username: string): Promise<{ ok: true } | { ok: false; reason: string }> {
+  const v = username.trim().toLowerCase();
+  if (!/^[a-z0-9_]{3,24}$/.test(v)) {
+    return { ok: false, reason: "3–24 letters, numbers, or underscores." };
+  }
+  const userId = memoryState.userId;
+  if (!userId) return { ok: false, reason: "Not signed in." };
+  const { error } = await supabase.from("profiles").update({ username: v }).eq("id", userId);
+  if (error) {
+    if (error.code === "23505") return { ok: false, reason: "That username is taken." };
+    return { ok: false, reason: error.message };
+  }
+  setState((s) => { s.user = { ...s.user, username: v }; return s; });
+  return { ok: true };
+}
+
 export function acknowledgeSilverGold() {
   setState((s) => { s.silverGoldAcknowledged = true; return s; });
   void persistProfile({ silver_gold_acknowledged: true });
