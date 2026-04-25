@@ -70,6 +70,7 @@ function emptyState(): AppState {
     onboarded: false,
     user: {
       name: "Friend",
+      username: null,
       email: "",
       translation: "ESV",
       dailyGoal: 2,
