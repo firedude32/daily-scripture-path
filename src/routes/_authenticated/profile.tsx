@@ -308,13 +308,15 @@ function ProfilePage() {
             <FieldEditor
               label="Name"
               value={state.user.name}
-              onSave={setUserName}
+              onSave={(v) => { setUserName(v); }}
             />
+            <Rule />
+            <UsernameEditor value={state.user.username ?? ""} />
             <Rule />
             <FieldEditor
               label="Email"
               value={state.user.email}
-              onSave={setUserEmail}
+              onSave={(v) => { setUserEmail(v); }}
               type="email"
             />
           </div>
