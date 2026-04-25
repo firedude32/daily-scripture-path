@@ -1,4 +1,4 @@
-import { createFileRoute, Link } from "@tanstack/react-router";
+import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
 import { useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { X } from "lucide-react";
@@ -13,6 +13,7 @@ import {
   setProgressView,
 } from "@/state/store";
 import { BOOKS, NT_CHAPTERS, OT_CHAPTERS, type Book, bookById } from "@/data/books";
+import { setReadOverride } from "@/lib/readOverride";
 import { hasQuiz } from "@/data/quiz";
 import type { Genre } from "@/data/books";
 import { SmallCaps } from "@/components/ui-lectio/SmallCaps";
@@ -40,6 +41,7 @@ const TIER_FILL: Record<string, string> = {
 function ProgressPage() {
   const ready = useClientReady();
   const state = useAppState();
+  const navigate = useNavigate();
   const [openBook, setOpenBook] = useState<Book | null>(null);
 
   if (!ready) {
@@ -181,11 +183,7 @@ function ProgressPage() {
               </Section>
               <Rule />
               <Section title="At Your Current Pace">
-                <ul className="space-y-3 font-body text-[color:var(--color-ink)]" style={{ fontSize: 15 }}>
-                  <li className="flex justify-between"><span>Mark</span><span className="tabular text-[color:var(--color-ink-muted)]">{Math.ceil((16 - 14) / Math.max(1, state.user.dailyGoal))} days</span></li>
-                  <li className="flex justify-between"><span>The Gospels</span><span className="tabular text-[color:var(--color-ink-muted)]">{Math.ceil(89 / Math.max(1, state.user.dailyGoal))} days</span></li>
-                  <li className="flex justify-between"><span>The New Testament</span><span className="tabular text-[color:var(--color-ink-muted)]">{Math.ceil(NT_CHAPTERS / Math.max(1, state.user.dailyGoal))} days</span></li>
-                </ul>
+                <PaceETA state={state} />
               </Section>
             </>
           )}
@@ -273,18 +271,23 @@ function ProgressPage() {
                       (state.bookProgress[openBook.id]?.inProgressChapters ?? []).includes(ch) ||
                       (state.bookProgress[openBook.id]?.readThroughs ?? 0) > 0;
                     return (
-                      <div
+                      <button
                         key={ch}
-                        className="aspect-square flex items-center justify-center font-ui tabular"
+                        onClick={() => {
+                          setReadOverride(openBook.id, ch);
+                          navigate({ to: "/read" });
+                        }}
+                        className="aspect-square flex items-center justify-center font-ui tabular transition-opacity hover:opacity-70"
                         style={{
                           fontSize: 10,
                           background: done ? "var(--color-gold)" : "transparent",
                           border: done ? "none" : "1px solid var(--color-rule)",
                           color: done ? "var(--color-ink)" : "var(--color-ink-muted)",
                         }}
+                        title={`Read ${openBook.name} ${ch}`}
                       >
                         {ch}
-                      </div>
+                      </button>
                     );
                   })}
                 </div>
@@ -395,5 +398,83 @@ function PaceChart({ state }: { state: ReturnType<typeof useAppState> }) {
         <span>This week · {buckets[buckets.length - 1]}</span>
       </div>
     </div>
+  );
+}
+
+const GOSPEL_IDS = ["mat", "mrk", "luk", "jhn"];
+const NT_IDS = BOOKS.filter((b) => b.testament === "NT").map((b) => b.id);
+
+function chaptersRemainingIn(state: ReturnType<typeof useAppState>, bookIds: string[]): number {
+  let remaining = 0;
+  for (const id of bookIds) {
+    const book = bookById(id);
+    if (!book) continue;
+    const bp = state.bookProgress[id];
+    if (!bp || bp.readThroughs === 0) {
+      remaining += book.chapters - (bp?.inProgressChapters.length ?? 0);
+    }
+    // If already completed at least once, treat as 0 remaining for ETA purposes.
+  }
+  return Math.max(0, remaining);
+}
+
+function recentChaptersPerDay(state: ReturnType<typeof useAppState>, days = 14): number {
+  const today = new Date();
+  let total = 0;
+  let activeDays = 0;
+  for (let i = 0; i < days; i++) {
+    const d = new Date(today);
+    d.setDate(today.getDate() - i);
+    const k = d.toISOString().slice(0, 10);
+    const c = state.dailyCounts[k] ?? 0;
+    total += c;
+    if (c > 0) activeDays++;
+  }
+  // Average across the full window so rest days lower the pace honestly.
+  if (total === 0) return 0;
+  void activeDays;
+  return total / days;
+}
+
+function PaceETA({ state }: { state: ReturnType<typeof useAppState> }) {
+  const pathBook = bookById(state.user.pathBookId);
+  const pace = recentChaptersPerDay(state, 14);
+  const fallback = Math.max(1, state.user.dailyGoal);
+  const effective = pace > 0 ? pace : fallback;
+
+  const rows: { label: string; remaining: number }[] = [];
+  if (pathBook) {
+    rows.push({
+      label: pathBook.name,
+      remaining: chaptersRemainingIn(state, [pathBook.id]),
+    });
+  }
+  rows.push({ label: "The Gospels", remaining: chaptersRemainingIn(state, GOSPEL_IDS) });
+  rows.push({ label: "The New Testament", remaining: chaptersRemainingIn(state, NT_IDS) });
+
+  return (
+    <>
+      <ul className="space-y-3 font-body text-[color:var(--color-ink)]" style={{ fontSize: 15 }}>
+        {rows.map((r) => {
+          const days = r.remaining === 0 ? 0 : Math.ceil(r.remaining / effective);
+          return (
+            <li key={r.label} className="flex justify-between">
+              <span>{r.label}</span>
+              <span className="tabular text-[color:var(--color-ink-muted)]">
+                {r.remaining === 0 ? "Complete" : `${days} ${days === 1 ? "day" : "days"}`}
+              </span>
+            </li>
+          );
+        })}
+      </ul>
+      <p
+        className="mt-4 font-body italic text-[color:var(--color-ink-muted)]"
+        style={{ fontSize: 12 }}
+      >
+        {pace > 0
+          ? `Based on ${pace.toFixed(1)} chapters/day over the last 14 days.`
+          : `No reading in the last 14 days — using your daily goal of ${fallback}.`}
+      </p>
+    </>
   );
 }
