@@ -370,9 +370,9 @@ export function recordSession(bookId: string, chapter: number, durationSec: numb
   });
 
   // Fire-and-forget Supabase writes
-  if (userId && sessionRow && nextBp) {
-    const sr = sessionRow;
-    const np = nextBp;
+  const sr = sessionRow as ReadingSession | null;
+  const np = nextBp as BookProgress | null;
+  if (userId && sr && np) {
     void (async () => {
       const { data: inserted } = await supabase
         .from("reading_sessions")
@@ -386,7 +386,6 @@ export function recordSession(bookId: string, chapter: number, durationSec: numb
         .select("id")
         .single();
       if (inserted?.id) {
-        // Replace temp id with real id
         setState((s) => {
           s.sessions = s.sessions.map((x) => (x.id === sr.id ? { ...x, id: inserted.id } : x));
           return s;
