@@ -1,13 +1,14 @@
-// localStorage-backed app state for the prototype.
-// One global store, accessed via useAppState().
+// Supabase-backed app state. Same public surface as the prototype's
+// localStorage store so existing components keep working unchanged. The
+// in-memory state is hydrated from Supabase on auth, and every mutation is
+// mirrored back to the database so reads remain instant via useSyncExternalStore.
 
 import { useEffect, useState, useSyncExternalStore } from "react";
 import { BOOKS, NT_ORDER, bookById } from "@/data/books";
+import { supabase } from "@/integrations/supabase/client";
 
 export interface BookProgress {
-  // chapters completed in the CURRENT (in-progress) read-through
   inProgressChapters: number[];
-  // number of full read-throughs completed (0, 1, 2, 3+)
   readThroughs: number;
 }
 
@@ -21,28 +22,27 @@ export interface ReadingSession {
 }
 
 export interface AppState {
+  hydrated: boolean;
+  userId: string | null;
   onboarded: boolean;
   user: {
     name: string;
     email: string;
     translation: string;
-    dailyGoal: number; // chapters per day
-    reminderTime: string; // "07:00"
-    pathBookId: string; // currently reading book
+    dailyGoal: number;
+    reminderTime: string;
+    pathBookId: string;
     progressView: "simple" | "detailed";
   };
   xp: number;
   currentStreak: number;
   longestStreak: number;
   lastReadDate: string | null; // YYYY-MM-DD
-  // per-day chapter counts for heatmap, keyed YYYY-MM-DD
   dailyCounts: Record<string, number>;
   bookProgress: Record<string, BookProgress>;
   sessions: ReadingSession[];
-  // celebration unlocks
   silverGoldUnlocked: boolean;
   silverGoldAcknowledged: boolean;
-  // pending celebration to show after a session
   pendingCelebration: null | {
     bookId: string;
     tier: "green" | "silver" | "gold";
@@ -51,8 +51,6 @@ export interface AppState {
   };
   pendingRankUp: null | { rankIndex: number };
 }
-
-const STORAGE_KEY = "brt:state:v1";
 
 function todayKey(d = new Date()): string {
   return d.toISOString().slice(0, 10);
@@ -64,81 +62,27 @@ function daysBetween(a: string, b: string): number {
   );
 }
 
-function buildSyntheticHistory(): {
-  dailyCounts: Record<string, number>;
-  sessions: ReadingSession[];
-} {
-  // 90 days of synthetic data with mostly 2-chapter days, a few skips,
-  // a few heavier days. Current streak = 23 (last 23 days unbroken).
-  const dailyCounts: Record<string, number> = {};
-  const sessions: ReadingSession[] = [];
-  const today = new Date();
-  // seed: chapters of mark consumed up to ch 14 across recent days
-  let markChapter = 0;
-
-  for (let offset = 89; offset >= 0; offset--) {
-    const d = new Date(today);
-    d.setDate(today.getDate() - offset);
-    const key = todayKey(d);
-
-    // last 23 days unbroken
-    const inStreak = offset < 23;
-    // before that, scattered skips
-    const skip = !inStreak && (offset === 24 || offset === 30 || offset === 38 || offset === 47 || offset === 60 || offset === 73);
-    if (skip) continue;
-
-    // Heavy days
-    let chapters = 2;
-    if (offset === 12 || offset === 45 || offset === 70) chapters = 5;
-    else if (offset === 3 || offset === 33) chapters = 4;
-    else if (offset === 18) chapters = 1;
-
-    dailyCounts[key] = chapters;
-    for (let i = 0; i < chapters; i++) {
-      markChapter++;
-      sessions.push({
-        id: `s-${key}-${i}`,
-        bookId: "mrk",
-        chapter: ((markChapter - 1) % 16) + 1,
-        durationSec: 600 + Math.floor(Math.random() * 500),
-        completedAt: d.getTime(),
-        xpEarned: 10,
-      });
-    }
-  }
-
-  return { dailyCounts, sessions };
-}
-
-function defaultState(): AppState {
-  const { dailyCounts, sessions } = buildSyntheticHistory();
-  // 14 chapters into Mark
-  const inProgress = Array.from({ length: 14 }, (_, i) => i + 1);
+function emptyState(): AppState {
   return {
+    hydrated: false,
+    userId: null,
     onboarded: false,
     user: {
       name: "Friend",
-      email: "you@example.com",
+      email: "",
       translation: "ESV",
       dailyGoal: 2,
       reminderTime: "07:00",
       pathBookId: "mrk",
       progressView: "simple",
     },
-    xp: 1840,
-    currentStreak: 23,
-    longestStreak: 47,
-    lastReadDate: todayKey(new Date(Date.now() - 86400000)), // yesterday so today CTA active
-    dailyCounts,
-    bookProgress: {
-      // Three completed books (Philippians at gold, James at silver, Jude at green)
-      // demo the tier system. Plus 14 chapters into Mark.
-      mrk: { inProgressChapters: inProgress, readThroughs: 0 },
-      php: { inProgressChapters: [], readThroughs: 3 },
-      jas: { inProgressChapters: [], readThroughs: 2 },
-      jud: { inProgressChapters: [], readThroughs: 1 },
-    },
-    sessions,
+    xp: 0,
+    currentStreak: 0,
+    longestStreak: 0,
+    lastReadDate: null,
+    dailyCounts: {},
+    bookProgress: {},
+    sessions: [],
     silverGoldUnlocked: false,
     silverGoldAcknowledged: false,
     pendingCelebration: null,
@@ -146,58 +90,16 @@ function defaultState(): AppState {
   };
 }
 
-let memoryState: AppState | null = null;
+let memoryState: AppState = emptyState();
 const listeners = new Set<() => void>();
-
-function migrate(state: AppState): AppState {
-  // Forward-compatibility shim: merge any new defaults onto stored state.
-  const def = defaultState();
-  const merged: AppState = {
-    ...def,
-    ...state,
-    user: { ...def.user, ...state.user },
-  };
-  // Ensure new boolean field exists.
-  if (typeof merged.silverGoldAcknowledged !== "boolean") {
-    merged.silverGoldAcknowledged = false;
-  }
-  return merged;
-}
-
-function load(): AppState {
-  if (memoryState) return memoryState;
-  if (typeof window === "undefined") {
-    memoryState = defaultState();
-    return memoryState;
-  }
-  try {
-    const raw = localStorage.getItem(STORAGE_KEY);
-    if (raw) {
-      memoryState = migrate(JSON.parse(raw) as AppState);
-      return memoryState;
-    }
-  } catch {
-    // fall through
-  }
-  memoryState = defaultState();
-  save();
-  return memoryState;
-}
-
-function save() {
-  if (typeof window === "undefined" || !memoryState) return;
-  localStorage.setItem(STORAGE_KEY, JSON.stringify(memoryState));
-}
 
 function emit() {
   listeners.forEach((l) => l());
 }
 
 export function setState(updater: (s: AppState) => AppState | void) {
-  const s = load();
-  const next = updater(s);
-  memoryState = next ?? s;
-  save();
+  const next = updater(memoryState);
+  memoryState = next ?? memoryState;
   emit();
 }
 
@@ -207,26 +109,156 @@ function subscribe(cb: () => void) {
 }
 
 function getSnapshot(): AppState {
-  return load();
+  return memoryState;
 }
 
 function getServerSnapshot(): AppState {
-  return defaultState();
+  return emptyState();
 }
 
 export function useAppState(): AppState {
-  // Hydration-safe: useSyncExternalStore avoids mismatches.
   return useSyncExternalStore(subscribe, getSnapshot, getServerSnapshot);
 }
 
-// Hook that ensures we only render real client state after mount.
 export function useClientReady(): boolean {
   const [ready, setReady] = useState(false);
   useEffect(() => setReady(true), []);
   return ready;
 }
 
-// ---- Domain helpers ----
+// ---------- Hydration ----------
+
+function buildDailyCounts(sessions: ReadingSession[]): Record<string, number> {
+  const counts: Record<string, number> = {};
+  for (const s of sessions) {
+    const k = todayKey(new Date(s.completedAt));
+    counts[k] = (counts[k] ?? 0) + 1;
+  }
+  return counts;
+}
+
+let hydratingFor: string | null = null;
+
+export async function hydrateFromSupabase(): Promise<void> {
+  const { data: sessionData } = await supabase.auth.getSession();
+  const session = sessionData.session;
+  if (!session) {
+    memoryState = { ...emptyState(), hydrated: true };
+    emit();
+    return;
+  }
+  const userId = session.user.id;
+  if (hydratingFor === userId && memoryState.hydrated) return;
+  hydratingFor = userId;
+
+  const [profileRes, bpRes, sessRes] = await Promise.all([
+    supabase.from("profiles").select("*").eq("id", userId).maybeSingle(),
+    supabase.from("book_progress").select("*").eq("user_id", userId),
+    supabase
+      .from("reading_sessions")
+      .select("*")
+      .eq("user_id", userId)
+      .order("completed_at", { ascending: false })
+      .limit(1000),
+  ]);
+
+  const profile = profileRes.data;
+  const bookProgress: Record<string, BookProgress> = {};
+  for (const row of bpRes.data ?? []) {
+    bookProgress[row.book_id] = {
+      inProgressChapters: row.in_progress_chapters ?? [],
+      readThroughs: row.read_throughs ?? 0,
+    };
+  }
+  const sessions: ReadingSession[] = (sessRes.data ?? []).map((r) => ({
+    id: r.id,
+    bookId: r.book_id,
+    chapter: r.chapter,
+    durationSec: r.duration_sec ?? 0,
+    completedAt: new Date(r.completed_at).getTime(),
+    xpEarned: r.xp_earned ?? 10,
+  }));
+
+  memoryState = {
+    hydrated: true,
+    userId,
+    onboarded: profile?.onboarded ?? false,
+    user: {
+      name: profile?.name ?? session.user.email?.split("@")[0] ?? "Friend",
+      email: profile?.email ?? session.user.email ?? "",
+      translation: profile?.translation ?? "ESV",
+      dailyGoal: profile?.daily_goal ?? 2,
+      reminderTime: profile?.reminder_time ?? "07:00",
+      pathBookId: profile?.path_book_id ?? "mrk",
+      progressView: (profile?.progress_view as "simple" | "detailed") ?? "simple",
+    },
+    xp: profile?.xp ?? 0,
+    currentStreak: profile?.current_streak ?? 0,
+    longestStreak: profile?.longest_streak ?? 0,
+    lastReadDate: profile?.last_read_date ?? null,
+    dailyCounts: buildDailyCounts(sessions),
+    bookProgress,
+    sessions,
+    silverGoldUnlocked: profile?.silver_gold_unlocked ?? false,
+    silverGoldAcknowledged: profile?.silver_gold_acknowledged ?? false,
+    pendingCelebration: null,
+    pendingRankUp: null,
+  };
+  emit();
+}
+
+export function useHydrateStore() {
+  useEffect(() => {
+    hydrateFromSupabase();
+    const { data: sub } = supabase.auth.onAuthStateChange(() => {
+      hydratingFor = null;
+      hydrateFromSupabase();
+    });
+    return () => sub.subscription.unsubscribe();
+  }, []);
+}
+
+// ---------- Persistence helpers ----------
+
+type ProfilePatch = Partial<{
+  name: string;
+  email: string;
+  translation: string;
+  daily_goal: number;
+  reminder_time: string;
+  path_book_id: string;
+  progress_view: string;
+  xp: number;
+  current_streak: number;
+  longest_streak: number;
+  last_read_date: string | null;
+  silver_gold_unlocked: boolean;
+  silver_gold_acknowledged: boolean;
+  onboarded: boolean;
+}>;
+
+async function persistProfile(patch: ProfilePatch) {
+  const userId = memoryState.userId;
+  if (!userId) return;
+  await supabase.from("profiles").update(patch).eq("id", userId);
+}
+
+async function persistBookProgress(bookId: string, bp: BookProgress) {
+  const userId = memoryState.userId;
+  if (!userId) return;
+  await supabase.from("book_progress").upsert(
+    {
+      user_id: userId,
+      book_id: bookId,
+      in_progress_chapters: bp.inProgressChapters,
+      read_throughs: bp.readThroughs,
+      updated_at: new Date().toISOString(),
+    },
+    { onConflict: "user_id,book_id" },
+  );
+}
+
+// ---------- Domain helpers ----------
 
 import { RANKS, getRankIndex } from "@/data/ranks";
 
@@ -237,7 +269,6 @@ export function nextChapterFor(state: AppState): { bookId: string; chapter: numb
   if (next <= book.chapters) {
     return { bookId: state.user.pathBookId, chapter: next };
   }
-  // book complete — advance to next NT book
   const idx = NT_ORDER.indexOf(state.user.pathBookId);
   const nextBookId = NT_ORDER[(idx + 1) % NT_ORDER.length];
   return { bookId: nextBookId, chapter: 1 };
@@ -257,12 +288,16 @@ export interface SessionResult {
 export function recordSession(bookId: string, chapter: number, durationSec: number): SessionResult {
   const today = todayKey();
   let result: SessionResult = { bookCompleted: null, rankUp: null, streak: 0, xpEarned: 10 };
+  const userId = memoryState.userId;
+
+  let nextBp: BookProgress | null = null;
+  let profilePatch: ProfilePatch = {};
+  let sessionRow: ReadingSession | null = null;
 
   setState((s) => {
     const before = s.xp;
     const beforeRank = getRankIndex(before);
 
-    // Update book progress
     const bp = s.bookProgress[bookId] ?? { inProgressChapters: [], readThroughs: 0 };
     const inProg = Array.from(new Set([...bp.inProgressChapters, chapter])).sort((a, b) => a - b);
     const book = bookById(bookId)!;
@@ -280,44 +315,35 @@ export function recordSession(bookId: string, chapter: number, durationSec: numb
         newReadThroughs === 1 ? "green" : newReadThroughs === 2 ? "silver" : "gold";
       const bonus = tier === "green" ? 50 : tier === "silver" ? 25 : 15;
       xpEarned += bonus;
-      // estimate days (not crucial in prototype)
       bookCelebration = { bookId, tier, chapters: book.chapters, days: Math.max(1, Math.ceil(book.chapters / Math.max(1, s.user.dailyGoal))) };
     }
 
-    s.bookProgress = { ...s.bookProgress, [bookId]: { inProgressChapters: newInProg, readThroughs: newReadThroughs } };
+    nextBp = { inProgressChapters: newInProg, readThroughs: newReadThroughs };
+    s.bookProgress = { ...s.bookProgress, [bookId]: nextBp };
 
-    // Streak
     let streak = s.currentStreak;
     if (s.lastReadDate !== today) {
       if (s.lastReadDate && daysBetween(s.lastReadDate, today) === 1) streak += 1;
       else if (!s.lastReadDate || daysBetween(s.lastReadDate, today) > 1) streak = 1;
-      xpEarned += 5; // small daily streak bonus
+      xpEarned += 5;
     }
     s.currentStreak = streak;
     s.longestStreak = Math.max(s.longestStreak, streak);
     s.lastReadDate = today;
-
-    // Daily counts
     s.dailyCounts = { ...s.dailyCounts, [today]: (s.dailyCounts[today] ?? 0) + 1 };
-
-    // XP
     s.xp = before + xpEarned;
     const afterRank = getRankIndex(s.xp);
 
-    // Sessions list
-    s.sessions = [
-      {
-        id: `s-${Date.now()}`,
-        bookId,
-        chapter,
-        durationSec,
-        completedAt: Date.now(),
-        xpEarned,
-      },
-      ...s.sessions,
-    ];
+    sessionRow = {
+      id: `s-${Date.now()}`,
+      bookId,
+      chapter,
+      durationSec,
+      completedAt: Date.now(),
+      xpEarned,
+    };
+    s.sessions = [sessionRow, ...s.sessions];
 
-    // Half-bible silver/gold unlock
     const totalCompleted = Object.values(s.bookProgress).filter((b) => b.readThroughs >= 1).length;
     if (!s.silverGoldUnlocked && totalCompleted >= 33) {
       s.silverGoldUnlocked = true;
@@ -325,6 +351,14 @@ export function recordSession(bookId: string, chapter: number, durationSec: numb
 
     if (bookCelebration) s.pendingCelebration = bookCelebration;
     if (afterRank > beforeRank) s.pendingRankUp = { rankIndex: afterRank };
+
+    profilePatch = {
+      xp: s.xp,
+      current_streak: s.currentStreak,
+      longest_streak: s.longestStreak,
+      last_read_date: s.lastReadDate,
+      silver_gold_unlocked: s.silverGoldUnlocked,
+    };
 
     result = {
       bookCompleted: bookCelebration,
@@ -334,6 +368,33 @@ export function recordSession(bookId: string, chapter: number, durationSec: numb
     };
     return s;
   });
+
+  // Fire-and-forget Supabase writes
+  const sr = sessionRow as ReadingSession | null;
+  const np = nextBp as BookProgress | null;
+  if (userId && sr && np) {
+    void (async () => {
+      const { data: inserted } = await supabase
+        .from("reading_sessions")
+        .insert({
+          user_id: userId,
+          book_id: bookId,
+          chapter,
+          duration_sec: sr.durationSec,
+          xp_earned: sr.xpEarned,
+        })
+        .select("id")
+        .single();
+      if (inserted?.id) {
+        setState((s) => {
+          s.sessions = s.sessions.map((x) => (x.id === sr.id ? { ...x, id: inserted.id } : x));
+          return s;
+        });
+      }
+      await persistBookProgress(bookId, np);
+      await persistProfile(profilePatch);
+    })();
+  }
 
   return result;
 }
@@ -358,12 +419,19 @@ export function completeOnboarding(updates: Partial<AppState["user"]>) {
     s.user = { ...s.user, ...updates };
     return s;
   });
+  void persistProfile({
+    onboarded: true,
+    name: updates.name,
+    translation: updates.translation,
+    daily_goal: updates.dailyGoal,
+    reminder_time: updates.reminderTime,
+    path_book_id: updates.pathBookId,
+  });
 }
 
 export function resetAll() {
-  if (typeof window === "undefined") return;
-  localStorage.removeItem(STORAGE_KEY);
-  memoryState = null;
+  // No-op kept for backwards compatibility. Sign-out is handled via supabase.auth.signOut().
+  memoryState = { ...emptyState(), hydrated: true };
   emit();
 }
 
@@ -387,52 +455,39 @@ export function bookTier(state: AppState, bookId: string): "none" | "in_progress
 // ---- Settings setters ----
 
 export function setProgressView(view: "simple" | "detailed") {
-  setState((s) => {
-    s.user = { ...s.user, progressView: view };
-    return s;
-  });
+  setState((s) => { s.user = { ...s.user, progressView: view }; return s; });
+  void persistProfile({ progress_view: view });
 }
 
 export function setDailyGoal(goal: number) {
-  setState((s) => {
-    s.user = { ...s.user, dailyGoal: Math.max(1, Math.min(20, Math.round(goal))) };
-    return s;
-  });
+  const clamped = Math.max(1, Math.min(20, Math.round(goal)));
+  setState((s) => { s.user = { ...s.user, dailyGoal: clamped }; return s; });
+  void persistProfile({ daily_goal: clamped });
 }
 
 export function setReminder(time: string) {
-  setState((s) => {
-    s.user = { ...s.user, reminderTime: time };
-    return s;
-  });
+  setState((s) => { s.user = { ...s.user, reminderTime: time }; return s; });
+  void persistProfile({ reminder_time: time });
 }
 
 export function setTranslation(translation: string) {
-  setState((s) => {
-    s.user = { ...s.user, translation };
-    return s;
-  });
+  setState((s) => { s.user = { ...s.user, translation }; return s; });
+  void persistProfile({ translation });
 }
 
 export function setUserName(name: string) {
-  setState((s) => {
-    s.user = { ...s.user, name };
-    return s;
-  });
+  setState((s) => { s.user = { ...s.user, name }; return s; });
+  void persistProfile({ name });
 }
 
 export function setUserEmail(email: string) {
-  setState((s) => {
-    s.user = { ...s.user, email };
-    return s;
-  });
+  setState((s) => { s.user = { ...s.user, email }; return s; });
+  void persistProfile({ email });
 }
 
 export function acknowledgeSilverGold() {
-  setState((s) => {
-    s.silverGoldAcknowledged = true;
-    return s;
-  });
+  setState((s) => { s.silverGoldAcknowledged = true; return s; });
+  void persistProfile({ silver_gold_acknowledged: true });
 }
 
 // ---- Analytics helpers ----
@@ -444,7 +499,6 @@ export function firstSessionDate(state: AppState): number | null {
   return Math.min(...state.sessions.map((s) => s.completedAt));
 }
 
-/** Returns the daily chapter counts for the last `n` days (oldest → newest). */
 export function lastNDayCounts(state: AppState, n: number): { date: string; count: number }[] {
   const out: { date: string; count: number }[] = [];
   const today = new Date();
@@ -490,7 +544,6 @@ export function totalHoursRead(state: AppState): number {
 }
 
 export function versesRead(state: AppState): number {
-  // Count sessions per chapter; multiply by avg verse count.
   let total = 0;
   for (const s of state.sessions) {
     total += avgVersesPerChapter(s.bookId);
@@ -503,4 +556,3 @@ export function totalReadingDays(state: AppState): number {
 }
 
 export { todayKey, daysBetween };
-

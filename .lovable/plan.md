@@ -28,7 +28,7 @@ Enable **Lovable Cloud** (Supabase). Create the schema:
 - Move `/`, `/read`, `/quiz`, `/progress`, `/friends`, `/profile`, `/analytics`, `/onboarding`, `/resources`, `/summary`, `/celebration/*` under `_authenticated`.
 - Sign Out in Profile → real `supabase.auth.signOut()` (currently it calls `resetAll()` and pretends).
 
-## Chunk 3 — Replace the store with Supabase
+## Chunk 3 — Replace the store with Supabase ✅
 Rewrite `src/state/store.ts` so every read/write hits Supabase via TanStack Query:
 - `useProfile()`, `useBookProgress()`, `useSessions()`, `useDailyCounts()`.
 - `recordSession()` becomes a server function that inserts into `reading_sessions`, recomputes streak/XP/daily_count atomically, and returns the result.
