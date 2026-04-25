@@ -165,6 +165,9 @@ function HomePage() {
             <TodaysNote />
           </div>
 
+          {/* Friend activity (only renders when there are friends) */}
+          <FriendActivity />
+
           {/* Divider */}
           <div className="mt-10">
             <Rule />
