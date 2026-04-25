@@ -3,8 +3,9 @@ import { motion, AnimatePresence } from "framer-motion";
 import { useEffect, useState } from "react";
 import { PhoneFrame } from "@/components/PhoneFrame";
 import { Screen } from "@/components/Screen";
-import { useAppState, useClientReady, nextChapterFor } from "@/state/store";
+import { useAppState, useClientReady, nextChapterFor, recordSession } from "@/state/store";
 import { bookById } from "@/data/books";
+import { hasQuiz } from "@/data/quiz";
 import { breath } from "@/lib/motion";
 import { EditorialButton } from "@/components/ui-lectio/EditorialButton";
 import { SmallCaps } from "@/components/ui-lectio/SmallCaps";
@@ -55,19 +56,26 @@ function ReadPage() {
 
   const next = nextChapterFor(state);
   const book = bookById(next.bookId)!;
+  const quizAvailable = hasQuiz(next.bookId, next.chapter);
   const mm = Math.floor(seconds / 60).toString().padStart(2, "0");
   const ss = (seconds % 60).toString().padStart(2, "0");
 
   function finish() {
-    sessionStorage.setItem(
-      "brt:lastSession",
-      JSON.stringify({
-        bookId: next.bookId,
-        chapter: next.chapter,
-        durationSec: seconds,
-      }),
-    );
-    navigate({ to: "/quiz" });
+    if (quizAvailable) {
+      sessionStorage.setItem(
+        "brt:lastSession",
+        JSON.stringify({
+          bookId: next.bookId,
+          chapter: next.chapter,
+          durationSec: seconds,
+        }),
+      );
+      navigate({ to: "/quiz" });
+      return;
+    }
+    // No quiz yet for this book — record the session and head home.
+    recordSession(next.bookId, next.chapter, seconds);
+    navigate({ to: "/" });
   }
 
   return (
