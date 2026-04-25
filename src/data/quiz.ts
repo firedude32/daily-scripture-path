@@ -427,10 +427,21 @@ const SCRIPTED: QuizBank = {
   ],
 };
 
+// Books that currently have hand-scripted quizzes. Anything not in this set
+// will surface a "Quiz Coming Soon" banner instead of using generic filler.
+export const BOOKS_WITH_QUIZZES = new Set<string>(
+  Object.keys(SCRIPTED).map((k) => k.split("-")[0]),
+);
+
+export function hasQuiz(bookId: string, chapter?: number): boolean {
+  if (chapter != null) return SCRIPTED[`${bookId}-${chapter}`] != null;
+  return BOOKS_WITH_QUIZZES.has(bookId);
+}
+
 export function getQuiz(bookId: string, chapter: number): QuizQuestion[] {
   const key = `${bookId}-${chapter}`;
   if (SCRIPTED[key]) return SCRIPTED[key];
   // Fall back to generic literal-style questions for chapters not yet scripted.
-  // Find book name for question text.
   return generic(bookId.toUpperCase(), chapter);
 }
+
