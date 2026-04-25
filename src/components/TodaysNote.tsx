@@ -301,6 +301,6 @@ export function TodaysNote() {
       <div className="mt-3">
         <SmallCaps>{note.bottom}</SmallCaps>
       </div>
-    </motion.button>
+    </motion.div>
   );
 }
