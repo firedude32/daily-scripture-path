@@ -19,7 +19,7 @@ import {
 } from "@/state/store";
 import { bookById } from "@/data/books";
 
-export const Route = createFileRoute("/")({
+export const Route = createFileRoute("/_authenticated/")({
   head: () => ({
     meta: [
       { title: "Today — Lectio" },

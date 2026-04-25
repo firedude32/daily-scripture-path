@@ -9,7 +9,7 @@ import { EditorialButton } from "@/components/ui-lectio/EditorialButton";
 import { Rule } from "@/components/ui-lectio/Rule";
 import { BottomSheet } from "@/components/ui-lectio/BottomSheet";
 
-export const Route = createFileRoute("/friends")({
+export const Route = createFileRoute("/_authenticated/friends")({
   head: () => ({
     meta: [
       { title: "Friends — Lectio" },

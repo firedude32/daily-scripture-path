@@ -12,7 +12,7 @@ import { EditorialCard } from "@/components/ui-lectio/EditorialCard";
 import { SmallCaps } from "@/components/ui-lectio/SmallCaps";
 import { Rule } from "@/components/ui-lectio/Rule";
 
-export const Route = createFileRoute("/onboarding")({
+export const Route = createFileRoute("/_authenticated/onboarding")({
   head: () => ({
     meta: [
       { title: "Welcome — Lectio" },

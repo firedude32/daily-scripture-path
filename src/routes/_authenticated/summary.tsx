@@ -12,7 +12,7 @@ import { Rule } from "@/components/ui-lectio/Rule";
 import { BottomSheet } from "@/components/ui-lectio/BottomSheet";
 import { staggerUp } from "@/lib/motion";
 
-export const Route = createFileRoute("/summary")({
+export const Route = createFileRoute("/_authenticated/summary")({
   head: () => ({
     meta: [
       { title: "Session complete — Lectio" },

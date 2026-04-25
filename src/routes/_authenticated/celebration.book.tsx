@@ -9,7 +9,7 @@ import { EditorialButton } from "@/components/ui-lectio/EditorialButton";
 import { SmallCaps } from "@/components/ui-lectio/SmallCaps";
 import { GoldMotif, bookMotif } from "@/components/GoldMotif";
 
-export const Route = createFileRoute("/celebration/book")({
+export const Route = createFileRoute("/_authenticated/celebration/book")({
   head: () => ({
     meta: [
       { title: "Book completed — Lectio" },

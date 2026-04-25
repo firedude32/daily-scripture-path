@@ -6,7 +6,7 @@ import { RESOURCES } from "@/data/friends";
 import { SmallCaps } from "@/components/ui-lectio/SmallCaps";
 import { Rule } from "@/components/ui-lectio/Rule";
 
-export const Route = createFileRoute("/resources")({
+export const Route = createFileRoute("/_authenticated/resources")({
   head: () => ({
     meta: [
       { title: "Other Resources — Lectio" },

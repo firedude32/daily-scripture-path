@@ -1,14 +1,14 @@
-import { createFileRoute, Link } from "@tanstack/react-router";
+import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
 import { ChevronRight } from "lucide-react";
 import { useState } from "react";
 import { PhoneFrame } from "@/components/PhoneFrame";
 import { Screen } from "@/components/Screen";
+import { supabase } from "@/integrations/supabase/client";
 import {
   useAppState,
   useClientReady,
   totalChaptersRead,
   booksCompleted,
-  resetAll,
   setDailyGoal,
   setReminder,
   setTranslation,
@@ -23,7 +23,7 @@ import { EditorialButton } from "@/components/ui-lectio/EditorialButton";
 import { BottomSheet } from "@/components/ui-lectio/BottomSheet";
 import { exportAll } from "@/lib/exportCsv";
 
-export const Route = createFileRoute("/profile")({
+export const Route = createFileRoute("/_authenticated/profile")({
   head: () => ({
     meta: [
       { title: "Profile — Lectio" },
@@ -47,7 +47,14 @@ const TRANSLATIONS = ["ESV", "NIV", "KJV", "NKJV", "NLT", "NASB", "CSB", "NRSV",
 function ProfilePage() {
   const ready = useClientReady();
   const state = useAppState();
+  const navigate = useNavigate();
   const [localGoal, setLocalGoal] = useState<number | null>(null);
+
+  async function handleSignOut() {
+    if (!confirm("Sign out of Lectio?")) return;
+    await supabase.auth.signOut();
+    navigate({ to: "/login" });
+  }
   const [sheet, setSheet] = useState<SheetKey>(null);
 
   if (!ready) {
@@ -191,7 +198,7 @@ function ProfilePage() {
             <EditorialButton
               variant="text"
               fullWidth={false}
-              onClick={() => { if (confirm("Reset all prototype data?")) resetAll(); }}
+              onClick={handleSignOut}
             >
               Sign Out
             </EditorialButton>
