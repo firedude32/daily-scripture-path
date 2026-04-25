@@ -323,3 +323,81 @@ function PercentRing({ pct, label }: { pct: number; label: string }) {
     </div>
   );
 }
+
+interface FavoriteRow {
+  id: string;
+  book_id: string;
+  chapter: number;
+  verse: number | null;
+}
+
+function FavoritesList() {
+  const [rows, setRows] = useState<FavoriteRow[] | null>(null);
+
+  useEffect(() => {
+    let cancelled = false;
+    (async () => {
+      const { data: auth } = await supabase.auth.getUser();
+      const uid = auth.user?.id;
+      if (!uid) {
+        if (!cancelled) setRows([]);
+        return;
+      }
+      const { data, error } = await supabase
+        .from("favorites")
+        .select("id, book_id, chapter, verse")
+        .eq("user_id", uid)
+        .order("created_at", { ascending: false })
+        .limit(20);
+      if (cancelled) return;
+      if (error) {
+        setRows([]);
+        return;
+      }
+      setRows((data ?? []) as FavoriteRow[]);
+    })();
+    return () => {
+      cancelled = true;
+    };
+  }, []);
+
+  if (rows === null) {
+    return (
+      <p
+        className="mt-4 font-body italic text-[color:var(--color-ink-muted)]"
+        style={{ fontSize: 13 }}
+      >
+        Loading…
+      </p>
+    );
+  }
+
+  if (rows.length === 0) {
+    return (
+      <p
+        className="mt-4 font-body italic text-[color:var(--color-ink-muted)]"
+        style={{ fontSize: 13 }}
+      >
+        No favorites yet. Mark verses you want to remember and they'll appear here.
+      </p>
+    );
+  }
+
+  return (
+    <div className="mt-4 flex flex-wrap gap-x-5 gap-y-2">
+      {rows.map((f) => {
+        const book = bookById(f.book_id);
+        const name = book?.name ?? f.book_id;
+        const ref = f.verse ? `${name} ${f.chapter}:${f.verse}` : `${name} ${f.chapter}`;
+        return (
+          <span
+            key={f.id}
+            className="font-ui uppercase tracking-[0.14em] text-[12px] text-[color:var(--color-ink)]"
+          >
+            {ref}
+          </span>
+        );
+      })}
+    </div>
+  );
+}
