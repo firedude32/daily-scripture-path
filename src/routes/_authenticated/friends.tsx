@@ -46,6 +46,7 @@ function FriendsPage() {
   const [groups, setGroups] = useState<Group[]>([]);
   const [loading, setLoading] = useState(true);
   const [openGroup, setOpenGroup] = useState<Group | null>(null);
+  const [openFriend, setOpenFriend] = useState<FriendRow | null>(null);
 
   const refresh = useCallback(async () => {
     if (!userId) return;
