@@ -248,6 +248,24 @@ function ProgressPage() {
                     ? ` · ${state.bookProgress[openBook.id].readThroughs}× through`
                     : ""}
                 </p>
+                {!hasQuiz(openBook.id) && (
+                  <div
+                    className="mt-4 inline-flex items-center gap-2 px-3 py-1.5"
+                    style={{
+                      background: "var(--color-paper-light)",
+                      border: "1px solid var(--color-gold)",
+                      borderRadius: 999,
+                    }}
+                  >
+                    <span
+                      style={{
+                        width: 6, height: 6, borderRadius: 999,
+                        background: "var(--color-gold)",
+                      }}
+                    />
+                    <SmallCaps tone="gold">Quiz Coming Soon</SmallCaps>
+                  </div>
+                )}
                 <div className="mt-6 grid grid-cols-8 gap-1.5">
                   {Array.from({ length: openBook.chapters }, (_, i) => {
                     const ch = i + 1;
