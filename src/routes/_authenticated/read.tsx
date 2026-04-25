@@ -112,6 +112,26 @@ function ReadPage() {
             </h1>
           </div>
 
+          {!quizAvailable && (
+            <div
+              className="mt-6 mx-auto text-center px-4 py-3"
+              style={{
+                maxWidth: 320,
+                background: "var(--color-paper-light)",
+                border: "1px solid var(--color-rule)",
+                borderRadius: 10,
+              }}
+            >
+              <SmallCaps tone="gold">Quiz Coming Soon</SmallCaps>
+              <p
+                className="mt-2 font-body italic text-[color:var(--color-ink-soft)]"
+                style={{ fontSize: 13, lineHeight: 1.45 }}
+              >
+                Hand-crafted questions for {book.name} are on the way. Your reading still counts.
+              </p>
+            </div>
+          )}
+
           {/* Timer + breathing dot */}
           <div className="flex-1 flex flex-col items-center justify-center">
             <div
@@ -134,7 +154,7 @@ function ReadPage() {
 
           {/* Finish */}
           <EditorialButton variant="gold" onClick={finish}>
-            I'm Finished
+            {quizAvailable ? "I'm Finished" : "Mark Chapter Complete"}
           </EditorialButton>
         </motion.div>
 
