@@ -140,6 +140,7 @@ function FriendsPage() {
                         <FriendRowItem
                           key={r.other.id}
                           row={r}
+                          onOpen={() => setOpenFriend(r)}
                           onRemove={async () => {
                             await removeFriendship(userId!, r.other.id);
                             void refresh();
