@@ -112,7 +112,6 @@ function pickVariant(state: AppState, today: Date): NoteContent | null {
       body:
         "Last time, you closed the book mid\u2011passage. Pick the thread back up where you set it down \u2014 the next chapter is waiting.",
       bottom: `${(lastBook?.name ?? "").toUpperCase()} ${lastSession.chapter} \u00B7 READ ${formatDate(lastSession.completedAt)}`,
-      to: "/read",
     });
   }
 
@@ -129,7 +128,6 @@ function pickVariant(state: AppState, today: Date): NoteContent | null {
       Icon: RotateCcw,
       body: `You moved quickly through ${sb?.name} ${struggle.chapter} when you read it. A second reading often opens what the first one closed.`,
       bottom: `${(sb?.name ?? "").toUpperCase()} ${struggle.chapter} \u00B7 READ ${formatDate(struggle.completedAt)}`,
-      to: "/read",
     });
   }
 
@@ -145,7 +143,6 @@ function pickVariant(state: AppState, today: Date): NoteContent | null {
       Icon: Users,
       body: `${a.name.split(" ")[0]} finished a book yesterday \u2014 her ${ordinal(a.booksCompleted)} this year. ${b.name.split(" ")[0]} started a new one this morning.`,
       bottom: "YOUR FRIENDS \u00B7 TWO UPDATES",
-      to: "/friends",
     });
   }
 
@@ -158,7 +155,6 @@ function pickVariant(state: AppState, today: Date): NoteContent | null {
       Icon: Feather,
       body: CHAPTER_NOTES[chapKey],
       bottom: `${nextBook.name.toUpperCase()} ${next.chapter} \u00B7 TODAY\u2019S READING`,
-      to: "/read",
     });
   }
 
@@ -173,7 +169,6 @@ function pickVariant(state: AppState, today: Date): NoteContent | null {
       Icon: BarChart3,
       body: `You\u2019ve read for ${hours} hours across ${days} days. That\u2019s a working day each month given quietly to scripture.`,
       bottom: `${days} DAYS OF READING \u00B7 ${chapters} CHAPTERS`,
-      to: "/analytics",
     });
   }
 
