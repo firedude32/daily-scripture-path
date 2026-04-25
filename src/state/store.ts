@@ -291,7 +291,7 @@ export function recordSession(bookId: string, chapter: number, durationSec: numb
   const userId = memoryState.userId;
 
   let nextBp: BookProgress | null = null;
-  let profilePatch: Record<string, unknown> = {};
+  let profilePatch: ProfilePatch = {};
   let sessionRow: ReadingSession | null = null;
 
   setState((s) => {
