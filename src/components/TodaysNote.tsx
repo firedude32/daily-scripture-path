@@ -130,7 +130,7 @@ function pickVariant(state: AppState, today: Date): NoteContent | null {
     });
   }
 
-  // Variant 4 — In Motion (real friends data) — TODO: query friends; skip for now.
+  // Variant 4 — In Motion is now surfaced via the FriendActivity widget on Home.
 
 
   // Variant 6 — On This Chapter
