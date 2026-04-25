@@ -9,6 +9,10 @@
 // Additionally, you should also exclude this file from your linter and/or formatter to prevent it from being checked or modified.
 
 import { Route as rootRouteImport } from './routes/__root'
+import { Route as SignupRouteImport } from './routes/signup'
+import { Route as ResetPasswordRouteImport } from './routes/reset-password'
+import { Route as LoginRouteImport } from './routes/login'
+import { Route as AuthenticatedRouteImport } from './routes/_authenticated'
 import { Route as AuthenticatedIndexRouteImport } from './routes/_authenticated/index'
 import { Route as AuthenticatedSummaryRouteImport } from './routes/_authenticated/summary'
 import { Route as AuthenticatedResourcesRouteImport } from './routes/_authenticated/resources'
@@ -22,70 +26,93 @@ import { Route as AuthenticatedAnalyticsRouteImport } from './routes/_authentica
 import { Route as AuthenticatedCelebrationRankRouteImport } from './routes/_authenticated/celebration.rank'
 import { Route as AuthenticatedCelebrationBookRouteImport } from './routes/_authenticated/celebration.book'
 
-const AuthenticatedIndexRoute = AuthenticatedIndexRouteImport.update({
-  id: '/_authenticated/',
-  path: '/',
+const SignupRoute = SignupRouteImport.update({
+  id: '/signup',
+  path: '/signup',
   getParentRoute: () => rootRouteImport,
+} as any)
+const ResetPasswordRoute = ResetPasswordRouteImport.update({
+  id: '/reset-password',
+  path: '/reset-password',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const LoginRoute = LoginRouteImport.update({
+  id: '/login',
+  path: '/login',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const AuthenticatedRoute = AuthenticatedRouteImport.update({
+  id: '/_authenticated',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const AuthenticatedIndexRoute = AuthenticatedIndexRouteImport.update({
+  id: '/',
+  path: '/',
+  getParentRoute: () => AuthenticatedRoute,
 } as any)
 const AuthenticatedSummaryRoute = AuthenticatedSummaryRouteImport.update({
-  id: '/_authenticated/summary',
+  id: '/summary',
   path: '/summary',
-  getParentRoute: () => rootRouteImport,
+  getParentRoute: () => AuthenticatedRoute,
 } as any)
 const AuthenticatedResourcesRoute = AuthenticatedResourcesRouteImport.update({
-  id: '/_authenticated/resources',
+  id: '/resources',
   path: '/resources',
-  getParentRoute: () => rootRouteImport,
+  getParentRoute: () => AuthenticatedRoute,
 } as any)
 const AuthenticatedReadRoute = AuthenticatedReadRouteImport.update({
-  id: '/_authenticated/read',
+  id: '/read',
   path: '/read',
-  getParentRoute: () => rootRouteImport,
+  getParentRoute: () => AuthenticatedRoute,
 } as any)
 const AuthenticatedQuizRoute = AuthenticatedQuizRouteImport.update({
-  id: '/_authenticated/quiz',
+  id: '/quiz',
   path: '/quiz',
-  getParentRoute: () => rootRouteImport,
+  getParentRoute: () => AuthenticatedRoute,
 } as any)
 const AuthenticatedProgressRoute = AuthenticatedProgressRouteImport.update({
-  id: '/_authenticated/progress',
+  id: '/progress',
   path: '/progress',
-  getParentRoute: () => rootRouteImport,
+  getParentRoute: () => AuthenticatedRoute,
 } as any)
 const AuthenticatedProfileRoute = AuthenticatedProfileRouteImport.update({
-  id: '/_authenticated/profile',
+  id: '/profile',
   path: '/profile',
-  getParentRoute: () => rootRouteImport,
+  getParentRoute: () => AuthenticatedRoute,
 } as any)
 const AuthenticatedOnboardingRoute = AuthenticatedOnboardingRouteImport.update({
-  id: '/_authenticated/onboarding',
+  id: '/onboarding',
   path: '/onboarding',
-  getParentRoute: () => rootRouteImport,
+  getParentRoute: () => AuthenticatedRoute,
 } as any)
 const AuthenticatedFriendsRoute = AuthenticatedFriendsRouteImport.update({
-  id: '/_authenticated/friends',
+  id: '/friends',
   path: '/friends',
-  getParentRoute: () => rootRouteImport,
+  getParentRoute: () => AuthenticatedRoute,
 } as any)
 const AuthenticatedAnalyticsRoute = AuthenticatedAnalyticsRouteImport.update({
-  id: '/_authenticated/analytics',
+  id: '/analytics',
   path: '/analytics',
-  getParentRoute: () => rootRouteImport,
+  getParentRoute: () => AuthenticatedRoute,
 } as any)
 const AuthenticatedCelebrationRankRoute =
   AuthenticatedCelebrationRankRouteImport.update({
-    id: '/_authenticated/celebration/rank',
+    id: '/celebration/rank',
     path: '/celebration/rank',
-    getParentRoute: () => rootRouteImport,
+    getParentRoute: () => AuthenticatedRoute,
   } as any)
 const AuthenticatedCelebrationBookRoute =
   AuthenticatedCelebrationBookRouteImport.update({
-    id: '/_authenticated/celebration/book',
+    id: '/celebration/book',
     path: '/celebration/book',
-    getParentRoute: () => rootRouteImport,
+    getParentRoute: () => AuthenticatedRoute,
   } as any)
 
 export interface FileRoutesByFullPath {
+  '/': typeof AuthenticatedIndexRoute
+  '/login': typeof LoginRoute
+  '/reset-password': typeof ResetPasswordRoute
+  '/signup': typeof SignupRoute
   '/analytics': typeof AuthenticatedAnalyticsRoute
   '/friends': typeof AuthenticatedFriendsRoute
   '/onboarding': typeof AuthenticatedOnboardingRoute
@@ -95,11 +122,13 @@ export interface FileRoutesByFullPath {
   '/read': typeof AuthenticatedReadRoute
   '/resources': typeof AuthenticatedResourcesRoute
   '/summary': typeof AuthenticatedSummaryRoute
-  '/': typeof AuthenticatedIndexRoute
   '/celebration/book': typeof AuthenticatedCelebrationBookRoute
   '/celebration/rank': typeof AuthenticatedCelebrationRankRoute
 }
 export interface FileRoutesByTo {
+  '/login': typeof LoginRoute
+  '/reset-password': typeof ResetPasswordRoute
+  '/signup': typeof SignupRoute
   '/analytics': typeof AuthenticatedAnalyticsRoute
   '/friends': typeof AuthenticatedFriendsRoute
   '/onboarding': typeof AuthenticatedOnboardingRoute
@@ -115,6 +144,10 @@ export interface FileRoutesByTo {
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
+  '/_authenticated': typeof AuthenticatedRouteWithChildren
+  '/login': typeof LoginRoute
+  '/reset-password': typeof ResetPasswordRoute
+  '/signup': typeof SignupRoute
   '/_authenticated/analytics': typeof AuthenticatedAnalyticsRoute
   '/_authenticated/friends': typeof AuthenticatedFriendsRoute
   '/_authenticated/onboarding': typeof AuthenticatedOnboardingRoute
@@ -131,6 +164,10 @@ export interface FileRoutesById {
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
   fullPaths:
+    | '/'
+    | '/login'
+    | '/reset-password'
+    | '/signup'
     | '/analytics'
     | '/friends'
     | '/onboarding'
@@ -140,11 +177,13 @@ export interface FileRouteTypes {
     | '/read'
     | '/resources'
     | '/summary'
-    | '/'
     | '/celebration/book'
     | '/celebration/rank'
   fileRoutesByTo: FileRoutesByTo
   to:
+    | '/login'
+    | '/reset-password'
+    | '/signup'
     | '/analytics'
     | '/friends'
     | '/onboarding'
@@ -159,6 +198,10 @@ export interface FileRouteTypes {
     | '/celebration/rank'
   id:
     | '__root__'
+    | '/_authenticated'
+    | '/login'
+    | '/reset-password'
+    | '/signup'
     | '/_authenticated/analytics'
     | '/_authenticated/friends'
     | '/_authenticated/onboarding'
@@ -174,6 +217,130 @@ export interface FileRouteTypes {
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
+  AuthenticatedRoute: typeof AuthenticatedRouteWithChildren
+  LoginRoute: typeof LoginRoute
+  ResetPasswordRoute: typeof ResetPasswordRoute
+  SignupRoute: typeof SignupRoute
+}
+
+declare module '@tanstack/react-router' {
+  interface FileRoutesByPath {
+    '/signup': {
+      id: '/signup'
+      path: '/signup'
+      fullPath: '/signup'
+      preLoaderRoute: typeof SignupRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/reset-password': {
+      id: '/reset-password'
+      path: '/reset-password'
+      fullPath: '/reset-password'
+      preLoaderRoute: typeof ResetPasswordRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/login': {
+      id: '/login'
+      path: '/login'
+      fullPath: '/login'
+      preLoaderRoute: typeof LoginRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/_authenticated': {
+      id: '/_authenticated'
+      path: ''
+      fullPath: '/'
+      preLoaderRoute: typeof AuthenticatedRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/_authenticated/': {
+      id: '/_authenticated/'
+      path: '/'
+      fullPath: '/'
+      preLoaderRoute: typeof AuthenticatedIndexRouteImport
+      parentRoute: typeof AuthenticatedRoute
+    }
+    '/_authenticated/summary': {
+      id: '/_authenticated/summary'
+      path: '/summary'
+      fullPath: '/summary'
+      preLoaderRoute: typeof AuthenticatedSummaryRouteImport
+      parentRoute: typeof AuthenticatedRoute
+    }
+    '/_authenticated/resources': {
+      id: '/_authenticated/resources'
+      path: '/resources'
+      fullPath: '/resources'
+      preLoaderRoute: typeof AuthenticatedResourcesRouteImport
+      parentRoute: typeof AuthenticatedRoute
+    }
+    '/_authenticated/read': {
+      id: '/_authenticated/read'
+      path: '/read'
+      fullPath: '/read'
+      preLoaderRoute: typeof AuthenticatedReadRouteImport
+      parentRoute: typeof AuthenticatedRoute
+    }
+    '/_authenticated/quiz': {
+      id: '/_authenticated/quiz'
+      path: '/quiz'
+      fullPath: '/quiz'
+      preLoaderRoute: typeof AuthenticatedQuizRouteImport
+      parentRoute: typeof AuthenticatedRoute
+    }
+    '/_authenticated/progress': {
+      id: '/_authenticated/progress'
+      path: '/progress'
+      fullPath: '/progress'
+      preLoaderRoute: typeof AuthenticatedProgressRouteImport
+      parentRoute: typeof AuthenticatedRoute
+    }
+    '/_authenticated/profile': {
+      id: '/_authenticated/profile'
+      path: '/profile'
+      fullPath: '/profile'
+      preLoaderRoute: typeof AuthenticatedProfileRouteImport
+      parentRoute: typeof AuthenticatedRoute
+    }
+    '/_authenticated/onboarding': {
+      id: '/_authenticated/onboarding'
+      path: '/onboarding'
+      fullPath: '/onboarding'
+      preLoaderRoute: typeof AuthenticatedOnboardingRouteImport
+      parentRoute: typeof AuthenticatedRoute
+    }
+    '/_authenticated/friends': {
+      id: '/_authenticated/friends'
+      path: '/friends'
+      fullPath: '/friends'
+      preLoaderRoute: typeof AuthenticatedFriendsRouteImport
+      parentRoute: typeof AuthenticatedRoute
+    }
+    '/_authenticated/analytics': {
+      id: '/_authenticated/analytics'
+      path: '/analytics'
+      fullPath: '/analytics'
+      preLoaderRoute: typeof AuthenticatedAnalyticsRouteImport
+      parentRoute: typeof AuthenticatedRoute
+    }
+    '/_authenticated/celebration/rank': {
+      id: '/_authenticated/celebration/rank'
+      path: '/celebration/rank'
+      fullPath: '/celebration/rank'
+      preLoaderRoute: typeof AuthenticatedCelebrationRankRouteImport
+      parentRoute: typeof AuthenticatedRoute
+    }
+    '/_authenticated/celebration/book': {
+      id: '/_authenticated/celebration/book'
+      path: '/celebration/book'
+      fullPath: '/celebration/book'
+      preLoaderRoute: typeof AuthenticatedCelebrationBookRouteImport
+      parentRoute: typeof AuthenticatedRoute
+    }
+  }
+}
+
+interface AuthenticatedRouteChildren {
   AuthenticatedAnalyticsRoute: typeof AuthenticatedAnalyticsRoute
   AuthenticatedFriendsRoute: typeof AuthenticatedFriendsRoute
   AuthenticatedOnboardingRoute: typeof AuthenticatedOnboardingRoute
@@ -188,96 +355,7 @@ export interface RootRouteChildren {
   AuthenticatedCelebrationRankRoute: typeof AuthenticatedCelebrationRankRoute
 }
 
-declare module '@tanstack/react-router' {
-  interface FileRoutesByPath {
-    '/_authenticated/': {
-      id: '/_authenticated/'
-      path: '/'
-      fullPath: '/'
-      preLoaderRoute: typeof AuthenticatedIndexRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/_authenticated/summary': {
-      id: '/_authenticated/summary'
-      path: '/summary'
-      fullPath: '/summary'
-      preLoaderRoute: typeof AuthenticatedSummaryRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/_authenticated/resources': {
-      id: '/_authenticated/resources'
-      path: '/resources'
-      fullPath: '/resources'
-      preLoaderRoute: typeof AuthenticatedResourcesRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/_authenticated/read': {
-      id: '/_authenticated/read'
-      path: '/read'
-      fullPath: '/read'
-      preLoaderRoute: typeof AuthenticatedReadRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/_authenticated/quiz': {
-      id: '/_authenticated/quiz'
-      path: '/quiz'
-      fullPath: '/quiz'
-      preLoaderRoute: typeof AuthenticatedQuizRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/_authenticated/progress': {
-      id: '/_authenticated/progress'
-      path: '/progress'
-      fullPath: '/progress'
-      preLoaderRoute: typeof AuthenticatedProgressRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/_authenticated/profile': {
-      id: '/_authenticated/profile'
-      path: '/profile'
-      fullPath: '/profile'
-      preLoaderRoute: typeof AuthenticatedProfileRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/_authenticated/onboarding': {
-      id: '/_authenticated/onboarding'
-      path: '/onboarding'
-      fullPath: '/onboarding'
-      preLoaderRoute: typeof AuthenticatedOnboardingRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/_authenticated/friends': {
-      id: '/_authenticated/friends'
-      path: '/friends'
-      fullPath: '/friends'
-      preLoaderRoute: typeof AuthenticatedFriendsRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/_authenticated/analytics': {
-      id: '/_authenticated/analytics'
-      path: '/analytics'
-      fullPath: '/analytics'
-      preLoaderRoute: typeof AuthenticatedAnalyticsRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/_authenticated/celebration/rank': {
-      id: '/_authenticated/celebration/rank'
-      path: '/celebration/rank'
-      fullPath: '/celebration/rank'
-      preLoaderRoute: typeof AuthenticatedCelebrationRankRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/_authenticated/celebration/book': {
-      id: '/_authenticated/celebration/book'
-      path: '/celebration/book'
-      fullPath: '/celebration/book'
-      preLoaderRoute: typeof AuthenticatedCelebrationBookRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-  }
-}
-
-const rootRouteChildren: RootRouteChildren = {
+const AuthenticatedRouteChildren: AuthenticatedRouteChildren = {
   AuthenticatedAnalyticsRoute: AuthenticatedAnalyticsRoute,
   AuthenticatedFriendsRoute: AuthenticatedFriendsRoute,
   AuthenticatedOnboardingRoute: AuthenticatedOnboardingRoute,
@@ -291,15 +369,17 @@ const rootRouteChildren: RootRouteChildren = {
   AuthenticatedCelebrationBookRoute: AuthenticatedCelebrationBookRoute,
   AuthenticatedCelebrationRankRoute: AuthenticatedCelebrationRankRoute,
 }
+
+const AuthenticatedRouteWithChildren = AuthenticatedRoute._addFileChildren(
+  AuthenticatedRouteChildren,
+)
+
+const rootRouteChildren: RootRouteChildren = {
+  AuthenticatedRoute: AuthenticatedRouteWithChildren,
+  LoginRoute: LoginRoute,
+  ResetPasswordRoute: ResetPasswordRoute,
+  SignupRoute: SignupRoute,
+}
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)
   ._addFileTypes<FileRouteTypes>()
-
-import type { getRouter } from './router.tsx'
-import type { createStart } from '@tanstack/react-start'
-declare module '@tanstack/react-start' {
-  interface Register {
-    ssr: true
-    router: Awaited<ReturnType<typeof getRouter>>
-  }
-}
