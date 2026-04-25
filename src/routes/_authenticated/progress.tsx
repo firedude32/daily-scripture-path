@@ -41,6 +41,7 @@ const TIER_FILL: Record<string, string> = {
 function ProgressPage() {
   const ready = useClientReady();
   const state = useAppState();
+  const navigate = useNavigate();
   const [openBook, setOpenBook] = useState<Book | null>(null);
 
   if (!ready) {
