@@ -187,6 +187,7 @@ export async function hydrateFromSupabase(): Promise<void> {
     onboarded: profile?.onboarded ?? false,
     user: {
       name: profile?.name ?? session.user.email?.split("@")[0] ?? "Friend",
+      username: profile?.username ?? null,
       email: profile?.email ?? session.user.email ?? "",
       translation: profile?.translation ?? "ESV",
       dailyGoal: profile?.daily_goal ?? 2,
