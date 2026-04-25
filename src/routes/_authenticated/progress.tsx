@@ -1,4 +1,4 @@
-import { createFileRoute, Link } from "@tanstack/react-router";
+import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
 import { useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { X } from "lucide-react";
@@ -13,6 +13,7 @@ import {
   setProgressView,
 } from "@/state/store";
 import { BOOKS, NT_CHAPTERS, OT_CHAPTERS, type Book, bookById } from "@/data/books";
+import { setReadOverride } from "@/lib/readOverride";
 import { hasQuiz } from "@/data/quiz";
 import type { Genre } from "@/data/books";
 import { SmallCaps } from "@/components/ui-lectio/SmallCaps";
