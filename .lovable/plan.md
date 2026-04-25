@@ -40,6 +40,8 @@ Rewrite `src/state/store.ts` so every read/write hits Supabase via TanStack Quer
 - Removed "in_motion" variant from `TodaysNote` (was synthesizing from FRIENDS).
 - Rewrote Friends page with empty states for both Friends and Groups tabs (real backend wiring comes in Chunks 5–6).
 - Synthetic 90-day history was already removed in Chunk 3; new users now start at 0 XP, 0 streak, 0 sessions, no books, no friends.
+- Fixed `PhoneFrame` rendering children twice (was producing duplicate forms / inputs visible on auth pages).
+- Added `BOOKS_WITH_QUIZZES` / `hasQuiz()` helpers; books without scripted quizzes now show a "Quiz Coming Soon" banner on the Read screen and a badge in the Progress book sheet, and skip the quiz step (session still records).
 
 ## Chunk 5 — Real friends system
 - `Add Friend` form → looks up by email, creates row in `friendships` with status=pending; shows in their inbox.
