@@ -1,6 +1,6 @@
 import { createFileRoute, useNavigate } from "@tanstack/react-router";
 import { motion, AnimatePresence } from "framer-motion";
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { PhoneFrame } from "@/components/PhoneFrame";
 import { Screen } from "@/components/Screen";
 import { useAppState, useClientReady, nextChapterFor, recordSession } from "@/state/store";
@@ -9,6 +9,7 @@ import { hasQuiz } from "@/data/quiz";
 import { breath } from "@/lib/motion";
 import { EditorialButton } from "@/components/ui-lectio/EditorialButton";
 import { SmallCaps } from "@/components/ui-lectio/SmallCaps";
+import { getReadOverride, clearReadOverride } from "@/lib/readOverride";
 
 export const Route = createFileRoute("/_authenticated/read")({
   head: () => ({
@@ -54,7 +55,14 @@ function ReadPage() {
     );
   }
 
-  const next = nextChapterFor(state);
+  // Resolve target chapter once on mount: explicit override (from picker) wins,
+  // otherwise fall back to the path's recommended next chapter.
+  const next = useMemo(() => {
+    const override = getReadOverride();
+    if (override) return { bookId: override.bookId, chapter: override.chapter };
+    return nextChapterFor(state);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
   const book = bookById(next.bookId)!;
   const quizAvailable = hasQuiz(next.bookId, next.chapter);
   const mm = Math.floor(seconds / 60).toString().padStart(2, "0");
@@ -70,11 +78,13 @@ function ReadPage() {
           durationSec: seconds,
         }),
       );
+      clearReadOverride();
       navigate({ to: "/quiz" });
       return;
     }
     // No quiz yet for this book — record the session and head home.
     recordSession(next.bookId, next.chapter, seconds);
+    clearReadOverride();
     navigate({ to: "/" });
   }
 
