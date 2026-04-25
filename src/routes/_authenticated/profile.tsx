@@ -521,6 +521,46 @@ function FieldEditor({
   );
 }
 
+function UsernameEditor({ value }: { value: string }) {
+  const [v, setV] = useState(value);
+  const [status, setStatus] = useState<{ ok: boolean; msg: string } | null>(null);
+  const [busy, setBusy] = useState(false);
+  const onSave = async () => {
+    if (!v.trim() || v.trim() === value) return;
+    setBusy(true);
+    const r = await setUsername(v);
+    setBusy(false);
+    setStatus(r.ok ? { ok: true, msg: "Saved." } : { ok: false, msg: r.reason });
+  };
+  return (
+    <div>
+      <SmallCaps>Username</SmallCaps>
+      <div className="mt-2 flex items-center gap-3 border-b" style={{ borderColor: "var(--color-rule)" }}>
+        <span className="font-body text-[color:var(--color-ink-muted)]" style={{ fontSize: 17 }}>@</span>
+        <input
+          value={v}
+          onChange={(e) => { setV(e.target.value); setStatus(null); }}
+          onBlur={onSave}
+          placeholder="yourname"
+          autoCapitalize="off"
+          autoCorrect="off"
+          className="flex-1 bg-transparent py-3 font-body text-[color:var(--color-ink)] focus:outline-none"
+          style={{ fontSize: 17 }}
+        />
+      </div>
+      <p
+        className="mt-2 font-body italic"
+        style={{
+          fontSize: 12,
+          color: status && !status.ok ? "var(--color-ink)" : "var(--color-ink-muted)",
+        }}
+      >
+        {busy ? "Saving…" : status ? status.msg : "Friends can find you by this. 3–24 letters, numbers, or _."}
+      </p>
+    </div>
+  );
+}
+
 function AboutRow({ label, value }: { label: string; value: string }) {
   return (
     <div className="flex items-baseline justify-between">
