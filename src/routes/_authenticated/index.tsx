@@ -8,6 +8,7 @@ import { GoldMotif, dailyMotif } from "@/components/GoldMotif";
 
 import { SmallCaps } from "@/components/ui-lectio/SmallCaps";
 import { TodaysNote } from "@/components/TodaysNote";
+import { FriendActivity } from "@/components/FriendActivity";
 import { EditorialButton } from "@/components/ui-lectio/EditorialButton";
 import { Rule } from "@/components/ui-lectio/Rule";
 import {
@@ -163,6 +164,9 @@ function HomePage() {
           <div className="mt-11">
             <TodaysNote />
           </div>
+
+          {/* Friend activity (only renders when there are friends) */}
+          <FriendActivity />
 
           {/* Divider */}
           <div className="mt-10">

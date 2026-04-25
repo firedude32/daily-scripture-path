@@ -46,6 +46,7 @@ function FriendsPage() {
   const [groups, setGroups] = useState<Group[]>([]);
   const [loading, setLoading] = useState(true);
   const [openGroup, setOpenGroup] = useState<Group | null>(null);
+  const [openFriend, setOpenFriend] = useState<FriendRow | null>(null);
 
   const refresh = useCallback(async () => {
     if (!userId) return;
@@ -139,6 +140,7 @@ function FriendsPage() {
                         <FriendRowItem
                           key={r.other.id}
                           row={r}
+                          onOpen={() => setOpenFriend(r)}
                           onRemove={async () => {
                             await removeFriendship(userId!, r.other.id);
                             void refresh();
@@ -263,6 +265,15 @@ function FriendsPage() {
             />
           )}
         </BottomSheet>
+
+        <BottomSheet
+          open={!!openFriend}
+          onClose={() => setOpenFriend(null)}
+          eyebrow="Friend"
+          title={openFriend?.other.name ?? ""}
+        >
+          {openFriend && <FriendProfileSheet row={openFriend} />}
+        </BottomSheet>
       </Screen>
     </PhoneFrame>
   );
@@ -326,19 +337,29 @@ function Avatar({ name }: { name: string }) {
   );
 }
 
-function FriendRowItem({ row, onRemove }: { row: FriendRow; onRemove: () => void }) {
+function FriendRowItem({
+  row,
+  onOpen,
+  onRemove,
+}: {
+  row: FriendRow;
+  onOpen: () => void;
+  onRemove: () => void;
+}) {
   return (
     <div className="flex items-center gap-3 py-3" style={{ borderTop: "1px solid var(--color-rule)" }}>
-      <Avatar name={row.other.name} />
-      <div className="flex-1 min-w-0">
-        <div className="font-display text-[color:var(--color-ink)] truncate" style={{ fontSize: 16 }}>
-          {row.other.name}
+      <button onClick={onOpen} className="flex items-center gap-3 flex-1 min-w-0 text-left">
+        <Avatar name={row.other.name} />
+        <div className="flex-1 min-w-0">
+          <div className="font-display text-[color:var(--color-ink)] truncate" style={{ fontSize: 16 }}>
+            {row.other.name}
+          </div>
+          <div className="flex items-center gap-2 mt-0.5 text-[color:var(--color-ink-muted)]" style={{ fontSize: 12 }}>
+            <Flame size={12} strokeWidth={1.5} />
+            <span className="tabular">{row.other.current_streak} day streak</span>
+          </div>
         </div>
-        <div className="flex items-center gap-2 mt-0.5 text-[color:var(--color-ink-muted)]" style={{ fontSize: 12 }}>
-          <Flame size={12} strokeWidth={1.5} />
-          <span className="tabular">{row.other.current_streak} day streak</span>
-        </div>
-      </div>
+      </button>
       <button
         onClick={onRemove}
         className="text-[color:var(--color-ink-muted)] hover:text-[color:var(--color-ink)] font-ui uppercase tracking-[0.14em]"
@@ -346,6 +367,64 @@ function FriendRowItem({ row, onRemove }: { row: FriendRow; onRemove: () => void
       >
         Remove
       </button>
+    </div>
+  );
+}
+
+function FriendProfileSheet({ row }: { row: FriendRow }) {
+  const f = row.other;
+  return (
+    <div>
+      <div className="flex items-center gap-4">
+        <div
+          className="flex items-center justify-center rounded-full font-display"
+          style={{
+            width: 56,
+            height: 56,
+            background: "var(--color-paper-soft)",
+            color: "var(--color-ink)",
+            fontSize: 22,
+            border: "1px solid var(--color-rule)",
+          }}
+        >
+          {(f.name?.[0] || "?").toUpperCase()}
+        </div>
+        <div className="min-w-0">
+          <div className="font-display text-[color:var(--color-ink)] truncate" style={{ fontSize: 22 }}>
+            {f.name}
+          </div>
+          {f.username && (
+            <div className="font-ui text-[color:var(--color-ink-muted)] mt-0.5" style={{ fontSize: 12 }}>
+              @{f.username}
+            </div>
+          )}
+        </div>
+      </div>
+
+      <div className="mt-7 grid grid-cols-2 gap-3">
+        <Stat label="Streak" value={`${f.current_streak}d`} />
+        <Stat label="XP" value={f.xp.toLocaleString()} />
+      </div>
+
+      <p className="mt-7 font-body italic text-[color:var(--color-ink-muted)]" style={{ fontSize: 13, lineHeight: 1.5 }}>
+        Reading content and quiz scores stay private. You only see streak and XP.
+      </p>
+    </div>
+  );
+}
+
+function Stat({ label, value }: { label: string; value: string }) {
+  return (
+    <div
+      className="rounded-[12px] px-4 py-4"
+      style={{ background: "var(--color-paper-soft)", border: "1px solid var(--color-rule)" }}
+    >
+      <div className="font-ui uppercase tracking-[0.14em] text-[color:var(--color-ink-muted)]" style={{ fontSize: 10 }}>
+        {label}
+      </div>
+      <div className="font-display tabular text-[color:var(--color-ink)] mt-1" style={{ fontSize: 22 }}>
+        {value}
+      </div>
     </div>
   );
 }
