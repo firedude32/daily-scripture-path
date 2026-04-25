@@ -59,24 +59,25 @@ Rewrite `src/state/store.ts` so every read/write hits Supabase via TanStack Quer
 ## Chunk 7 — Resources page
 Decision: keep a small **curated** list (9Marks, BibleProject, Ligonier, Crossway, Desiring God) hardcoded as static editorial content — these are real organizations, not filler. Remove the fake "Daily Disciple" entry. This chunk is just trimming the array; no backend.
 
-## Chunk 8 — Wire every remaining button (audit)
-Walk through each screen and confirm every button does what it claims:
-- **Home**: CTA → /read ✓, heatmap cells → tooltip with date+count
-- **Read**: Mark chapter complete → records session, navigates to /quiz
-- **Quiz**: Submit → grades, awards XP, fires celebration if book complete
-- **Progress**: Book tiles → open book detail sheet (currently no-op?)
-- **Profile**: Export CSV → real export of user's own data; Achievements/History/Account/About sheets all functional ✓; Sign Out → real signOut
-- **Friends**: Add/Create/Join → real backend calls (Chunks 5–6)
-- **Onboarding**: Final step → writes profile, navigates home
-- **Celebration**: Continue → clears pending, returns home
-- **Analytics**: confirm all charts render with empty state when no sessions
+## Chunk 8 — Wire every remaining button (audit) ✅
+Audited every screen; every interactive element now performs a real action:
+- **Home**: CTA → /read ✓; heatmap cells have date + chapter-count tooltips ✓; FriendActivity replaces the old synthetic "in motion" variant ✓.
+- **Read**: Mark chapter complete records a session and (when a quiz exists) routes to /quiz ✓.
+- **Quiz**: Submit grades, awards XP, fires book-complete celebration ✓.
+- **Progress**: Book tiles open a real book-detail sheet with chapter grid + "Quiz Coming Soon" badge ✓.
+- **Profile**: CSV export, all sheets, and Sign Out all real ✓; username editor live ✓.
+- **Friends**: Add by email/username, Accept/Decline/Cancel, friend profile sheet, Create/Join group, group leaderboard, Leave/Delete — all backed by Supabase ✓.
+- **Onboarding**: Writes profile + flips `onboarded`, then navigates home ✓.
+- **Celebration**: Continue clears pending and returns home ✓.
+- **Analytics**: Renders empty-state when there are no sessions ✓.
+- Cleared a stale TODO in `TodaysNote` (the "in motion" variant is now handled by `FriendActivity`).
 
-## Chunk 9 — Polish & QA pass
-- Loading skeletons for async data
-- Error boundaries on all routes with loaders
-- Confirm RLS works (a user cannot see another user's sessions/progress)
-- Confirm onboarding redirect works on first sign-in
-- Confirm empty Home screen looks intentional (illustration + "Start your first reading" CTA)
+## Chunk 9 — Polish & QA pass (remaining)
+- Loading skeletons for async-heavy lists (friends, groups).
+- Per-route error boundaries on data routes.
+- Manual RLS spot-check (one account cannot read another's sessions/progress).
+- Confirm onboarding redirect on first sign-in.
+- Confirm empty Home looks intentional (illustration + "Start Today's Reading" CTA already does this).
 
 ---
 
