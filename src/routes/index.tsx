@@ -82,11 +82,6 @@ function HomePage() {
             />
           </motion.div>
 
-          {/* Today's Note rotating slot */}
-          <div className="mb-11">
-            <TodaysNote />
-          </div>
-
           {/* Hero streak */}
           <motion.div
             initial={{ opacity: 0, scale: 0.96 }}
@@ -162,6 +157,11 @@ function HomePage() {
             <SmallCaps>
               Up Next · {nextBook.name} {next.chapter}
             </SmallCaps>
+          </div>
+
+          {/* Today's Note rotating slot */}
+          <div className="mt-11">
+            <TodaysNote />
           </div>
 
           {/* Divider */}
