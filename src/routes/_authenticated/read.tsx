@@ -45,6 +45,17 @@ function ReadPage() {
     return () => clearInterval(t);
   }, []);
 
+  // Resolve target chapter once on mount: explicit override (from picker) wins,
+  // otherwise fall back to the path's recommended next chapter.
+  // NOTE: This must run unconditionally before any early return so the hook
+  // order stays stable across renders.
+  const next = useMemo(() => {
+    const override = getReadOverride();
+    if (override) return { bookId: override.bookId, chapter: override.chapter };
+    return nextChapterFor(state);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
   if (!ready) {
     return (
       <PhoneFrame>
@@ -55,14 +66,6 @@ function ReadPage() {
     );
   }
 
-  // Resolve target chapter once on mount: explicit override (from picker) wins,
-  // otherwise fall back to the path's recommended next chapter.
-  const next = useMemo(() => {
-    const override = getReadOverride();
-    if (override) return { bookId: override.bookId, chapter: override.chapter };
-    return nextChapterFor(state);
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []);
   const book = bookById(next.bookId)!;
   const quizAvailable = hasQuiz(next.bookId, next.chapter);
   const mm = Math.floor(seconds / 60).toString().padStart(2, "0");
