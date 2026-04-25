@@ -215,13 +215,7 @@ function AnalyticsPage() {
           {/* Favorites */}
           <div className="mt-7">
             <SmallCaps>Favorites</SmallCaps>
-            <div className="mt-4 flex flex-wrap gap-x-5 gap-y-2">
-              {["Mark 4:9", "Psalms 23:1", "John 1:14", "Philippians 4:13"].map((ref) => (
-                <span key={ref} className="font-ui uppercase tracking-[0.14em] text-[12px] text-[color:var(--color-ink)]">
-                  {ref}
-                </span>
-              ))}
-            </div>
+            <FavoritesList />
           </div>
 
           {/* Export */}
