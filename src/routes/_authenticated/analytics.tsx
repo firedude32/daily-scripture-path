@@ -212,10 +212,10 @@ function AnalyticsPage() {
 
           <div className="mt-8"><Rule /></div>
 
-          {/* Favorites */}
+          {/* Most-read chapters */}
           <div className="mt-7">
-            <SmallCaps>Favorites</SmallCaps>
-            <FavoritesList />
+            <SmallCaps>Favorites · Most Read Chapters</SmallCaps>
+            <MostReadChapters state={state} />
           </div>
 
           {/* Export */}
