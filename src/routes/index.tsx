@@ -5,6 +5,7 @@ import { Screen } from "@/components/Screen";
 import { PhoneFrame } from "@/components/PhoneFrame";
 import { Heatmap } from "@/components/Heatmap";
 import { GoldMotif, dailyMotif } from "@/components/GoldMotif";
+import { BreadIllustration } from "@/components/BreadIllustration";
 import { SmallCaps } from "@/components/ui-lectio/SmallCaps";
 import { EditorialButton } from "@/components/ui-lectio/EditorialButton";
 import { Rule } from "@/components/ui-lectio/Rule";
@@ -65,12 +66,22 @@ function HomePage() {
             <GoldMotif name={dailyMotif(today)} size={44} />
           </div>
 
+          {/* Hand-drawn loaf illustration */}
+          <motion.div
+            initial={{ opacity: 0, y: 6 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.7, ease: [0.22, 1, 0.36, 1] }}
+            className="mt-11 flex justify-center"
+          >
+            <BreadIllustration width={280} height={200} />
+          </motion.div>
+
           {/* Hero streak */}
           <motion.div
             initial={{ opacity: 0, scale: 0.96 }}
             animate={{ opacity: 1, scale: 1 }}
-            transition={{ duration: 0.5, ease: [0.22, 1, 0.36, 1] }}
-            className="mt-12 text-center"
+            transition={{ duration: 0.5, ease: [0.22, 1, 0.36, 1], delay: 0.1 }}
+            className="mt-11 text-center"
           >
             {state.currentStreak > 0 ? (
               <>
