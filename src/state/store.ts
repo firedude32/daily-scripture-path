@@ -27,6 +27,7 @@ export interface AppState {
   onboarded: boolean;
   user: {
     name: string;
+    username: string | null;
     email: string;
     translation: string;
     dailyGoal: number;
