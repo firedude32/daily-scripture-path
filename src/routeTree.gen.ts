@@ -9,127 +9,128 @@
 // Additionally, you should also exclude this file from your linter and/or formatter to prevent it from being checked or modified.
 
 import { Route as rootRouteImport } from './routes/__root'
-import { Route as SummaryRouteImport } from './routes/summary'
-import { Route as ResourcesRouteImport } from './routes/resources'
-import { Route as ReadRouteImport } from './routes/read'
-import { Route as QuizRouteImport } from './routes/quiz'
-import { Route as ProgressRouteImport } from './routes/progress'
-import { Route as ProfileRouteImport } from './routes/profile'
-import { Route as OnboardingRouteImport } from './routes/onboarding'
-import { Route as FriendsRouteImport } from './routes/friends'
-import { Route as AnalyticsRouteImport } from './routes/analytics'
-import { Route as IndexRouteImport } from './routes/index'
-import { Route as CelebrationRankRouteImport } from './routes/celebration.rank'
-import { Route as CelebrationBookRouteImport } from './routes/celebration.book'
+import { Route as AuthenticatedIndexRouteImport } from './routes/_authenticated/index'
+import { Route as AuthenticatedSummaryRouteImport } from './routes/_authenticated/summary'
+import { Route as AuthenticatedResourcesRouteImport } from './routes/_authenticated/resources'
+import { Route as AuthenticatedReadRouteImport } from './routes/_authenticated/read'
+import { Route as AuthenticatedQuizRouteImport } from './routes/_authenticated/quiz'
+import { Route as AuthenticatedProgressRouteImport } from './routes/_authenticated/progress'
+import { Route as AuthenticatedProfileRouteImport } from './routes/_authenticated/profile'
+import { Route as AuthenticatedOnboardingRouteImport } from './routes/_authenticated/onboarding'
+import { Route as AuthenticatedFriendsRouteImport } from './routes/_authenticated/friends'
+import { Route as AuthenticatedAnalyticsRouteImport } from './routes/_authenticated/analytics'
+import { Route as AuthenticatedCelebrationRankRouteImport } from './routes/_authenticated/celebration.rank'
+import { Route as AuthenticatedCelebrationBookRouteImport } from './routes/_authenticated/celebration.book'
 
-const SummaryRoute = SummaryRouteImport.update({
-  id: '/summary',
-  path: '/summary',
-  getParentRoute: () => rootRouteImport,
-} as any)
-const ResourcesRoute = ResourcesRouteImport.update({
-  id: '/resources',
-  path: '/resources',
-  getParentRoute: () => rootRouteImport,
-} as any)
-const ReadRoute = ReadRouteImport.update({
-  id: '/read',
-  path: '/read',
-  getParentRoute: () => rootRouteImport,
-} as any)
-const QuizRoute = QuizRouteImport.update({
-  id: '/quiz',
-  path: '/quiz',
-  getParentRoute: () => rootRouteImport,
-} as any)
-const ProgressRoute = ProgressRouteImport.update({
-  id: '/progress',
-  path: '/progress',
-  getParentRoute: () => rootRouteImport,
-} as any)
-const ProfileRoute = ProfileRouteImport.update({
-  id: '/profile',
-  path: '/profile',
-  getParentRoute: () => rootRouteImport,
-} as any)
-const OnboardingRoute = OnboardingRouteImport.update({
-  id: '/onboarding',
-  path: '/onboarding',
-  getParentRoute: () => rootRouteImport,
-} as any)
-const FriendsRoute = FriendsRouteImport.update({
-  id: '/friends',
-  path: '/friends',
-  getParentRoute: () => rootRouteImport,
-} as any)
-const AnalyticsRoute = AnalyticsRouteImport.update({
-  id: '/analytics',
-  path: '/analytics',
-  getParentRoute: () => rootRouteImport,
-} as any)
-const IndexRoute = IndexRouteImport.update({
-  id: '/',
+const AuthenticatedIndexRoute = AuthenticatedIndexRouteImport.update({
+  id: '/_authenticated/',
   path: '/',
   getParentRoute: () => rootRouteImport,
 } as any)
-const CelebrationRankRoute = CelebrationRankRouteImport.update({
-  id: '/celebration/rank',
-  path: '/celebration/rank',
+const AuthenticatedSummaryRoute = AuthenticatedSummaryRouteImport.update({
+  id: '/_authenticated/summary',
+  path: '/summary',
   getParentRoute: () => rootRouteImport,
 } as any)
-const CelebrationBookRoute = CelebrationBookRouteImport.update({
-  id: '/celebration/book',
-  path: '/celebration/book',
+const AuthenticatedResourcesRoute = AuthenticatedResourcesRouteImport.update({
+  id: '/_authenticated/resources',
+  path: '/resources',
   getParentRoute: () => rootRouteImport,
 } as any)
+const AuthenticatedReadRoute = AuthenticatedReadRouteImport.update({
+  id: '/_authenticated/read',
+  path: '/read',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const AuthenticatedQuizRoute = AuthenticatedQuizRouteImport.update({
+  id: '/_authenticated/quiz',
+  path: '/quiz',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const AuthenticatedProgressRoute = AuthenticatedProgressRouteImport.update({
+  id: '/_authenticated/progress',
+  path: '/progress',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const AuthenticatedProfileRoute = AuthenticatedProfileRouteImport.update({
+  id: '/_authenticated/profile',
+  path: '/profile',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const AuthenticatedOnboardingRoute = AuthenticatedOnboardingRouteImport.update({
+  id: '/_authenticated/onboarding',
+  path: '/onboarding',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const AuthenticatedFriendsRoute = AuthenticatedFriendsRouteImport.update({
+  id: '/_authenticated/friends',
+  path: '/friends',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const AuthenticatedAnalyticsRoute = AuthenticatedAnalyticsRouteImport.update({
+  id: '/_authenticated/analytics',
+  path: '/analytics',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const AuthenticatedCelebrationRankRoute =
+  AuthenticatedCelebrationRankRouteImport.update({
+    id: '/_authenticated/celebration/rank',
+    path: '/celebration/rank',
+    getParentRoute: () => rootRouteImport,
+  } as any)
+const AuthenticatedCelebrationBookRoute =
+  AuthenticatedCelebrationBookRouteImport.update({
+    id: '/_authenticated/celebration/book',
+    path: '/celebration/book',
+    getParentRoute: () => rootRouteImport,
+  } as any)
 
 export interface FileRoutesByFullPath {
-  '/': typeof IndexRoute
-  '/analytics': typeof AnalyticsRoute
-  '/friends': typeof FriendsRoute
-  '/onboarding': typeof OnboardingRoute
-  '/profile': typeof ProfileRoute
-  '/progress': typeof ProgressRoute
-  '/quiz': typeof QuizRoute
-  '/read': typeof ReadRoute
-  '/resources': typeof ResourcesRoute
-  '/summary': typeof SummaryRoute
-  '/celebration/book': typeof CelebrationBookRoute
-  '/celebration/rank': typeof CelebrationRankRoute
+  '/analytics': typeof AuthenticatedAnalyticsRoute
+  '/friends': typeof AuthenticatedFriendsRoute
+  '/onboarding': typeof AuthenticatedOnboardingRoute
+  '/profile': typeof AuthenticatedProfileRoute
+  '/progress': typeof AuthenticatedProgressRoute
+  '/quiz': typeof AuthenticatedQuizRoute
+  '/read': typeof AuthenticatedReadRoute
+  '/resources': typeof AuthenticatedResourcesRoute
+  '/summary': typeof AuthenticatedSummaryRoute
+  '/': typeof AuthenticatedIndexRoute
+  '/celebration/book': typeof AuthenticatedCelebrationBookRoute
+  '/celebration/rank': typeof AuthenticatedCelebrationRankRoute
 }
 export interface FileRoutesByTo {
-  '/': typeof IndexRoute
-  '/analytics': typeof AnalyticsRoute
-  '/friends': typeof FriendsRoute
-  '/onboarding': typeof OnboardingRoute
-  '/profile': typeof ProfileRoute
-  '/progress': typeof ProgressRoute
-  '/quiz': typeof QuizRoute
-  '/read': typeof ReadRoute
-  '/resources': typeof ResourcesRoute
-  '/summary': typeof SummaryRoute
-  '/celebration/book': typeof CelebrationBookRoute
-  '/celebration/rank': typeof CelebrationRankRoute
+  '/analytics': typeof AuthenticatedAnalyticsRoute
+  '/friends': typeof AuthenticatedFriendsRoute
+  '/onboarding': typeof AuthenticatedOnboardingRoute
+  '/profile': typeof AuthenticatedProfileRoute
+  '/progress': typeof AuthenticatedProgressRoute
+  '/quiz': typeof AuthenticatedQuizRoute
+  '/read': typeof AuthenticatedReadRoute
+  '/resources': typeof AuthenticatedResourcesRoute
+  '/summary': typeof AuthenticatedSummaryRoute
+  '/': typeof AuthenticatedIndexRoute
+  '/celebration/book': typeof AuthenticatedCelebrationBookRoute
+  '/celebration/rank': typeof AuthenticatedCelebrationRankRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
-  '/': typeof IndexRoute
-  '/analytics': typeof AnalyticsRoute
-  '/friends': typeof FriendsRoute
-  '/onboarding': typeof OnboardingRoute
-  '/profile': typeof ProfileRoute
-  '/progress': typeof ProgressRoute
-  '/quiz': typeof QuizRoute
-  '/read': typeof ReadRoute
-  '/resources': typeof ResourcesRoute
-  '/summary': typeof SummaryRoute
-  '/celebration/book': typeof CelebrationBookRoute
-  '/celebration/rank': typeof CelebrationRankRoute
+  '/_authenticated/analytics': typeof AuthenticatedAnalyticsRoute
+  '/_authenticated/friends': typeof AuthenticatedFriendsRoute
+  '/_authenticated/onboarding': typeof AuthenticatedOnboardingRoute
+  '/_authenticated/profile': typeof AuthenticatedProfileRoute
+  '/_authenticated/progress': typeof AuthenticatedProgressRoute
+  '/_authenticated/quiz': typeof AuthenticatedQuizRoute
+  '/_authenticated/read': typeof AuthenticatedReadRoute
+  '/_authenticated/resources': typeof AuthenticatedResourcesRoute
+  '/_authenticated/summary': typeof AuthenticatedSummaryRoute
+  '/_authenticated/': typeof AuthenticatedIndexRoute
+  '/_authenticated/celebration/book': typeof AuthenticatedCelebrationBookRoute
+  '/_authenticated/celebration/rank': typeof AuthenticatedCelebrationRankRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
   fullPaths:
-    | '/'
     | '/analytics'
     | '/friends'
     | '/onboarding'
@@ -139,11 +140,11 @@ export interface FileRouteTypes {
     | '/read'
     | '/resources'
     | '/summary'
+    | '/'
     | '/celebration/book'
     | '/celebration/rank'
   fileRoutesByTo: FileRoutesByTo
   to:
-    | '/'
     | '/analytics'
     | '/friends'
     | '/onboarding'
@@ -153,141 +154,142 @@ export interface FileRouteTypes {
     | '/read'
     | '/resources'
     | '/summary'
+    | '/'
     | '/celebration/book'
     | '/celebration/rank'
   id:
     | '__root__'
-    | '/'
-    | '/analytics'
-    | '/friends'
-    | '/onboarding'
-    | '/profile'
-    | '/progress'
-    | '/quiz'
-    | '/read'
-    | '/resources'
-    | '/summary'
-    | '/celebration/book'
-    | '/celebration/rank'
+    | '/_authenticated/analytics'
+    | '/_authenticated/friends'
+    | '/_authenticated/onboarding'
+    | '/_authenticated/profile'
+    | '/_authenticated/progress'
+    | '/_authenticated/quiz'
+    | '/_authenticated/read'
+    | '/_authenticated/resources'
+    | '/_authenticated/summary'
+    | '/_authenticated/'
+    | '/_authenticated/celebration/book'
+    | '/_authenticated/celebration/rank'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
-  IndexRoute: typeof IndexRoute
-  AnalyticsRoute: typeof AnalyticsRoute
-  FriendsRoute: typeof FriendsRoute
-  OnboardingRoute: typeof OnboardingRoute
-  ProfileRoute: typeof ProfileRoute
-  ProgressRoute: typeof ProgressRoute
-  QuizRoute: typeof QuizRoute
-  ReadRoute: typeof ReadRoute
-  ResourcesRoute: typeof ResourcesRoute
-  SummaryRoute: typeof SummaryRoute
-  CelebrationBookRoute: typeof CelebrationBookRoute
-  CelebrationRankRoute: typeof CelebrationRankRoute
+  AuthenticatedAnalyticsRoute: typeof AuthenticatedAnalyticsRoute
+  AuthenticatedFriendsRoute: typeof AuthenticatedFriendsRoute
+  AuthenticatedOnboardingRoute: typeof AuthenticatedOnboardingRoute
+  AuthenticatedProfileRoute: typeof AuthenticatedProfileRoute
+  AuthenticatedProgressRoute: typeof AuthenticatedProgressRoute
+  AuthenticatedQuizRoute: typeof AuthenticatedQuizRoute
+  AuthenticatedReadRoute: typeof AuthenticatedReadRoute
+  AuthenticatedResourcesRoute: typeof AuthenticatedResourcesRoute
+  AuthenticatedSummaryRoute: typeof AuthenticatedSummaryRoute
+  AuthenticatedIndexRoute: typeof AuthenticatedIndexRoute
+  AuthenticatedCelebrationBookRoute: typeof AuthenticatedCelebrationBookRoute
+  AuthenticatedCelebrationRankRoute: typeof AuthenticatedCelebrationRankRoute
 }
 
 declare module '@tanstack/react-router' {
   interface FileRoutesByPath {
-    '/summary': {
-      id: '/summary'
-      path: '/summary'
-      fullPath: '/summary'
-      preLoaderRoute: typeof SummaryRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/resources': {
-      id: '/resources'
-      path: '/resources'
-      fullPath: '/resources'
-      preLoaderRoute: typeof ResourcesRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/read': {
-      id: '/read'
-      path: '/read'
-      fullPath: '/read'
-      preLoaderRoute: typeof ReadRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/quiz': {
-      id: '/quiz'
-      path: '/quiz'
-      fullPath: '/quiz'
-      preLoaderRoute: typeof QuizRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/progress': {
-      id: '/progress'
-      path: '/progress'
-      fullPath: '/progress'
-      preLoaderRoute: typeof ProgressRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/profile': {
-      id: '/profile'
-      path: '/profile'
-      fullPath: '/profile'
-      preLoaderRoute: typeof ProfileRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/onboarding': {
-      id: '/onboarding'
-      path: '/onboarding'
-      fullPath: '/onboarding'
-      preLoaderRoute: typeof OnboardingRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/friends': {
-      id: '/friends'
-      path: '/friends'
-      fullPath: '/friends'
-      preLoaderRoute: typeof FriendsRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/analytics': {
-      id: '/analytics'
-      path: '/analytics'
-      fullPath: '/analytics'
-      preLoaderRoute: typeof AnalyticsRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/': {
-      id: '/'
+    '/_authenticated/': {
+      id: '/_authenticated/'
       path: '/'
       fullPath: '/'
-      preLoaderRoute: typeof IndexRouteImport
+      preLoaderRoute: typeof AuthenticatedIndexRouteImport
       parentRoute: typeof rootRouteImport
     }
-    '/celebration/rank': {
-      id: '/celebration/rank'
+    '/_authenticated/summary': {
+      id: '/_authenticated/summary'
+      path: '/summary'
+      fullPath: '/summary'
+      preLoaderRoute: typeof AuthenticatedSummaryRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/_authenticated/resources': {
+      id: '/_authenticated/resources'
+      path: '/resources'
+      fullPath: '/resources'
+      preLoaderRoute: typeof AuthenticatedResourcesRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/_authenticated/read': {
+      id: '/_authenticated/read'
+      path: '/read'
+      fullPath: '/read'
+      preLoaderRoute: typeof AuthenticatedReadRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/_authenticated/quiz': {
+      id: '/_authenticated/quiz'
+      path: '/quiz'
+      fullPath: '/quiz'
+      preLoaderRoute: typeof AuthenticatedQuizRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/_authenticated/progress': {
+      id: '/_authenticated/progress'
+      path: '/progress'
+      fullPath: '/progress'
+      preLoaderRoute: typeof AuthenticatedProgressRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/_authenticated/profile': {
+      id: '/_authenticated/profile'
+      path: '/profile'
+      fullPath: '/profile'
+      preLoaderRoute: typeof AuthenticatedProfileRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/_authenticated/onboarding': {
+      id: '/_authenticated/onboarding'
+      path: '/onboarding'
+      fullPath: '/onboarding'
+      preLoaderRoute: typeof AuthenticatedOnboardingRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/_authenticated/friends': {
+      id: '/_authenticated/friends'
+      path: '/friends'
+      fullPath: '/friends'
+      preLoaderRoute: typeof AuthenticatedFriendsRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/_authenticated/analytics': {
+      id: '/_authenticated/analytics'
+      path: '/analytics'
+      fullPath: '/analytics'
+      preLoaderRoute: typeof AuthenticatedAnalyticsRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/_authenticated/celebration/rank': {
+      id: '/_authenticated/celebration/rank'
       path: '/celebration/rank'
       fullPath: '/celebration/rank'
-      preLoaderRoute: typeof CelebrationRankRouteImport
+      preLoaderRoute: typeof AuthenticatedCelebrationRankRouteImport
       parentRoute: typeof rootRouteImport
     }
-    '/celebration/book': {
-      id: '/celebration/book'
+    '/_authenticated/celebration/book': {
+      id: '/_authenticated/celebration/book'
       path: '/celebration/book'
       fullPath: '/celebration/book'
-      preLoaderRoute: typeof CelebrationBookRouteImport
+      preLoaderRoute: typeof AuthenticatedCelebrationBookRouteImport
       parentRoute: typeof rootRouteImport
     }
   }
 }
 
 const rootRouteChildren: RootRouteChildren = {
-  IndexRoute: IndexRoute,
-  AnalyticsRoute: AnalyticsRoute,
-  FriendsRoute: FriendsRoute,
-  OnboardingRoute: OnboardingRoute,
-  ProfileRoute: ProfileRoute,
-  ProgressRoute: ProgressRoute,
-  QuizRoute: QuizRoute,
-  ReadRoute: ReadRoute,
-  ResourcesRoute: ResourcesRoute,
-  SummaryRoute: SummaryRoute,
-  CelebrationBookRoute: CelebrationBookRoute,
-  CelebrationRankRoute: CelebrationRankRoute,
+  AuthenticatedAnalyticsRoute: AuthenticatedAnalyticsRoute,
+  AuthenticatedFriendsRoute: AuthenticatedFriendsRoute,
+  AuthenticatedOnboardingRoute: AuthenticatedOnboardingRoute,
+  AuthenticatedProfileRoute: AuthenticatedProfileRoute,
+  AuthenticatedProgressRoute: AuthenticatedProgressRoute,
+  AuthenticatedQuizRoute: AuthenticatedQuizRoute,
+  AuthenticatedReadRoute: AuthenticatedReadRoute,
+  AuthenticatedResourcesRoute: AuthenticatedResourcesRoute,
+  AuthenticatedSummaryRoute: AuthenticatedSummaryRoute,
+  AuthenticatedIndexRoute: AuthenticatedIndexRoute,
+  AuthenticatedCelebrationBookRoute: AuthenticatedCelebrationBookRoute,
+  AuthenticatedCelebrationRankRoute: AuthenticatedCelebrationRankRoute,
 }
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)

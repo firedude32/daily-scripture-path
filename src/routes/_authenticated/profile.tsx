@@ -23,7 +23,7 @@ import { EditorialButton } from "@/components/ui-lectio/EditorialButton";
 import { BottomSheet } from "@/components/ui-lectio/BottomSheet";
 import { exportAll } from "@/lib/exportCsv";
 
-export const Route = createFileRoute("/profile")({
+export const Route = createFileRoute("/_authenticated/profile")({
   head: () => ({
     meta: [
       { title: "Profile — Lectio" },

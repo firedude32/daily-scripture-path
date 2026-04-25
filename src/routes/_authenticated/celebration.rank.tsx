@@ -9,7 +9,7 @@ import { EditorialButton } from "@/components/ui-lectio/EditorialButton";
 import { SmallCaps } from "@/components/ui-lectio/SmallCaps";
 import { letterReveal } from "@/lib/motion";
 
-export const Route = createFileRoute("/celebration/rank")({
+export const Route = createFileRoute("/_authenticated/celebration/rank")({
   head: () => ({
     meta: [
       { title: "New rank — Lectio" },

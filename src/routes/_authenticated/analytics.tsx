@@ -21,7 +21,7 @@ import { Rule } from "@/components/ui-lectio/Rule";
 import { EditorialButton } from "@/components/ui-lectio/EditorialButton";
 import { exportAll } from "@/lib/exportCsv";
 
-export const Route = createFileRoute("/analytics")({
+export const Route = createFileRoute("/_authenticated/analytics")({
   head: () => ({
     meta: [
       { title: "Advanced Analytics — Lectio" },

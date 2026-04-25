@@ -11,7 +11,7 @@ import { EditorialButton } from "@/components/ui-lectio/EditorialButton";
 import { EditorialCard } from "@/components/ui-lectio/EditorialCard";
 import { SmallCaps } from "@/components/ui-lectio/SmallCaps";
 
-export const Route = createFileRoute("/quiz")({
+export const Route = createFileRoute("/_authenticated/quiz")({
   head: () => ({
     meta: [
       { title: "Quiz — Lectio" },
