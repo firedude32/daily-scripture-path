@@ -53,7 +53,7 @@ function ProfilePage() {
   async function handleSignOut() {
     if (!confirm("Sign out of Lectio?")) return;
     await supabase.auth.signOut();
-    navigate({ to: "/login", search: {} });
+    navigate({ to: "/login" });
   }
   const [sheet, setSheet] = useState<SheetKey>(null);
 
