@@ -9,13 +9,14 @@ import { SmallCaps } from "@/components/ui-lectio/SmallCaps";
 import { Rule } from "@/components/ui-lectio/Rule";
 
 export const Route = createFileRoute("/login")({
-  validateSearch: (search: Record<string, unknown>) => ({
-    redirect: (search.redirect as string) || "/",
-  }),
+  validateSearch: (search: Record<string, unknown>): { redirect?: string } => {
+    const r = search.redirect;
+    return typeof r === "string" ? { redirect: r } : {};
+  },
   beforeLoad: async ({ search }) => {
     if (typeof window === "undefined") return;
     const { data } = await supabase.auth.getSession();
-    if (data.session) throw redirect({ to: search.redirect });
+    if (data.session) throw redirect({ to: search.redirect ?? "/" });
   },
   head: () => ({ meta: [{ title: "Sign in — Lectio" }] }),
   component: LoginPage,

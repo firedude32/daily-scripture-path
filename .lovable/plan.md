@@ -35,12 +35,11 @@ Rewrite `src/state/store.ts` so every read/write hits Supabase via TanStack Quer
 - Onboarding writes to `profiles` and flips `onboarded = true`.
 - Settings writes (translation, reminder, daily goal, name, email) update `profiles`.
 
-## Chunk 4 — Remove all filler/synthetic data
-- Delete `buildSyntheticHistory()` and the seeded 23-day streak / 14 chapters of Mark / Philippians-James-Jude completions.
-- Delete `src/data/friends.ts` (FRIENDS, GROUPS, RESOURCES hardcoded arrays).
-- New users start at: 0 XP, 0 streak, 0 sessions, no books in progress, no friends, no groups.
-- Update `TodaysNote` variants that referenced `FRIENDS` ("In Motion") to query real friends or hide when none.
-- Empty states everywhere: Home ("Start your first reading"), Friends ("Invite someone to read alongside you"), Progress ("No books started yet"), Analytics ("Read your first chapter to see stats"), Profile history ("No sessions yet").
+## Chunk 4 — Remove all filler/synthetic data ✅
+- Deleted FRIENDS / GROUPS hardcoded arrays from `src/data/friends.ts`; trimmed RESOURCES to real partners only (removed fake "Daily Disciple").
+- Removed "in_motion" variant from `TodaysNote` (was synthesizing from FRIENDS).
+- Rewrote Friends page with empty states for both Friends and Groups tabs (real backend wiring comes in Chunks 5–6).
+- Synthetic 90-day history was already removed in Chunk 3; new users now start at 0 XP, 0 streak, 0 sessions, no books, no friends.
 
 ## Chunk 5 — Real friends system
 - `Add Friend` form → looks up by email, creates row in `friendships` with status=pending; shows in their inbox.

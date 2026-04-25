@@ -4,7 +4,6 @@ import {
   Bookmark,
   BookOpen,
   Star,
-  Users,
   BarChart3,
   Feather,
   RotateCcw,
@@ -20,7 +19,7 @@ import {
   useAppState,
 } from "@/state/store";
 import { bookById } from "@/data/books";
-import { FRIENDS } from "@/data/friends";
+
 
 type VariantKey =
   | "left_off"
@@ -131,20 +130,8 @@ function pickVariant(state: AppState, today: Date): NoteContent | null {
     });
   }
 
-  // Variant 4 — In Motion (synthesize from FRIENDS data, deterministic per day)
-  if (FRIENDS.length >= 2) {
-    const i = seedFor(dateStr, "friend") % FRIENDS.length;
-    const j = (i + 1 + (seedFor(dateStr, "friend2") % (FRIENDS.length - 1))) % FRIENDS.length;
-    const a = FRIENDS[i];
-    const b = FRIENDS[j];
-    candidates.push({
-      key: "in_motion",
-      label: "In Motion",
-      Icon: Users,
-      body: `${a.name.split(" ")[0]} finished a book yesterday \u2014 her ${ordinal(a.booksCompleted)} this year. ${b.name.split(" ")[0]} started a new one this morning.`,
-      bottom: "YOUR FRIENDS \u00B7 TWO UPDATES",
-    });
-  }
+  // Variant 4 — In Motion (real friends data) — TODO: query friends; skip for now.
+
 
   // Variant 6 — On This Chapter
   const chapKey = `${next.bookId}:${next.chapter}`;
