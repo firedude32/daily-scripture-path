@@ -21,7 +21,6 @@ import { SmallCaps } from "@/components/ui-lectio/SmallCaps";
 import { Rule } from "@/components/ui-lectio/Rule";
 import { EditorialButton } from "@/components/ui-lectio/EditorialButton";
 import { exportAll } from "@/lib/exportCsv";
-import { supabase } from "@/integrations/supabase/client";
 
 export const Route = createFileRoute("/_authenticated/analytics")({
   head: () => ({
