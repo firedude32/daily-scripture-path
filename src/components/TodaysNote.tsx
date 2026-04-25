@@ -184,7 +184,7 @@ function pickVariant(state: AppState, today: Date): NoteContent | null {
         Icon: BookOpen,
         body: BOOK_NOTES[next.bookId],
         bottom: `THE BOOK OF ${nextBook.name.toUpperCase()} \u00B7 ${nextBook.chapters} CHAPTERS`,
-        to: "/progress",
+        
       });
     }
   }
