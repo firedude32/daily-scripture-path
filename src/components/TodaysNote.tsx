@@ -1,6 +1,5 @@
 import { useMemo } from "react";
 import { motion } from "framer-motion";
-import { useNavigate } from "@tanstack/react-router";
 import {
   Bookmark,
   BookOpen,
@@ -39,7 +38,6 @@ interface NoteContent {
   body: string;
   italic?: boolean;
   bottom: string;
-  to: string;
 }
 
 // Deterministic daily seed → integer
@@ -114,7 +112,6 @@ function pickVariant(state: AppState, today: Date): NoteContent | null {
       body:
         "Last time, you closed the book mid\u2011passage. Pick the thread back up where you set it down \u2014 the next chapter is waiting.",
       bottom: `${(lastBook?.name ?? "").toUpperCase()} ${lastSession.chapter} \u00B7 READ ${formatDate(lastSession.completedAt)}`,
-      to: "/read",
     });
   }
 
@@ -131,7 +128,6 @@ function pickVariant(state: AppState, today: Date): NoteContent | null {
       Icon: RotateCcw,
       body: `You moved quickly through ${sb?.name} ${struggle.chapter} when you read it. A second reading often opens what the first one closed.`,
       bottom: `${(sb?.name ?? "").toUpperCase()} ${struggle.chapter} \u00B7 READ ${formatDate(struggle.completedAt)}`,
-      to: "/read",
     });
   }
 
@@ -147,7 +143,6 @@ function pickVariant(state: AppState, today: Date): NoteContent | null {
       Icon: Users,
       body: `${a.name.split(" ")[0]} finished a book yesterday \u2014 her ${ordinal(a.booksCompleted)} this year. ${b.name.split(" ")[0]} started a new one this morning.`,
       bottom: "YOUR FRIENDS \u00B7 TWO UPDATES",
-      to: "/friends",
     });
   }
 
@@ -160,7 +155,6 @@ function pickVariant(state: AppState, today: Date): NoteContent | null {
       Icon: Feather,
       body: CHAPTER_NOTES[chapKey],
       bottom: `${nextBook.name.toUpperCase()} ${next.chapter} \u00B7 TODAY\u2019S READING`,
-      to: "/read",
     });
   }
 
@@ -175,7 +169,6 @@ function pickVariant(state: AppState, today: Date): NoteContent | null {
       Icon: BarChart3,
       body: `You\u2019ve read for ${hours} hours across ${days} days. That\u2019s a working day each month given quietly to scripture.`,
       bottom: `${days} DAYS OF READING \u00B7 ${chapters} CHAPTERS`,
-      to: "/analytics",
     });
   }
 
@@ -191,7 +184,7 @@ function pickVariant(state: AppState, today: Date): NoteContent | null {
         Icon: BookOpen,
         body: BOOK_NOTES[next.bookId],
         bottom: `THE BOOK OF ${nextBook.name.toUpperCase()} \u00B7 ${nextBook.chapters} CHAPTERS`,
-        to: "/progress",
+        
       });
     }
   }
@@ -204,7 +197,7 @@ function pickVariant(state: AppState, today: Date): NoteContent | null {
     body: "\u201CBe still, and know that I am God.\u201D",
     italic: true,
     bottom: "PSALM 46 \u00B7 10 \u00B7 FAVORITED MARCH 12",
-    to: "/profile",
+    
   });
 
   // Priority order from spec
@@ -244,7 +237,6 @@ function ordinal(n: number): string {
 }
 
 export function TodaysNote() {
-  const navigate = useNavigate();
   const today = useMemo(() => new Date(), []);
   const state = useAppState();
 
@@ -255,13 +247,10 @@ export function TodaysNote() {
   const Icon = note.Icon;
 
   return (
-    <motion.button
-      type="button"
-      onClick={() => navigate({ to: note.to })}
+    <motion.div
       initial={{ opacity: 0 }}
       animate={{ opacity: 1 }}
       transition={{ duration: 0.2, ease: "easeOut" }}
-      whileTap={{ scale: 0.98 }}
       className="block w-full text-left rounded-xl"
       style={{
         background: "var(--color-paper-light, #FAF7F2)",
@@ -307,6 +296,6 @@ export function TodaysNote() {
       <div className="mt-3">
         <SmallCaps>{note.bottom}</SmallCaps>
       </div>
-    </motion.button>
+    </motion.div>
   );
 }
