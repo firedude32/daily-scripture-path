@@ -27,6 +27,7 @@ export interface AppState {
   onboarded: boolean;
   user: {
     name: string;
+    username: string | null;
     email: string;
     translation: string;
     dailyGoal: number;
@@ -69,6 +70,7 @@ function emptyState(): AppState {
     onboarded: false,
     user: {
       name: "Friend",
+      username: null,
       email: "",
       translation: "ESV",
       dailyGoal: 2,
@@ -185,6 +187,7 @@ export async function hydrateFromSupabase(): Promise<void> {
     onboarded: profile?.onboarded ?? false,
     user: {
       name: profile?.name ?? session.user.email?.split("@")[0] ?? "Friend",
+      username: profile?.username ?? null,
       email: profile?.email ?? session.user.email ?? "",
       translation: profile?.translation ?? "ESV",
       dailyGoal: profile?.daily_goal ?? 2,
@@ -483,6 +486,22 @@ export function setUserName(name: string) {
 export function setUserEmail(email: string) {
   setState((s) => { s.user = { ...s.user, email }; return s; });
   void persistProfile({ email });
+}
+
+export async function setUsername(username: string): Promise<{ ok: true } | { ok: false; reason: string }> {
+  const v = username.trim().toLowerCase();
+  if (!/^[a-z0-9_]{3,24}$/.test(v)) {
+    return { ok: false, reason: "3–24 letters, numbers, or underscores." };
+  }
+  const userId = memoryState.userId;
+  if (!userId) return { ok: false, reason: "Not signed in." };
+  const { error } = await supabase.from("profiles").update({ username: v }).eq("id", userId);
+  if (error) {
+    if (error.code === "23505") return { ok: false, reason: "That username is taken." };
+    return { ok: false, reason: error.message };
+  }
+  setState((s) => { s.user = { ...s.user, username: v }; return s; });
+  return { ok: true };
 }
 
 export function acknowledgeSilverGold() {
