@@ -5,7 +5,7 @@ import { Screen } from "@/components/Screen";
 import { PhoneFrame } from "@/components/PhoneFrame";
 import { Heatmap } from "@/components/Heatmap";
 import { GoldMotif, dailyMotif } from "@/components/GoldMotif";
-import { BreadIllustration } from "@/components/BreadIllustration";
+
 import { SmallCaps } from "@/components/ui-lectio/SmallCaps";
 import { EditorialButton } from "@/components/ui-lectio/EditorialButton";
 import { Rule } from "@/components/ui-lectio/Rule";
