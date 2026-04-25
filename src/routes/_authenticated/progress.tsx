@@ -183,11 +183,7 @@ function ProgressPage() {
               </Section>
               <Rule />
               <Section title="At Your Current Pace">
-                <ul className="space-y-3 font-body text-[color:var(--color-ink)]" style={{ fontSize: 15 }}>
-                  <li className="flex justify-between"><span>Mark</span><span className="tabular text-[color:var(--color-ink-muted)]">{Math.ceil((16 - 14) / Math.max(1, state.user.dailyGoal))} days</span></li>
-                  <li className="flex justify-between"><span>The Gospels</span><span className="tabular text-[color:var(--color-ink-muted)]">{Math.ceil(89 / Math.max(1, state.user.dailyGoal))} days</span></li>
-                  <li className="flex justify-between"><span>The New Testament</span><span className="tabular text-[color:var(--color-ink-muted)]">{Math.ceil(NT_CHAPTERS / Math.max(1, state.user.dailyGoal))} days</span></li>
-                </ul>
+                <PaceETA state={state} />
               </Section>
             </>
           )}
