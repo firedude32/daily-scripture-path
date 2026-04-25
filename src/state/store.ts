@@ -220,7 +220,24 @@ export function useHydrateStore() {
 
 // ---------- Persistence helpers ----------
 
-async function persistProfile(patch: Record<string, unknown>) {
+type ProfilePatch = Partial<{
+  name: string;
+  email: string;
+  translation: string;
+  daily_goal: number;
+  reminder_time: string;
+  path_book_id: string;
+  progress_view: string;
+  xp: number;
+  current_streak: number;
+  longest_streak: number;
+  last_read_date: string | null;
+  silver_gold_unlocked: boolean;
+  silver_gold_acknowledged: boolean;
+  onboarded: boolean;
+}>;
+
+async function persistProfile(patch: ProfilePatch) {
   const userId = memoryState.userId;
   if (!userId) return;
   await supabase.from("profiles").update(patch).eq("id", userId);
