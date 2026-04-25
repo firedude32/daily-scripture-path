@@ -10,12 +10,12 @@ import { Rule } from "@/components/ui-lectio/Rule";
 
 export const Route = createFileRoute("/login")({
   validateSearch: (search: Record<string, unknown>) => ({
-    redirect: (search.redirect as string) || "/",
+    redirect: (search.redirect as string | undefined) || undefined,
   }),
   beforeLoad: async ({ search }) => {
     if (typeof window === "undefined") return;
     const { data } = await supabase.auth.getSession();
-    if (data.session) throw redirect({ to: search.redirect });
+    if (data.session) throw redirect({ to: search.redirect ?? "/" });
   },
   head: () => ({ meta: [{ title: "Sign in — Lectio" }] }),
   component: LoginPage,
