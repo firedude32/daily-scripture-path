@@ -271,18 +271,23 @@ function ProgressPage() {
                       (state.bookProgress[openBook.id]?.inProgressChapters ?? []).includes(ch) ||
                       (state.bookProgress[openBook.id]?.readThroughs ?? 0) > 0;
                     return (
-                      <div
+                      <button
                         key={ch}
-                        className="aspect-square flex items-center justify-center font-ui tabular"
+                        onClick={() => {
+                          setReadOverride(openBook.id, ch);
+                          navigate({ to: "/read" });
+                        }}
+                        className="aspect-square flex items-center justify-center font-ui tabular transition-opacity hover:opacity-70"
                         style={{
                           fontSize: 10,
                           background: done ? "var(--color-gold)" : "transparent",
                           border: done ? "none" : "1px solid var(--color-rule)",
                           color: done ? "var(--color-ink)" : "var(--color-ink-muted)",
                         }}
+                        title={`Read ${openBook.name} ${ch}`}
                       >
                         {ch}
-                      </div>
+                      </button>
                     );
                   })}
                 </div>
