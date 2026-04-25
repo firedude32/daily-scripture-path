@@ -71,9 +71,14 @@ function HomePage() {
             initial={{ opacity: 0, y: 6 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.7, ease: [0.22, 1, 0.36, 1] }}
-            className="mt-11 flex justify-center"
+            className="mt-11 mb-11 flex justify-center bg-transparent"
           >
-            <BreadIllustration width={280} height={200} />
+            <img
+              src="/images/bread-illustration.png"
+              alt="Hand-drawn illustration of a loaf of bread on linen cloth"
+              loading="eager"
+              style={{ width: 290, height: "auto", objectFit: "contain", background: "transparent" }}
+            />
           </motion.div>
 
           {/* Hero streak */}
