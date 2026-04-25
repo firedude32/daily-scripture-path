@@ -324,80 +324,50 @@ function PercentRing({ pct, label }: { pct: number; label: string }) {
   );
 }
 
-interface FavoriteRow {
-  id: string;
-  book_id: string;
-  chapter: number;
-  verse: number | null;
-}
-
-function FavoritesList() {
-  const [rows, setRows] = useState<FavoriteRow[] | null>(null);
-
-  useEffect(() => {
-    let cancelled = false;
-    (async () => {
-      const { data: auth } = await supabase.auth.getUser();
-      const uid = auth.user?.id;
-      if (!uid) {
-        if (!cancelled) setRows([]);
-        return;
-      }
-      const { data, error } = await supabase
-        .from("favorites")
-        .select("id, book_id, chapter, verse")
-        .eq("user_id", uid)
-        .order("created_at", { ascending: false })
-        .limit(20);
-      if (cancelled) return;
-      if (error) {
-        setRows([]);
-        return;
-      }
-      setRows((data ?? []) as FavoriteRow[]);
-    })();
-    return () => {
-      cancelled = true;
-    };
-  }, []);
-
-  if (rows === null) {
-    return (
-      <p
-        className="mt-4 font-body italic text-[color:var(--color-ink-muted)]"
-        style={{ fontSize: 13 }}
-      >
-        Loading…
-      </p>
-    );
+function MostReadChapters({ state }: { state: ReturnType<typeof useAppState> }) {
+  // Tally how many times each (book, chapter) appears in the user's session log.
+  const counts = new Map<string, number>();
+  for (const s of state.sessions) {
+    const key = `${s.bookId}-${s.chapter}`;
+    counts.set(key, (counts.get(key) ?? 0) + 1);
   }
+  const top = Array.from(counts.entries())
+    .map(([key, count]) => {
+      const [bookId, chapterStr] = key.split("-");
+      return { bookId, chapter: Number(chapterStr), count };
+    })
+    .sort((a, b) => b.count - a.count || a.bookId.localeCompare(b.bookId))
+    .slice(0, 12);
 
-  if (rows.length === 0) {
+  if (top.length === 0) {
     return (
       <p
         className="mt-4 font-body italic text-[color:var(--color-ink-muted)]"
         style={{ fontSize: 13 }}
       >
-        No favorites yet. Mark verses you want to remember and they'll appear here.
+        Read a chapter and it'll start showing up here. The ones you return to most rise to the top.
       </p>
     );
   }
 
   return (
     <div className="mt-4 flex flex-wrap gap-x-5 gap-y-2">
-      {rows.map((f) => {
-        const book = bookById(f.book_id);
-        const name = book?.name ?? f.book_id;
-        const ref = f.verse ? `${name} ${f.chapter}:${f.verse}` : `${name} ${f.chapter}`;
+      {top.map((t) => {
+        const book = bookById(t.bookId);
+        const name = book?.name ?? t.bookId;
         return (
           <span
-            key={f.id}
-            className="font-ui uppercase tracking-[0.14em] text-[12px] text-[color:var(--color-ink)]"
+            key={`${t.bookId}-${t.chapter}`}
+            className="font-ui uppercase tracking-[0.14em] text-[12px] text-[color:var(--color-ink)] inline-flex items-baseline gap-2"
           >
-            {ref}
+            {name} {t.chapter}
+            <span className="tabular text-[10px] text-[color:var(--color-ink-muted)]">
+              ×{t.count}
+            </span>
           </span>
         );
       })}
     </div>
   );
 }
+
