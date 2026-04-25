@@ -264,17 +264,31 @@ async function persistBookProgress(bookId: string, bp: BookProgress) {
 // ---------- Domain helpers ----------
 
 import { RANKS, getRankIndex } from "@/data/ranks";
+import { hasQuiz } from "@/data/quiz";
 
 export function nextChapterFor(state: AppState): { bookId: string; chapter: number } {
-  const bp = state.bookProgress[state.user.pathBookId];
-  const next = (bp?.inProgressChapters.length ?? 0) + 1;
-  const book = bookById(state.user.pathBookId)!;
-  if (next <= book.chapters) {
-    return { bookId: state.user.pathBookId, chapter: next };
+  // Walk forward from the user's path book, skipping chapters that don't yet
+  // have a hand-scripted quiz. We never recommend filler-quiz chapters.
+  const startBookId = state.user.pathBookId;
+  const startIdx = Math.max(0, NT_ORDER.indexOf(startBookId));
+
+  for (let offset = 0; offset < NT_ORDER.length; offset++) {
+    const bookId = NT_ORDER[(startIdx + offset) % NT_ORDER.length];
+    const book = bookById(bookId);
+    if (!book) continue;
+    const bp = state.bookProgress[bookId];
+    // For the starting book, resume after in-progress chapters; otherwise start at 1.
+    const startCh = offset === 0 ? (bp?.inProgressChapters.length ?? 0) + 1 : 1;
+    for (let ch = startCh; ch <= book.chapters; ch++) {
+      if (hasQuiz(bookId, ch)) return { bookId, chapter: ch };
+    }
   }
-  const idx = NT_ORDER.indexOf(state.user.pathBookId);
-  const nextBookId = NT_ORDER[(idx + 1) % NT_ORDER.length];
-  return { bookId: nextBookId, chapter: 1 };
+  // Fallback if nothing has a quiz yet — return the literal next chapter.
+  const bp = state.bookProgress[startBookId];
+  const next = (bp?.inProgressChapters.length ?? 0) + 1;
+  const book = bookById(startBookId)!;
+  if (next <= book.chapters) return { bookId: startBookId, chapter: next };
+  return { bookId: NT_ORDER[(startIdx + 1) % NT_ORDER.length], chapter: 1 };
 }
 
 export function chaptersReadToday(state: AppState): number {
