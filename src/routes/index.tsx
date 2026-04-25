@@ -7,6 +7,7 @@ import { Heatmap } from "@/components/Heatmap";
 import { GoldMotif, dailyMotif } from "@/components/GoldMotif";
 
 import { SmallCaps } from "@/components/ui-lectio/SmallCaps";
+import { TodaysNote } from "@/components/TodaysNote";
 import { EditorialButton } from "@/components/ui-lectio/EditorialButton";
 import { Rule } from "@/components/ui-lectio/Rule";
 import {
@@ -80,6 +81,11 @@ function HomePage() {
               style={{ width: 290, height: "auto", objectFit: "contain", background: "transparent" }}
             />
           </motion.div>
+
+          {/* Today's Note rotating slot */}
+          <div className="mb-11">
+            <TodaysNote />
+          </div>
 
           {/* Hero streak */}
           <motion.div
