@@ -168,29 +168,53 @@ function FriendsPage() {
           )}
 
           {tab === "groups" && (
-            <div className="mt-16 text-center">
-              <SmallCaps tone="gold">No Groups Yet</SmallCaps>
-              <p
-                className="mt-5 font-display text-[color:var(--color-ink)]"
-                style={{ fontSize: 22, fontWeight: 400, lineHeight: 1.3 }}
-              >
-                Start something small.
-              </p>
-              <p
-                className="mt-3 mx-auto font-body italic text-[color:var(--color-ink-soft)]"
-                style={{ fontSize: 14, maxWidth: 280, lineHeight: 1.5 }}
-              >
-                A group can be a small Bible study, a youth crew, or a few friends keeping each other going.
-              </p>
-              <div className="mt-8 grid grid-cols-2 gap-3">
-                <EditorialButton variant="secondary" size="sm" onClick={() => setOpenCreate(true)}>
-                  Create Group
-                </EditorialButton>
-                <EditorialButton variant="secondary" size="sm" onClick={() => setOpenJoin(true)}>
-                  Join Group
-                </EditorialButton>
-              </div>
-            </div>
+            <>
+              {loading ? (
+                <p className="mt-16 text-center font-body italic text-[color:var(--color-ink-muted)]" style={{ fontSize: 14 }}>
+                  Loading…
+                </p>
+              ) : groups.length === 0 ? (
+                <div className="mt-16 text-center">
+                  <SmallCaps tone="gold">No Groups Yet</SmallCaps>
+                  <p
+                    className="mt-5 font-display text-[color:var(--color-ink)]"
+                    style={{ fontSize: 22, fontWeight: 400, lineHeight: 1.3 }}
+                  >
+                    Start something small.
+                  </p>
+                  <p
+                    className="mt-3 mx-auto font-body italic text-[color:var(--color-ink-soft)]"
+                    style={{ fontSize: 14, maxWidth: 280, lineHeight: 1.5 }}
+                  >
+                    A group can be a small Bible study, a youth crew, or a few friends keeping each other going.
+                  </p>
+                  <div className="mt-8 grid grid-cols-2 gap-3">
+                    <EditorialButton variant="secondary" size="sm" onClick={() => setOpenCreate(true)}>
+                      Create Group
+                    </EditorialButton>
+                    <EditorialButton variant="secondary" size="sm" onClick={() => setOpenJoin(true)}>
+                      Join Group
+                    </EditorialButton>
+                  </div>
+                </div>
+              ) : (
+                <div className="mt-8">
+                  <Section title="Your Groups">
+                    {groups.map((g) => (
+                      <GroupListRow key={g.id} group={g} onOpen={() => setOpenGroup(g)} />
+                    ))}
+                  </Section>
+                  <div className="mt-8 grid grid-cols-2 gap-3">
+                    <EditorialButton variant="secondary" size="sm" onClick={() => setOpenCreate(true)}>
+                      Create Group
+                    </EditorialButton>
+                    <EditorialButton variant="secondary" size="sm" onClick={() => setOpenJoin(true)}>
+                      Join Group
+                    </EditorialButton>
+                  </div>
+                </div>
+              )}
+            </>
           )}
         </div>
 
@@ -204,11 +228,40 @@ function FriendsPage() {
         </BottomSheet>
 
         <BottomSheet open={openCreate} onClose={() => setOpenCreate(false)} eyebrow="New Group" title="Name your group">
-          <ComingSoon kind="create" onClose={() => setOpenCreate(false)} />
+          <CreateGroupForm
+            onCreated={(g) => {
+              setOpenCreate(false);
+              void refresh();
+              setOpenGroup(g);
+            }}
+          />
         </BottomSheet>
 
         <BottomSheet open={openJoin} onClose={() => setOpenJoin(false)} eyebrow="Join" title="Enter a group code">
-          <ComingSoon kind="join" onClose={() => setOpenJoin(false)} />
+          <JoinGroupForm
+            onJoined={(g) => {
+              setOpenJoin(false);
+              void refresh();
+              setOpenGroup(g);
+            }}
+          />
+        </BottomSheet>
+
+        <BottomSheet
+          open={!!openGroup}
+          onClose={() => setOpenGroup(null)}
+          eyebrow="Group"
+          title={openGroup?.name ?? ""}
+        >
+          {openGroup && (
+            <GroupDetail
+              group={openGroup}
+              onLeft={() => {
+                setOpenGroup(null);
+                void refresh();
+              }}
+            />
+          )}
         </BottomSheet>
       </Screen>
     </PhoneFrame>
