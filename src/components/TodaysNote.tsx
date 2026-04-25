@@ -197,7 +197,7 @@ function pickVariant(state: AppState, today: Date): NoteContent | null {
     body: "\u201CBe still, and know that I am God.\u201D",
     italic: true,
     bottom: "PSALM 46 \u00B7 10 \u00B7 FAVORITED MARCH 12",
-    to: "/profile",
+    
   });
 
   // Priority order from spec
