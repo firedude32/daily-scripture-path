@@ -265,6 +265,15 @@ function FriendsPage() {
             />
           )}
         </BottomSheet>
+
+        <BottomSheet
+          open={!!openFriend}
+          onClose={() => setOpenFriend(null)}
+          eyebrow="Friend"
+          title={openFriend?.other.name ?? ""}
+        >
+          {openFriend && <FriendProfileSheet row={openFriend} />}
+        </BottomSheet>
       </Screen>
     </PhoneFrame>
   );
