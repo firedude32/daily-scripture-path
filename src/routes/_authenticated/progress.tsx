@@ -13,6 +13,7 @@ import {
   setProgressView,
 } from "@/state/store";
 import { BOOKS, NT_CHAPTERS, OT_CHAPTERS, type Book, bookById } from "@/data/books";
+import { hasQuiz } from "@/data/quiz";
 import type { Genre } from "@/data/books";
 import { SmallCaps } from "@/components/ui-lectio/SmallCaps";
 import { Rule } from "@/components/ui-lectio/Rule";
