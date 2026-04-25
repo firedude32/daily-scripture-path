@@ -18,7 +18,7 @@ import { SmallCaps } from "@/components/ui-lectio/SmallCaps";
 import { Rule } from "@/components/ui-lectio/Rule";
 import { HairlineProgress } from "@/components/ui-lectio/HairlineProgress";
 
-export const Route = createFileRoute("/progress")({
+export const Route = createFileRoute("/_authenticated/progress")({
   head: () => ({
     meta: [
       { title: "Progress — Lectio" },

@@ -9,7 +9,7 @@ import { breath } from "@/lib/motion";
 import { EditorialButton } from "@/components/ui-lectio/EditorialButton";
 import { SmallCaps } from "@/components/ui-lectio/SmallCaps";
 
-export const Route = createFileRoute("/read")({
+export const Route = createFileRoute("/_authenticated/read")({
   head: () => ({
     meta: [
       { title: "Reading — Lectio" },
