@@ -14,13 +14,238 @@ export type Database = {
   }
   public: {
     Tables: {
-      [_ in never]: never
+      book_progress: {
+        Row: {
+          book_id: string
+          in_progress_chapters: number[]
+          read_throughs: number
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          book_id: string
+          in_progress_chapters?: number[]
+          read_throughs?: number
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          book_id?: string
+          in_progress_chapters?: number[]
+          read_throughs?: number
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
+      favorites: {
+        Row: {
+          book_id: string
+          chapter: number
+          created_at: string
+          id: string
+          note: string | null
+          user_id: string
+          verse: number | null
+        }
+        Insert: {
+          book_id: string
+          chapter: number
+          created_at?: string
+          id?: string
+          note?: string | null
+          user_id: string
+          verse?: number | null
+        }
+        Update: {
+          book_id?: string
+          chapter?: number
+          created_at?: string
+          id?: string
+          note?: string | null
+          user_id?: string
+          verse?: number | null
+        }
+        Relationships: []
+      }
+      friendships: {
+        Row: {
+          created_at: string
+          friend_user_id: string
+          requested_by: string
+          status: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          friend_user_id: string
+          requested_by: string
+          status?: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          friend_user_id?: string
+          requested_by?: string
+          status?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
+      group_members: {
+        Row: {
+          group_id: string
+          joined_at: string
+          user_id: string
+        }
+        Insert: {
+          group_id: string
+          joined_at?: string
+          user_id: string
+        }
+        Update: {
+          group_id?: string
+          joined_at?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "group_members_group_id_fkey"
+            columns: ["group_id"]
+            isOneToOne: false
+            referencedRelation: "groups"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      groups: {
+        Row: {
+          created_at: string
+          id: string
+          join_code: string
+          name: string
+          owner_id: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          join_code: string
+          name: string
+          owner_id: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          join_code?: string
+          name?: string
+          owner_id?: string
+        }
+        Relationships: []
+      }
+      profiles: {
+        Row: {
+          created_at: string
+          current_streak: number
+          daily_goal: number
+          email: string
+          id: string
+          last_read_date: string | null
+          longest_streak: number
+          name: string
+          onboarded: boolean
+          path_book_id: string
+          progress_view: string
+          reminder_time: string
+          silver_gold_acknowledged: boolean
+          silver_gold_unlocked: boolean
+          translation: string
+          updated_at: string
+          username: string | null
+          xp: number
+        }
+        Insert: {
+          created_at?: string
+          current_streak?: number
+          daily_goal?: number
+          email: string
+          id: string
+          last_read_date?: string | null
+          longest_streak?: number
+          name?: string
+          onboarded?: boolean
+          path_book_id?: string
+          progress_view?: string
+          reminder_time?: string
+          silver_gold_acknowledged?: boolean
+          silver_gold_unlocked?: boolean
+          translation?: string
+          updated_at?: string
+          username?: string | null
+          xp?: number
+        }
+        Update: {
+          created_at?: string
+          current_streak?: number
+          daily_goal?: number
+          email?: string
+          id?: string
+          last_read_date?: string | null
+          longest_streak?: number
+          name?: string
+          onboarded?: boolean
+          path_book_id?: string
+          progress_view?: string
+          reminder_time?: string
+          silver_gold_acknowledged?: boolean
+          silver_gold_unlocked?: boolean
+          translation?: string
+          updated_at?: string
+          username?: string | null
+          xp?: number
+        }
+        Relationships: []
+      }
+      reading_sessions: {
+        Row: {
+          book_id: string
+          chapter: number
+          completed_at: string
+          duration_sec: number
+          id: string
+          user_id: string
+          xp_earned: number
+        }
+        Insert: {
+          book_id: string
+          chapter: number
+          completed_at?: string
+          duration_sec?: number
+          id?: string
+          user_id: string
+          xp_earned?: number
+        }
+        Update: {
+          book_id?: string
+          chapter?: number
+          completed_at?: string
+          duration_sec?: number
+          id?: string
+          user_id?: string
+          xp_earned?: number
+        }
+        Relationships: []
+      }
     }
     Views: {
       [_ in never]: never
     }
     Functions: {
-      [_ in never]: never
+      books_completed_for: { Args: { _user_id: string }; Returns: number }
+      is_group_member: {
+        Args: { _group_id: string; _user_id: string }
+        Returns: boolean
+      }
+      weekly_chapters_for: { Args: { _user_id: string }; Returns: number }
     }
     Enums: {
       [_ in never]: never
