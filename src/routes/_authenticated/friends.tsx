@@ -1,6 +1,6 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { useCallback, useEffect, useState } from "react";
-import { Plus, Check, X, Flame } from "lucide-react";
+import { Plus, Check, X, Flame, Users, Copy, ChevronRight } from "lucide-react";
 import { PhoneFrame } from "@/components/PhoneFrame";
 import { Screen } from "@/components/Screen";
 import { SmallCaps } from "@/components/ui-lectio/SmallCaps";
@@ -14,6 +14,16 @@ import {
   sendFriendRequest,
   type FriendRow,
 } from "@/lib/friends";
+import {
+  createGroup,
+  deleteGroup,
+  joinGroupByCode,
+  leaveGroup,
+  listGroupMembers,
+  listMyGroups,
+  type Group,
+  type GroupMember,
+} from "@/lib/groups";
 import { toast } from "sonner";
 
 export const Route = createFileRoute("/_authenticated/friends")({
