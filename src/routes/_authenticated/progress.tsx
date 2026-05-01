@@ -401,46 +401,11 @@ function PaceChart({ state }: { state: ReturnType<typeof useAppState> }) {
   );
 }
 
-const GOSPEL_IDS = ["mat", "mrk", "luk", "jhn"];
-const NT_IDS = BOOKS.filter((b) => b.testament === "NT").map((b) => b.id);
-
-function chaptersRemainingIn(state: ReturnType<typeof useAppState>, bookIds: string[]): number {
-  let remaining = 0;
-  for (const id of bookIds) {
-    const book = bookById(id);
-    if (!book) continue;
-    const bp = state.bookProgress[id];
-    if (!bp || bp.readThroughs === 0) {
-      remaining += book.chapters - (bp?.inProgressChapters.length ?? 0);
-    }
-    // If already completed at least once, treat as 0 remaining for ETA purposes.
-  }
-  return Math.max(0, remaining);
-}
-
-function recentChaptersPerDay(state: ReturnType<typeof useAppState>, days = 14): number {
-  const today = new Date();
-  let total = 0;
-  let activeDays = 0;
-  for (let i = 0; i < days; i++) {
-    const d = new Date(today);
-    d.setDate(today.getDate() - i);
-    const k = d.toISOString().slice(0, 10);
-    const c = state.dailyCounts[k] ?? 0;
-    total += c;
-    if (c > 0) activeDays++;
-  }
-  // Average across the full window so rest days lower the pace honestly.
-  if (total === 0) return 0;
-  void activeDays;
-  return total / days;
-}
+import { GOSPEL_IDS, NT_IDS, chaptersRemainingIn, effectivePace } from "@/lib/pace";
 
 function PaceETA({ state }: { state: ReturnType<typeof useAppState> }) {
   const pathBook = bookById(state.user.pathBookId);
-  const pace = recentChaptersPerDay(state, 14);
-  const fallback = Math.max(1, state.user.dailyGoal);
-  const effective = pace > 0 ? pace : fallback;
+  const effective = effectivePace(state);
 
   const rows: { label: string; remaining: number }[] = [];
   if (pathBook) {
