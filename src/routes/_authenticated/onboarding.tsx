@@ -80,7 +80,6 @@ function OnboardingPage() {
   const [qIdx, setQIdx] = useState(0);
   const [answers, setAnswers] = useState<Record<string, string>>({});
   const [name, setName] = useState("");
-  const [email, setEmail] = useState("");
   const [reminder, setReminder] = useState("07:00");
   const [reminderOn, setReminderOn] = useState(true);
 
