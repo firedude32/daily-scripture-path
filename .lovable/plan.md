@@ -1,100 +1,86 @@
-# Make Lectio Real — Implementation Plan
+## Lectio — Publish-Readiness Plan
 
-Right now Lectio is a styled prototype: state lives in `localStorage`, the home screen seeds 90 days of fake reading history, friends/groups/resources are hardcoded arrays, and tapping the "Today's Note" opens the reader. To make it real we need a backend, real accounts, empty starting state, and every interactive element wired to actual behavior.
-
-The work below is broken into bite-sized chunks. Each chunk is independently shippable. After your approval I'll execute them in order.
+A focused pass to fix what's broken, remove placeholder content, ship a real responsive layout, and tighten copy + security before going live at lectio.live.
 
 ---
 
-## Chunk 0 — Quick fix (1 min)
-Make the **Today's Note** display-only.
-- Change the `<motion.button>` in `src/components/TodaysNote.tsx` to a `<motion.div>`, remove the `onClick={navigate(...)}` and the `to` field.
+### 1. Responsive shell (no more iPhone bezel)
 
-## Chunk 1 — Backend foundation
-Enable **Lovable Cloud** (Supabase). Create the schema:
-- `profiles` (id → auth.users, name, email, translation, daily_goal, reminder_time, path_book_id, progress_view, xp, current_streak, longest_streak, last_read_date, silver_gold_unlocked, silver_gold_acknowledged, onboarded)
-- `book_progress` (user_id, book_id, in_progress_chapters int[], read_throughs)
-- `reading_sessions` (id, user_id, book_id, chapter, duration_sec, completed_at, xp_earned)
-- `daily_counts` (user_id, date, count) — or derive from sessions
-- `friendships` (user_id, friend_user_id, status: pending/accepted)
-- `groups` (id, name, owner_id, join_code) + `group_members` (group_id, user_id)
-- `favorites` (user_id, book_id, chapter, verse, note, created_at)
-- RLS on every table; `handle_new_user()` trigger to auto-create profile.
+- `src/components/PhoneFrame.tsx`: remove the desktop bezel/notch. Render a centered column, max-width ~440px, full-height paper background. On mobile it's already full-bleed — preserve that. The `absolute inset-0` pattern in `Screen` keeps working because the column is `relative` + `min-h-screen`.
+- Audit any `md:` styles that assumed the framed layout (mostly none — most components are mobile-locked).
+- Set a sensible body bg color so the paper column reads as a sheet on desktop, not a phone.
 
-## Chunk 2 — Real auth
-- Add `/login` and `/signup` routes (email + password, plus Google).
-- Add `/reset-password` page.
-- Add `_authenticated` layout route that redirects unauthenticated users to `/login`.
-- Move `/`, `/read`, `/quiz`, `/progress`, `/friends`, `/profile`, `/analytics`, `/onboarding`, `/resources`, `/summary`, `/celebration/*` under `_authenticated`.
-- Sign Out in Profile → real `supabase.auth.signOut()` (currently it calls `resetAll()` and pretends).
+### 2. Replace small SVG motifs with Lucide (keep the bread loaf)
 
-## Chunk 3 — Replace the store with Supabase ✅
-Rewrite `src/state/store.ts` so every read/write hits Supabase via TanStack Query:
-- `useProfile()`, `useBookProgress()`, `useSessions()`, `useDailyCounts()`.
-- `recordSession()` becomes a server function that inserts into `reading_sessions`, recomputes streak/XP/daily_count atomically, and returns the result.
-- Onboarding writes to `profiles` and flips `onboarded = true`.
-- Settings writes (translation, reminder, daily goal, name, email) update `profiles`.
+Keep `BreadIllustration` (the hero loaf on Home — it's the brand signature).
 
-## Chunk 4 — Remove all filler/synthetic data ✅
-- Deleted FRIENDS / GROUPS hardcoded arrays from `src/data/friends.ts`; trimmed RESOURCES to real partners only (removed fake "Daily Disciple").
-- Removed "in_motion" variant from `TodaysNote` (was synthesizing from FRIENDS).
-- Rewrote Friends page with empty states for both Friends and Groups tabs (real backend wiring comes in Chunks 5–6).
-- Synthetic 90-day history was already removed in Chunk 3; new users now start at 0 XP, 0 streak, 0 sessions, no books, no friends.
-- Fixed `PhoneFrame` rendering children twice (was producing duplicate forms / inputs visible on auth pages).
-- Added `BOOKS_WITH_QUIZZES` / `hasQuiz()` helpers; books without scripted quizzes now show a "Quiz Coming Soon" banner on the Read screen and a badge in the Progress book sheet, and skip the quiz step (session still records).
+Replace these with Lucide icons:
+- **`GoldMotif`** rotation on Home top-right and book-completion screen → map each motif name to a Lucide equivalent and render with gold stroke:
+  - `olive` → `Leaf`, `wheat`/`sheaf` → `Wheat`, `loaf` → `Cookie` (closest), `bookmark` → `Bookmark`, `fish` → `Fish`, `dove` → `Bird`, `gate` → `DoorOpen`, `laurel` → `Award`, `lamp` → `Lamp`.
+  - Replace the `GoldMotif` component with a thin wrapper that picks a Lucide icon by name (same `dailyMotif` / `bookMotif` selectors keep working).
+- **`Mascot`** (onboarding intro screen) → replace with a single calm Lucide icon (`Sprout` or `Feather`) at the same size, keep the gentle bob animation.
+- Delete `src/components/Mascot.tsx` and the body of `src/components/GoldMotif.tsx` (keep the named exports / helpers so callers don't break).
 
-## Chunk 5 — Real friends system
-- `Add Friend` form → looks up by email, creates row in `friendships` with status=pending; shows in their inbox.
-- Friend profile sheet → real data (their streak, books completed, weekly chapters from `reading_sessions`).
-- Accept/decline pending invites (new section on Friends page).
-- Remove friend.
-- Privacy preserved: only aggregate stats are visible, never session content.
+### 3. Fix non-functional / placeholder UI
 
-## Chunk 6 — Real groups system
-- Create Group → inserts into `groups`, generates 6-char `join_code`, adds creator as member.
-- Join Group → looks up by code, inserts into `group_members`.
-- Group leaderboard → real weekly chapter counts from members' sessions.
-- Leave group / delete group (owner only).
+- **Quiz picker flow**: in `src/routes/_authenticated/read.tsx`, when the user picks a chapter that has no scripted quiz, skip the quiz entirely and just record the session (already partially wired — verify and keep `clearReadOverride` after `recordSession`). Remove the generic fallback path so unscripted chapters never show fake questions.
+  - In `src/data/quiz.ts`: change `getQuiz()` to return `[]` (or throw) for unscripted chapters, and update `nextChapterFor` callsites to rely on `hasQuiz` (already done). The `generic()` helper can stay for now but is unused; mark or remove.
+- **Analytics "At Your Current Pace"** (`src/routes/_authenticated/analytics.tsx`, lines ~165–183): currently hardcoded to `Math.ceil(2 / goal)` for Mark and `89 / goal` for Gospels — wire it to the real `chaptersRemainingIn` + `recentChaptersPerDay` helpers already used on the Progress page (lift them into `state/store.ts` or a shared `lib/pace.ts`).
+- **TodaysNote "From Your Favorites"** fallback hardcodes `PSALM 46 · 10 · FAVORITED MARCH 12`. Replace with a real most-read chapter pulled from session counts (same logic as `MostReadChapters`), or hide the variant when there's no real favorite.
+- **Progress page**: when a chapter button in the book sheet is tapped on a chapter that's already complete, currently it still routes to `/read` and re-reads it — confirm that's intended; if not, gate the click.
+- **Summary share buttons**: "Message" and "Post" currently just close the sheet. Either wire them to `navigator.share()` (with the same prefab text) and a Twitter intent URL, or remove them and keep just "Copy".
+- **Profile `Sign Out`** uses `confirm()` — replace with the existing `BottomSheet` confirm pattern for consistency.
+- **Friends search/add** (`AddFriendForm`): verify the empty-state and error toasts are firing.
 
-## Chunk 7 — Resources page
-Decision: keep a small **curated** list (9Marks, BibleProject, Ligonier, Crossway, Desiring God) hardcoded as static editorial content — these are real organizations, not filler. Remove the fake "Daily Disciple" entry. This chunk is just trimming the array; no backend.
+### 4. Copy & metadata polish
 
-## Chunk 8 — Wire every remaining button (audit) ✅
-Audited every screen; every interactive element now performs a real action:
-- **Home**: CTA → /read ✓; heatmap cells have date + chapter-count tooltips ✓; FriendActivity replaces the old synthetic "in motion" variant ✓.
-- **Read**: Mark chapter complete records a session and (when a quiz exists) routes to /quiz ✓.
-- **Quiz**: Submit grades, awards XP, fires book-complete celebration ✓.
-- **Progress**: Book tiles open a real book-detail sheet with chapter grid + "Quiz Coming Soon" badge ✓.
-- **Profile**: CSV export, all sheets, and Sign Out all real ✓; username editor live ✓.
-- **Friends**: Add by email/username, Accept/Decline/Cancel, friend profile sheet, Create/Join group, group leaderboard, Leave/Delete — all backed by Supabase ✓.
-- **Onboarding**: Writes profile + flips `onboarded`, then navigates home ✓.
-- **Celebration**: Continue clears pending and returns home ✓.
-- **Analytics**: Renders empty-state when there are no sessions ✓.
-- Cleared a stale TODO in `TodaysNote` (the "in motion" variant is now handled by `FriendActivity`).
+- `src/routes/_authenticated/profile.tsx`: change `Lectio · Prototype v0.2` and `Prototype 0.2` to `Lectio · v1.0` (or whatever the publish version is).
+- `src/routes/__root.tsx`: add `og:title`, `og:description`, `og:image` (use a snapshot of the bread loaf), `twitter:card`, and a `theme-color` that matches paper. Add a real favicon (small Lucide `BookOpen` or the bread mark exported as PNG).
+- Add a `manifest.webmanifest` and apple-touch-icon so installs / shares look right at lectio.live.
+- Confirm `<title>` per route (already set on each route — good).
 
-## Chunk 9 — Polish & QA pass (remaining)
-- Loading skeletons for async-heavy lists (friends, groups).
-- Per-route error boundaries on data routes.
-- Manual RLS spot-check (one account cannot read another's sessions/progress).
-- Confirm onboarding redirect on first sign-in.
-- Confirm empty Home looks intentional (illustration + "Start Today's Reading" CTA already does this).
+### 5. Auth flow review
+
+- `src/routes/login.tsx`, `signup.tsx`, `reset-password.tsx`: verify Google sign-in is enabled (per house rules); add a Google button if missing. Confirm `emailRedirectTo` is set on signup.
+- After signup, route to `/onboarding`; after login, to `/`. Verify both.
+- `src/routes/_authenticated/onboarding.tsx`: the `account` step collects name/email but the actual auth happens on `/signup`. Either remove that step or have it just edit the `name` field on the existing profile (currently it does write `name` via `completeOnboarding`, but `email` overwrites the real auth email — bug). Drop the email field from onboarding.
+
+### 6. Database / security
+
+The Supabase linter reports 8 WARN-level findings: public + signed-in users can `EXECUTE` certain `SECURITY DEFINER` functions. Action: identify which functions (likely `has_role`, friend/group helpers), then either (a) `REVOKE EXECUTE … FROM anon, authenticated` and grant only to `service_role` for ones that should be internal, or (b) confirm each is intentionally callable and document it.
+
+### 7. Final QA pass
+
+- Run through every route on desktop + mobile width. No frame, no overflow, no broken images.
+- Read a chapter from the picker for a book with no scripted quiz → confirm it skips the quiz and records the session.
+- Read Mark 1 → verify quiz, summary, streak increment, XP, book progress all update.
+- Sign out / sign in → state hydrates correctly.
+- Heatmap, progress map, analytics page all render with realistic empty states for a brand-new account.
 
 ---
 
-## Notes on scope
+### Out of scope (intentional)
 
-- **Auth providers**: defaulting to email/password + Google (Lovable Cloud's standard combo). Tell me if you want Apple or phone too.
-- **TodaysNote "In Motion" variant** depends on having friends — when a user has zero friends it'll fall through to the next eligible variant (book note or favorite verse).
-- **Synthetic streak (23 days)** disappears for everyone, including you. If you want to keep a "demo" toggle for screenshots, let me know.
-- **CSV export** will export only the signed-in user's own data.
-- This is a substantial rebuild (≈9 chunks, several hundred lines changed/added across ~15 files plus new schema). I'll execute chunks in order and stop after each major one if you want to review.
+- Real Bible text rendering inside the Read screen (still the focused timer view by design).
+- Push notifications for the daily reminder (UI only, no native push).
+- More quiz content beyond Gospels/Acts/Jude/Psalms (you'll add the rest as you write them).
 
-## Technical details
+### Files touched (rough)
 
-- Stack: TanStack Start + Lovable Cloud (Supabase). Server functions for streak/XP recompute (atomic, server-authoritative). TanStack Query for client cache.
-- File additions: `src/integrations/supabase/{client,client.server,auth-middleware}.ts`, `src/routes/{login,signup,reset-password,_authenticated}.tsx`, route files moved under `_authenticated/`.
-- File rewrites: `src/state/store.ts` (becomes hooks + server fns), `src/components/TodaysNote.tsx` (div not button), `src/routes/{friends,profile,index,onboarding}.tsx`.
-- File deletions: `src/data/friends.ts` (or trimmed to RESOURCES only).
-- Migrations: one schema migration creating all tables + RLS + trigger.
+```text
+src/components/PhoneFrame.tsx        — remove bezel
+src/components/GoldMotif.tsx         — rewrite as Lucide wrapper
+src/components/Mascot.tsx            — delete (or replace with Lucide)
+src/data/quiz.ts                     — remove generic fallback in getQuiz
+src/routes/__root.tsx                — favicon, og tags, manifest
+src/routes/_authenticated/read.tsx   — confirm skip-quiz path
+src/routes/_authenticated/analytics.tsx — real pace ETAs
+src/routes/_authenticated/onboarding.tsx — drop email field, swap Mascot
+src/routes/_authenticated/profile.tsx — version string, sign-out sheet
+src/routes/_authenticated/summary.tsx — wire/remove share buttons
+src/components/TodaysNote.tsx         — real favorite or hide variant
+public/                               — favicon, apple-touch-icon, manifest
+supabase/migrations/                  — REVOKE EXECUTE on internal SECURITY DEFINER fns
+```
 
-Approve and I'll start with Chunk 0 (the note fix) and Chunk 1 (enable Cloud + schema), then proceed.
+Approve and I'll execute top-to-bottom.
