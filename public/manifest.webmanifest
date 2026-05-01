@@ -1,0 +1,12 @@
+{
+  "name": "Lectio",
+  "short_name": "Lectio",
+  "description": "An honest tool for building a daily Bible reading habit.",
+  "start_url": "/",
+  "display": "standalone",
+  "background_color": "#F5F0E6",
+  "theme_color": "#F5F0E6",
+  "icons": [
+    { "src": "/images/bread-illustration.png", "sizes": "512x512", "type": "image/png", "purpose": "any" }
+  ]
+}

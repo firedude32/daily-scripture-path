@@ -176,16 +176,34 @@ function pickVariant(state: AppState, today: Date): NoteContent | null {
     }
   }
 
-  // Variant 3 — From Your Favorites (fallback; always last)
-  candidates.push({
-    key: "favorite",
-    label: "From Your Favorites",
-    Icon: Star,
-    body: "\u201CBe still, and know that I am God.\u201D",
-    italic: true,
-    bottom: "PSALM 46 \u00B7 10 \u00B7 FAVORITED MARCH 12",
-    
-  });
+  // Variant 3 — From Your Favorites — most-read chapter from your sessions.
+  const favorite = (() => {
+    if (state.sessions.length === 0) return null;
+    const counts = new Map<string, number>();
+    for (const s of state.sessions) {
+      const k = `${s.bookId}:${s.chapter}`;
+      counts.set(k, (counts.get(k) ?? 0) + 1);
+    }
+    let bestKey: string | null = null;
+    let bestN = 0;
+    for (const [k, n] of counts) {
+      if (n > bestN) { bestN = n; bestKey = k; }
+    }
+    if (!bestKey || bestN < 2) return null; // need at least 2 reads to count as a favorite
+    const [bid, chStr] = bestKey.split(":");
+    const b = bookById(bid);
+    if (!b) return null;
+    return { name: b.name, chapter: Number(chStr), times: bestN };
+  })();
+  if (favorite) {
+    candidates.push({
+      key: "favorite",
+      label: "From Your Favorites",
+      Icon: Star,
+      body: `You keep returning to ${favorite.name} ${favorite.chapter}. Some chapters earn the second and third reading.`,
+      bottom: `${favorite.name.toUpperCase()} ${favorite.chapter} \u00B7 READ ${favorite.times} TIMES`,
+    });
+  }
 
   // Priority order from spec
   const priority: VariantKey[] = [

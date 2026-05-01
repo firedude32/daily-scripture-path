@@ -41,7 +41,8 @@ type SheetKey =
   | "account"
   | "about"
   | "translation"
-  | "reminder";
+  | "reminder"
+  | "signout";
 
 const TRANSLATIONS = ["ESV", "NIV", "KJV", "NKJV", "NLT", "NASB", "CSB", "NRSV", "MSG", "AMP"];
 
@@ -52,7 +53,6 @@ function ProfilePage() {
   const [localGoal, setLocalGoal] = useState<number | null>(null);
 
   async function handleSignOut() {
-    if (!confirm("Sign out of Lectio?")) return;
     await supabase.auth.signOut();
     navigate({ to: "/login" });
   }
@@ -199,14 +199,14 @@ function ProfilePage() {
             <EditorialButton
               variant="text"
               fullWidth={false}
-              onClick={handleSignOut}
+              onClick={() => setSheet("signout")}
             >
               Sign Out
             </EditorialButton>
           </div>
 
           <p className="mt-8 text-center font-ui uppercase tracking-[0.18em] text-[10px] text-[color:var(--color-ink-muted)]">
-            Lectio · Prototype v0.2
+            Lectio · v1.0
           </p>
         </div>
 
@@ -335,7 +335,7 @@ function ProfilePage() {
           </p>
           <div className="mt-8"><Rule /></div>
           <div className="mt-6 space-y-3">
-            <AboutRow label="Version" value="Prototype 0.2" />
+            <AboutRow label="Version" value="1.0" />
             <AboutRow label="Build" value="Lectio · Editorial" />
             <AboutRow label="Made with" value="Care" />
           </div>
@@ -426,6 +426,25 @@ function ProfilePage() {
           <div className="mt-8">
             <EditorialButton variant="primary" onClick={() => setSheet(null)}>
               Done
+            </EditorialButton>
+          </div>
+        </BottomSheet>
+
+        <BottomSheet
+          open={sheet === "signout"}
+          onClose={() => setSheet(null)}
+          eyebrow="Sign Out"
+          title="See you soon."
+        >
+          <p className="font-body text-[color:var(--color-ink-soft)]" style={{ fontSize: 15, lineHeight: 1.55 }}>
+            Your reading and progress will be here when you return.
+          </p>
+          <div className="mt-8 flex gap-3">
+            <EditorialButton variant="secondary" onClick={() => setSheet(null)}>
+              Stay
+            </EditorialButton>
+            <EditorialButton variant="primary" onClick={handleSignOut}>
+              Sign Out
             </EditorialButton>
           </div>
         </BottomSheet>

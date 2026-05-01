@@ -80,7 +80,6 @@ function OnboardingPage() {
   const [qIdx, setQIdx] = useState(0);
   const [answers, setAnswers] = useState<Record<string, string>>({});
   const [name, setName] = useState("");
-  const [email, setEmail] = useState("");
   const [reminder, setReminder] = useState("07:00");
   const [reminderOn, setReminderOn] = useState(true);
 
@@ -101,8 +100,7 @@ function OnboardingPage() {
 
   function finish() {
     completeOnboarding({
-      name: name || "Friend",
-      email: email || "you@example.com",
+      name: name || state.user.name || "Friend",
       translation: answers.translation || "ESV",
       dailyGoal: dailyChapters,
       reminderTime: reminderOn ? reminder : "",
@@ -161,12 +159,14 @@ function OnboardingPage() {
                 <BackBtn onClick={() => setStep("welcome")} />
                 <div className="mt-8">
                   <h1 className="font-display text-[color:var(--color-ink)]" style={{ fontSize: 28, fontWeight: 400 }}>
-                    Create your account.
+                    What should we call you?
                   </h1>
+                  <p className="mt-3 font-body text-[color:var(--color-ink-soft)]" style={{ fontSize: 15 }}>
+                    Just a first name is fine.
+                  </p>
                 </div>
                 <div className="mt-12 space-y-8">
                   <Field label="Your Name" value={name} onChange={setName} placeholder="Sam" />
-                  <Field label="Email" value={email} onChange={setEmail} placeholder="you@example.com" />
                 </div>
                 <div className="flex-1" />
                 <EditorialButton variant="primary" onClick={() => setStep("intro")}>

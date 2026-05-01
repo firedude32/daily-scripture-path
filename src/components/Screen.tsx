@@ -2,8 +2,8 @@ import { ReactNode } from "react";
 import { TabBar } from "./TabBar";
 
 /**
- * Inner screen wrapper: scrollable content area with bottom padding for the
- * tab bar. Use `noTabs` for fullscreen flows (reading, quiz, onboarding).
+ * Inner screen wrapper. Fills the PhoneFrame column. Scrolls vertically.
+ * `noTabs` for fullscreen flows (reading, quiz, onboarding, celebrations).
  */
 export function Screen({
   children,
@@ -15,8 +15,8 @@ export function Screen({
   className?: string;
 }) {
   return (
-    <div className="absolute inset-0 flex flex-col bg-background">
-      <div className={`flex-1 overflow-y-auto ${noTabs ? "" : "pb-24"} ${className}`}>
+    <div className="relative w-full min-h-screen flex flex-col bg-background">
+      <div className={`flex-1 ${noTabs ? "" : "pb-24"} ${className}`}>
         {children}
       </div>
       {!noTabs && <TabBar />}

@@ -6007,7 +6007,11 @@ export function hasQuiz(bookId: string, chapter?: number): boolean {
 export function getQuiz(bookId: string, chapter: number): QuizQuestion[] {
   const key = `${bookId}-${chapter}`;
   if (SCRIPTED[key]) return SCRIPTED[key];
-  // Fall back to generic literal-style questions for chapters not yet scripted.
-  return generic(bookId.toUpperCase(), chapter);
+  // No fake fallback. Callers should check `hasQuiz()` first and skip the
+  // quiz step entirely for chapters we haven't hand-scripted yet.
+  return [];
 }
+
+// Kept exported so the helper isn't dead code if we ever want a debug fallback.
+export { generic as _genericQuizFallback };
 
