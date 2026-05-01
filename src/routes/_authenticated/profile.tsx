@@ -429,6 +429,25 @@ function ProfilePage() {
             </EditorialButton>
           </div>
         </BottomSheet>
+
+        <BottomSheet
+          open={sheet === "signout"}
+          onClose={() => setSheet(null)}
+          eyebrow="Sign Out"
+          title="See you soon."
+        >
+          <p className="font-body text-[color:var(--color-ink-soft)]" style={{ fontSize: 15, lineHeight: 1.55 }}>
+            Your reading and progress will be here when you return.
+          </p>
+          <div className="mt-8 flex gap-3">
+            <EditorialButton variant="secondary" onClick={() => setSheet(null)}>
+              Stay
+            </EditorialButton>
+            <EditorialButton variant="primary" onClick={handleSignOut}>
+              Sign Out
+            </EditorialButton>
+          </div>
+        </BottomSheet>
       </Screen>
     </PhoneFrame>
   );
