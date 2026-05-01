@@ -21,6 +21,7 @@ import { SmallCaps } from "@/components/ui-lectio/SmallCaps";
 import { Rule } from "@/components/ui-lectio/Rule";
 import { EditorialButton } from "@/components/ui-lectio/EditorialButton";
 import { exportAll } from "@/lib/exportCsv";
+import { GOSPEL_IDS, NT_IDS, chaptersRemainingIn, daysToFinish } from "@/lib/pace";
 
 export const Route = createFileRoute("/_authenticated/analytics")({
   head: () => ({
@@ -65,13 +66,24 @@ function AnalyticsPage() {
   const unreadCount = 66 - startedBooks.length;
 
   // Pace
-  const goal = Math.max(1, state.user.dailyGoal);
   const ntChaptersDone = BOOKS.filter((b) => b.testament === "NT").reduce((s, b) => {
     const bp = state.bookProgress[b.id];
     if (!bp) return s;
     return s + bp.readThroughs * b.chapters + bp.inProgressChapters.length;
   }, 0);
   const ntPct = Math.round((ntChaptersDone / NT_CHAPTERS) * 100);
+
+  // Real ETA rows — based on remaining chapters and the user's actual pace
+  const pathBook = bookById(state.user.pathBookId);
+  const paceRows: { label: string; remaining: number }[] = [];
+  if (pathBook) {
+    paceRows.push({
+      label: pathBook.name,
+      remaining: chaptersRemainingIn(state, [pathBook.id]),
+    });
+  }
+  paceRows.push({ label: "The Gospels", remaining: chaptersRemainingIn(state, GOSPEL_IDS) });
+  paceRows.push({ label: "The New Testament", remaining: chaptersRemainingIn(state, NT_IDS) });
 
   return (
     <PhoneFrame>
@@ -166,17 +178,18 @@ function AnalyticsPage() {
             <SmallCaps>At Your Current Pace</SmallCaps>
             <div className="mt-5 flex items-start gap-6">
               <ul className="flex-1 space-y-3 font-body text-[color:var(--color-ink)]" style={{ fontSize: 15 }}>
-                {[
-                  ["Mark", Math.ceil(2 / goal)],
-                  ["The Gospels", Math.ceil(89 / goal)],
-                  ["The New Testament", Math.ceil(NT_CHAPTERS / goal)],
-                ].map(([label, days]) => (
-                  <li key={String(label)} className="flex items-center gap-3">
-                    <span style={{ width: 5, height: 5, borderRadius: "9999px", background: "var(--color-gold)" }} />
-                    <span className="flex-1">{label}</span>
-                    <span className="tabular text-[color:var(--color-ink-muted)]">in {days} days</span>
-                  </li>
-                ))}
+                {paceRows.map((r) => {
+                  const days = daysToFinish(state, r.remaining);
+                  return (
+                    <li key={r.label} className="flex items-center gap-3">
+                      <span style={{ width: 5, height: 5, borderRadius: "9999px", background: "var(--color-gold)" }} />
+                      <span className="flex-1">{r.label}</span>
+                      <span className="tabular text-[color:var(--color-ink-muted)]">
+                        {r.remaining === 0 ? "Complete" : `in ${days} ${days === 1 ? "day" : "days"}`}
+                      </span>
+                    </li>
+                  );
+                })}
               </ul>
               <PercentRing pct={ntPct} label="NT" />
             </div>
