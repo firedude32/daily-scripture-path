@@ -221,13 +221,30 @@ function SummaryPage() {
             />
             <ShareBtn
               icon={<MessageCircle size={16} />}
-              label="Message"
-              onClick={() => setShareOpen(false)}
+              label="Share"
+              onClick={async () => {
+                const text = `Read ${book.name} ${data.chapter} today. Day ${data.result.streak} of the streak. — Lectio`;
+                try {
+                  if (navigator.share) {
+                    await navigator.share({ text, title: "Lectio" });
+                  } else {
+                    await navigator.clipboard?.writeText(text);
+                    setCopied(true);
+                    setTimeout(() => setCopied(false), 1800);
+                  }
+                } catch {
+                  /* user cancelled */
+                }
+              }}
             />
             <ShareBtn
               icon={<Twitter size={16} />}
               label="Post"
-              onClick={() => setShareOpen(false)}
+              onClick={() => {
+                const text = `Read ${book.name} ${data.chapter} today. Day ${data.result.streak} of the streak. — Lectio`;
+                const url = `https://twitter.com/intent/tweet?text=${encodeURIComponent(text)}`;
+                window.open(url, "_blank", "noopener,noreferrer");
+              }}
             />
           </div>
           <div className="mt-7">
