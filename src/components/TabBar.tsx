@@ -13,7 +13,7 @@ export function TabBar() {
   const loc = useLocation();
   return (
     <nav
-      className="absolute bottom-0 left-0 right-0 z-30"
+      className="fixed bottom-0 left-0 right-0 z-30 mx-auto w-full md:max-w-[440px]"
       style={{
         background: "color-mix(in oklab, var(--color-paper) 92%, transparent)",
         backdropFilter: "blur(8px)",
