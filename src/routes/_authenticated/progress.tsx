@@ -436,9 +436,7 @@ function PaceETA({ state }: { state: ReturnType<typeof useAppState> }) {
         className="mt-4 font-body italic text-[color:var(--color-ink-muted)]"
         style={{ fontSize: 12 }}
       >
-        {pace > 0
-          ? `Based on ${pace.toFixed(1)} chapters/day over the last 14 days.`
-          : `No reading in the last 14 days — using your daily goal of ${fallback}.`}
+        Based on {effective.toFixed(1)} chapters/day.
       </p>
     </>
   );
