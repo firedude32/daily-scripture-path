@@ -7,6 +7,7 @@
   "background_color": "#F5F0E6",
   "theme_color": "#F5F0E6",
   "icons": [
-    { "src": "/images/bread-illustration.png", "sizes": "512x512", "type": "image/png", "purpose": "any" }
+    { "src": "/images/lectio-icon.png", "sizes": "512x512", "type": "image/png", "purpose": "any" },
+    { "src": "/favicon.ico", "sizes": "16x16 32x32 48x48 64x64", "type": "image/x-icon" }
   ]
 }

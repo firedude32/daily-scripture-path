@@ -43,7 +43,7 @@ export const Route = createRootRoute({
     links: [
       { rel: "stylesheet", href: appCss },
       { rel: "icon", href: "/favicon.ico" },
-      { rel: "apple-touch-icon", href: "/images/bread-illustration.png" },
+      { rel: "apple-touch-icon", href: "/images/lectio-icon.png" },
       { rel: "manifest", href: "/manifest.webmanifest" },
       { rel: "canonical", href: "https://lectio.live" },
       { rel: "preconnect", href: "https://fonts.googleapis.com" },
