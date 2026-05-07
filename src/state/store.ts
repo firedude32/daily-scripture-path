@@ -63,6 +63,15 @@ function daysBetween(a: string, b: string): number {
   );
 }
 
+// A streak is "alive" only if the last read was today or yesterday.
+// Otherwise it has lapsed and should display as 0.
+function effectiveStreak(lastReadDate: string | null, storedStreak: number): number {
+  if (!lastReadDate || storedStreak <= 0) return 0;
+  const gap = daysBetween(lastReadDate, todayKey());
+  if (gap <= 1) return storedStreak;
+  return 0;
+}
+
 function emptyState(): AppState {
   return {
     hydrated: false,
