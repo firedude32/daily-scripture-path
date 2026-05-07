@@ -205,7 +205,7 @@ export async function hydrateFromSupabase(): Promise<void> {
       progressView: (profile?.progress_view as "simple" | "detailed") ?? "simple",
     },
     xp: profile?.xp ?? 0,
-    currentStreak: profile?.current_streak ?? 0,
+    currentStreak: effectiveStreak(profile?.last_read_date ?? null, profile?.current_streak ?? 0),
     longestStreak: profile?.longest_streak ?? 0,
     lastReadDate: profile?.last_read_date ?? null,
     dailyCounts: buildDailyCounts(sessions),
