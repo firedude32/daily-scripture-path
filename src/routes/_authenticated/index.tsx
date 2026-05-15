@@ -3,7 +3,7 @@ import { motion, AnimatePresence } from "framer-motion";
 import { useEffect, useState } from "react";
 import { Screen } from "@/components/Screen";
 import { PhoneFrame } from "@/components/PhoneFrame";
-import { Heatmap } from "@/components/Heatmap";
+import { CalendarHeatmap } from "@/components/CalendarHeatmap";
 import { GoldMotif, dailyMotif } from "@/components/GoldMotif";
 
 import { SmallCaps } from "@/components/ui-lectio/SmallCaps";
