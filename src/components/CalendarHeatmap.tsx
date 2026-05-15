@@ -127,10 +127,27 @@ function MonthGrid({
             <div
               key={c.key}
               title={`${c.key}${c.read ? " · read" : ""}`}
-              className="flex items-center justify-center"
+              className="relative flex items-center justify-center"
               style={{ width: cell, height: cell }}
             >
               <DayDot read={c.read} isToday={c.isToday} future={c.future} size={cell} />
+              {showDayNumbers && (
+                <span
+                  className="absolute font-ui tabular pointer-events-none"
+                  style={{
+                    fontSize: Math.max(10, Math.round(cell * 0.32)),
+                    color: c.read
+                      ? "var(--color-paper)"
+                      : c.future
+                        ? "var(--color-ink-muted)"
+                        : "var(--color-ink-soft)",
+                    fontWeight: c.isToday ? 600 : 400,
+                    lineHeight: 1,
+                  }}
+                >
+                  {c.day}
+                </span>
+              )}
             </div>
           ),
         )}
