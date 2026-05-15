@@ -4,7 +4,7 @@ import { motion, AnimatePresence } from "framer-motion";
 import { X } from "lucide-react";
 import { PhoneFrame } from "@/components/PhoneFrame";
 import { Screen } from "@/components/Screen";
-import { Heatmap } from "@/components/Heatmap";
+import { CalendarHeatmap } from "@/components/CalendarHeatmap";
 import {
   useAppState,
   useClientReady,
