@@ -9,10 +9,12 @@ export function CalendarHeatmap({
   months = 3,
   cell = 18,
   columns,
+  showDayNumbers = false,
 }: {
   months?: number;
   cell?: number;
   columns?: number;
+  showDayNumbers?: boolean;
 }) {
   const state = useAppState();
   const today = new Date();
