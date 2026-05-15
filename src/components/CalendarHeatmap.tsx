@@ -46,6 +46,7 @@ export function CalendarHeatmap({
           today={today}
           todayK={todayK}
           counts={state.dailyCounts}
+          showDayNumbers={showDayNumbers}
         />
       ))}
     </div>
@@ -59,6 +60,7 @@ function MonthGrid({
   today,
   todayK,
   counts,
+  showDayNumbers = false,
 }: {
   year: number;
   month: number;
@@ -66,6 +68,7 @@ function MonthGrid({
   today: Date;
   todayK: string;
   counts: Record<string, number>;
+  showDayNumbers?: boolean;
 }) {
   const first = new Date(year, month, 1);
   const startWeekday = first.getDay(); // 0 = Sun
