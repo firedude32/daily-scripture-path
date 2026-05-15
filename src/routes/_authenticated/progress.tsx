@@ -4,7 +4,7 @@ import { motion, AnimatePresence } from "framer-motion";
 import { X } from "lucide-react";
 import { PhoneFrame } from "@/components/PhoneFrame";
 import { Screen } from "@/components/Screen";
-import { Heatmap } from "@/components/Heatmap";
+import { CalendarHeatmap } from "@/components/CalendarHeatmap";
 import {
   useAppState,
   useClientReady,
@@ -87,11 +87,9 @@ function ProgressPage() {
 
           <div className="mt-9"><Rule /></div>
 
-          {/* Year heatmap */}
+          {/* Year calendar */}
           <Section title="The Last Year">
-            <div className="overflow-x-auto -mx-1 px-1">
-              <Heatmap weeks={52} cell={9} gap={2} />
-            </div>
+            <CalendarHeatmap months={12} cell={16} columns={3} />
           </Section>
 
           <Rule />

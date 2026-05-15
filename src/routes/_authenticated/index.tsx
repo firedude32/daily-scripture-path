@@ -3,7 +3,7 @@ import { motion, AnimatePresence } from "framer-motion";
 import { useEffect, useState } from "react";
 import { Screen } from "@/components/Screen";
 import { PhoneFrame } from "@/components/PhoneFrame";
-import { Heatmap } from "@/components/Heatmap";
+import { CalendarHeatmap } from "@/components/CalendarHeatmap";
 import { GoldMotif, dailyMotif } from "@/components/GoldMotif";
 
 import { SmallCaps } from "@/components/ui-lectio/SmallCaps";
@@ -195,17 +195,15 @@ function HomePage() {
             <Rule />
           </div>
 
-          {/* Heatmap */}
+          {/* Calendar */}
           <div className="mt-7">
             <div className="flex items-baseline justify-between mb-4">
-              <SmallCaps>The Last Thirteen Weeks</SmallCaps>
+              <SmallCaps>The Last Three Months</SmallCaps>
               <span className="font-ui text-[11px] tabular text-[color:var(--color-ink-muted)] tracking-wider">
                 Longest · {state.longestStreak}
               </span>
             </div>
-            <div className="overflow-x-auto -mx-1 px-1">
-              <Heatmap weeks={13} cell={14} gap={2} />
-            </div>
+            <CalendarHeatmap months={3} cell={28} />
           </div>
         </div>
 
