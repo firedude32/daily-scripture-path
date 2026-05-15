@@ -87,9 +87,9 @@ function ProgressPage() {
 
           <div className="mt-9"><Rule /></div>
 
-          {/* Year calendar */}
-          <Section title="The Last Year">
-            <CalendarHeatmap months={12} cell={16} columns={3} />
+          {/* Three-month calendar */}
+          <Section title="The Last Three Months">
+            <CalendarHeatmap months={3} cell={20} columns={1} />
           </Section>
 
           <Rule />
