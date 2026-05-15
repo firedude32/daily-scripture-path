@@ -203,7 +203,7 @@ function HomePage() {
                 Longest · {state.longestStreak}
               </span>
             </div>
-            <CalendarHeatmap months={1} cell={36} />
+<CalendarHeatmap months={1} cell={40} showDayNumbers />
           </div>
         </div>
 

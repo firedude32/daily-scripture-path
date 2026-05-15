@@ -9,10 +9,12 @@ export function CalendarHeatmap({
   months = 3,
   cell = 18,
   columns,
+  showDayNumbers = false,
 }: {
   months?: number;
   cell?: number;
   columns?: number;
+  showDayNumbers?: boolean;
 }) {
   const state = useAppState();
   const today = new Date();
@@ -44,6 +46,7 @@ export function CalendarHeatmap({
           today={today}
           todayK={todayK}
           counts={state.dailyCounts}
+          showDayNumbers={showDayNumbers}
         />
       ))}
     </div>
@@ -57,6 +60,7 @@ function MonthGrid({
   today,
   todayK,
   counts,
+  showDayNumbers = false,
 }: {
   year: number;
   month: number;
@@ -64,6 +68,7 @@ function MonthGrid({
   today: Date;
   todayK: string;
   counts: Record<string, number>;
+  showDayNumbers?: boolean;
 }) {
   const first = new Date(year, month, 1);
   const startWeekday = first.getDay(); // 0 = Sun
@@ -122,10 +127,27 @@ function MonthGrid({
             <div
               key={c.key}
               title={`${c.key}${c.read ? " · read" : ""}`}
-              className="flex items-center justify-center"
+              className="relative flex items-center justify-center"
               style={{ width: cell, height: cell }}
             >
               <DayDot read={c.read} isToday={c.isToday} future={c.future} size={cell} />
+              {showDayNumbers && (
+                <span
+                  className="absolute font-ui tabular pointer-events-none"
+                  style={{
+                    fontSize: Math.max(10, Math.round(cell * 0.32)),
+                    color: c.read
+                      ? "var(--color-paper)"
+                      : c.future
+                        ? "var(--color-ink-muted)"
+                        : "var(--color-ink-soft)",
+                    fontWeight: c.isToday ? 600 : 400,
+                    lineHeight: 1,
+                  }}
+                >
+                  {c.day}
+                </span>
+              )}
             </div>
           ),
         )}

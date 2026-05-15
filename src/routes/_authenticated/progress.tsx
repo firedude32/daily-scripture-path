@@ -89,7 +89,7 @@ function ProgressPage() {
 
           {/* Three-month calendar */}
           <Section title="The Last Three Months">
-            <CalendarHeatmap months={3} cell={20} columns={1} />
+<CalendarHeatmap months={3} cell={14} columns={3} />
           </Section>
 
           <Rule />
