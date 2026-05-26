@@ -192,6 +192,8 @@ function ProfilePage() {
               <Rule />
               <NavItem label="About / Credits" onClick={() => setSheet("about")} />
               <Rule />
+              <Link to="/admin" className="block"><NavItem label="Admin" /></Link>
+              <Rule />
             </div>
           </Section>
 
