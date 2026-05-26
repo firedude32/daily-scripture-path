@@ -194,6 +194,21 @@ function HomePage() {
             <Rule />
           </div>
 
+          {/* Calendar */}
+          <motion.div
+            initial={{ opacity: 0, y: 6 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.7, ease: [0.22, 1, 0.36, 1] }}
+            className="mt-10"
+          >
+            <div className="flex items-baseline justify-between mb-4">
+              <SmallCaps>This Month</SmallCaps>
+              <span className="font-ui text-[11px] tabular text-[color:var(--color-ink-muted)] tracking-wider">
+                Longest · {state.longestStreak}
+              </span>
+            </div>
+            <CalendarHeatmap months={1} cell={40} />
+          </motion.div>
         </div>
 
         {/* Half-Bible unlock modal — fires once when 33+ books complete */}
