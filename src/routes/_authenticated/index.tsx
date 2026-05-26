@@ -196,16 +196,6 @@ function HomePage() {
             <Rule />
           </div>
 
-          {/* Calendar */}
-          <div className="mt-7">
-            <div className="flex items-baseline justify-between mb-4">
-              <SmallCaps>This Month</SmallCaps>
-              <span className="font-ui text-[11px] tabular text-[color:var(--color-ink-muted)] tracking-wider">
-                Longest · {state.longestStreak}
-              </span>
-            </div>
-<CalendarHeatmap months={1} cell={40} showDayNumbers />
-          </div>
         </div>
 
         {/* Half-Bible unlock modal — fires once when 33+ books complete */}
