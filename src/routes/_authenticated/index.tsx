@@ -82,19 +82,20 @@ function HomePage() {
             <GoldMotif name={dailyMotif(today)} size={44} />
           </div>
 
-          {/* Hand-drawn loaf illustration */}
+          {/* Calendar (moved up — replaces bread illustration) */}
           <motion.div
             initial={{ opacity: 0, y: 6 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.7, ease: [0.22, 1, 0.36, 1] }}
-            className="mt-11 mb-11 flex justify-center bg-transparent"
+            className="mt-9 mb-2"
           >
-            <img
-              src="/images/bread-illustration.png"
-              alt="Hand-drawn illustration of a loaf of bread on linen cloth"
-              loading="eager"
-              style={{ width: 290, height: "auto", objectFit: "contain", background: "transparent" }}
-            />
+            <div className="flex items-baseline justify-between mb-4">
+              <SmallCaps>This Month</SmallCaps>
+              <span className="font-ui text-[11px] tabular text-[color:var(--color-ink-muted)] tracking-wider">
+                Longest · {state.longestStreak}
+              </span>
+            </div>
+            <CalendarHeatmap months={1} cell={40} showDayNumbers />
           </motion.div>
 
           {/* Hero streak */}
