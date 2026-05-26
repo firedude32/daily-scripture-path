@@ -1,7 +1,7 @@
 import { createFileRoute, useNavigate } from "@tanstack/react-router";
 import { motion, AnimatePresence } from "framer-motion";
 import { useEffect, useMemo, useState } from "react";
-import { Check } from "lucide-react";
+import { Check, Flag } from "lucide-react";
 import { PhoneFrame } from "@/components/PhoneFrame";
 import { Screen } from "@/components/Screen";
 import { getQuiz, type QuizQuestion } from "@/data/quiz";
@@ -10,6 +10,8 @@ import { recordSession } from "@/state/store";
 import { EditorialButton } from "@/components/ui-lectio/EditorialButton";
 import { EditorialCard } from "@/components/ui-lectio/EditorialCard";
 import { SmallCaps } from "@/components/ui-lectio/SmallCaps";
+import { BottomSheet } from "@/components/ui-lectio/BottomSheet";
+import { supabase } from "@/integrations/supabase/client";
 
 export const Route = createFileRoute("/_authenticated/quiz")({
   head: () => ({
