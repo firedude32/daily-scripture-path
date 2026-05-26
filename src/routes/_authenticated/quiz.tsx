@@ -58,6 +58,40 @@ function QuizPage() {
   const [cooldown, setCooldown] = useState(0);
   const [attempt, setAttempt] = useState(0);
   const [passing, setPassing] = useState(false);
+  const [reportOpen, setReportOpen] = useState(false);
+  const [reportReason, setReportReason] = useState<string>("incorrect");
+  const [reportNote, setReportNote] = useState("");
+  const [reportStatus, setReportStatus] = useState<"idle" | "sending" | "sent" | "error">("idle");
+
+  async function submitReport() {
+    if (!pending || !questions[idx]) return;
+    setReportStatus("sending");
+    const { data: auth } = await supabase.auth.getUser();
+    if (!auth.user) {
+      setReportStatus("error");
+      return;
+    }
+    const { error } = await supabase.from("quiz_reports").insert({
+      user_id: auth.user.id,
+      book_id: pending.bookId,
+      chapter: pending.chapter,
+      question: questions[idx].q,
+      reason: reportReason,
+      note: reportNote || null,
+    });
+    if (error) {
+      setReportStatus("error");
+      return;
+    }
+    setReportStatus("sent");
+    setTimeout(() => {
+      setReportOpen(false);
+      setReportStatus("idle");
+      setReportNote("");
+      setReportReason("incorrect");
+    }, 900);
+  }
+
 
   useEffect(() => {
     const raw = sessionStorage.getItem("brt:lastSession");
