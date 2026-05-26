@@ -53,7 +53,7 @@ function QuizPage() {
   const [idx, setIdx] = useState(0);
   const [picked, setPicked] = useState<number | null>(null);
   const [pickedCorrect, setPickedCorrect] = useState(false);
-  const [hasWrong, setHasWrong] = useState(false);
+  const [wrongCount, setWrongCount] = useState(0);
   const [wrongScreen, setWrongScreen] = useState(false);
   const [cooldown, setCooldown] = useState(0);
   const [attempt, setAttempt] = useState(0);
