@@ -171,7 +171,7 @@ function QuizPage() {
     setIdx(0);
     setPicked(null);
     setPickedCorrect(false);
-    setHasWrong(false);
+    setWrongCount(0);
     setWrongScreen(false);
     setAttempt((a) => a + 1);
   }
