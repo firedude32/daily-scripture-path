@@ -53,7 +53,7 @@ function QuizPage() {
   const [idx, setIdx] = useState(0);
   const [picked, setPicked] = useState<number | null>(null);
   const [pickedCorrect, setPickedCorrect] = useState(false);
-  const [hasWrong, setHasWrong] = useState(false);
+  const [wrongCount, setWrongCount] = useState(0);
   const [wrongScreen, setWrongScreen] = useState(false);
   const [cooldown, setCooldown] = useState(0);
   const [attempt, setAttempt] = useState(0);
@@ -138,12 +138,13 @@ function QuizPage() {
     if (picked !== null) return;
     setPicked(i);
     setPickedCorrect(correct);
-    if (!correct) setHasWrong(true);
+    const nextWrong = wrongCount + (correct ? 0 : 1);
+    if (!correct) setWrongCount(nextWrong);
     setTimeout(() => {
       // Quiz advances regardless of correctness — failure only revealed at end.
-      // (Spec: don't tell users which questions were wrong.)
+      // Pass threshold: at most 1 wrong (4/5 correct).
       if (idx + 1 >= questions.length) {
-        if (hasWrong || !correct) {
+        if (nextWrong > 1) {
           setWrongScreen(true);
           setCooldown(30);
           return;
@@ -170,7 +171,7 @@ function QuizPage() {
     setIdx(0);
     setPicked(null);
     setPickedCorrect(false);
-    setHasWrong(false);
+    setWrongCount(0);
     setWrongScreen(false);
     setAttempt((a) => a + 1);
   }
