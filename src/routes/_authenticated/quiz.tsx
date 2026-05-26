@@ -1,7 +1,7 @@
 import { createFileRoute, useNavigate } from "@tanstack/react-router";
 import { motion, AnimatePresence } from "framer-motion";
 import { useEffect, useMemo, useState } from "react";
-import { Check } from "lucide-react";
+import { Check, Flag } from "lucide-react";
 import { PhoneFrame } from "@/components/PhoneFrame";
 import { Screen } from "@/components/Screen";
 import { getQuiz, type QuizQuestion } from "@/data/quiz";
@@ -10,6 +10,8 @@ import { recordSession } from "@/state/store";
 import { EditorialButton } from "@/components/ui-lectio/EditorialButton";
 import { EditorialCard } from "@/components/ui-lectio/EditorialCard";
 import { SmallCaps } from "@/components/ui-lectio/SmallCaps";
+import { BottomSheet } from "@/components/ui-lectio/BottomSheet";
+import { supabase } from "@/integrations/supabase/client";
 
 export const Route = createFileRoute("/_authenticated/quiz")({
   head: () => ({
@@ -56,6 +58,40 @@ function QuizPage() {
   const [cooldown, setCooldown] = useState(0);
   const [attempt, setAttempt] = useState(0);
   const [passing, setPassing] = useState(false);
+  const [reportOpen, setReportOpen] = useState(false);
+  const [reportReason, setReportReason] = useState<string>("incorrect");
+  const [reportNote, setReportNote] = useState("");
+  const [reportStatus, setReportStatus] = useState<"idle" | "sending" | "sent" | "error">("idle");
+
+  async function submitReport() {
+    if (!pending || !questions[idx]) return;
+    setReportStatus("sending");
+    const { data: auth } = await supabase.auth.getUser();
+    if (!auth.user) {
+      setReportStatus("error");
+      return;
+    }
+    const { error } = await supabase.from("quiz_reports").insert({
+      user_id: auth.user.id,
+      book_id: pending.bookId,
+      chapter: pending.chapter,
+      question: questions[idx].q,
+      reason: reportReason,
+      note: reportNote || null,
+    });
+    if (error) {
+      setReportStatus("error");
+      return;
+    }
+    setReportStatus("sent");
+    setTimeout(() => {
+      setReportOpen(false);
+      setReportStatus("idle");
+      setReportNote("");
+      setReportReason("incorrect");
+    }, 900);
+  }
+
 
   useEffect(() => {
     const raw = sessionStorage.getItem("brt:lastSession");
@@ -296,7 +332,79 @@ function QuizPage() {
               );
             })}
           </div>
+
+          <div className="mt-6 flex justify-center">
+            <button
+              onClick={() => setReportOpen(true)}
+              className="flex items-center gap-1.5 font-ui uppercase tracking-[0.16em] text-[10px] text-[color:var(--color-ink-muted)] hover:text-[color:var(--color-ink)] py-2"
+            >
+              <Flag size={11} strokeWidth={1.5} />
+              Report This Question
+            </button>
+          </div>
         </div>
+
+        <BottomSheet
+          open={reportOpen}
+          onClose={() => setReportOpen(false)}
+          eyebrow="Feedback"
+          title="Report this question"
+        >
+          <p className="font-body text-[color:var(--color-ink-soft)]" style={{ fontSize: 14, lineHeight: 1.5 }}>
+            Help us improve the quiz. What's wrong with this question?
+          </p>
+
+          <div className="mt-5 flex flex-col gap-2">
+            {[
+              { v: "incorrect", l: "The answer is incorrect" },
+              { v: "confusing", l: "The question is confusing" },
+              { v: "typo", l: "There's a typo or error" },
+              { v: "other", l: "Something else" },
+            ].map((r) => (
+              <EditorialCard
+                key={r.v}
+                interactive
+                selected={reportReason === r.v}
+                padding="md"
+                onClick={() => setReportReason(r.v)}
+              >
+                <span className="font-body text-[color:var(--color-ink)]" style={{ fontSize: 15 }}>
+                  {r.l}
+                </span>
+              </EditorialCard>
+            ))}
+          </div>
+
+          <textarea
+            value={reportNote}
+            onChange={(e) => setReportNote(e.target.value.slice(0, 500))}
+            placeholder="Optional note…"
+            rows={3}
+            className="mt-4 w-full p-3 font-body text-[color:var(--color-ink)] outline-none resize-none"
+            style={{
+              fontSize: 15,
+              background: "transparent",
+              border: "1px solid var(--color-rule)",
+              borderRadius: 8,
+            }}
+          />
+
+          <div className="mt-5">
+            <EditorialButton
+              variant="gold"
+              disabled={reportStatus === "sending" || reportStatus === "sent"}
+              onClick={submitReport}
+            >
+              {reportStatus === "sent"
+                ? "Thank You"
+                : reportStatus === "sending"
+                  ? "Sending…"
+                  : reportStatus === "error"
+                    ? "Try Again"
+                    : "Send Report"}
+            </EditorialButton>
+          </div>
+        </BottomSheet>
       </Screen>
     </PhoneFrame>
   );

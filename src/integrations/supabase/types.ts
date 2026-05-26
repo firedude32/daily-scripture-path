@@ -205,6 +205,42 @@ export type Database = {
         }
         Relationships: []
       }
+      quiz_reports: {
+        Row: {
+          book_id: string
+          chapter: number
+          created_at: string
+          id: string
+          note: string | null
+          question: string
+          reason: string
+          status: string
+          user_id: string
+        }
+        Insert: {
+          book_id: string
+          chapter: number
+          created_at?: string
+          id?: string
+          note?: string | null
+          question: string
+          reason: string
+          status?: string
+          user_id: string
+        }
+        Update: {
+          book_id?: string
+          chapter?: number
+          created_at?: string
+          id?: string
+          note?: string | null
+          question?: string
+          reason?: string
+          status?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
       reading_sessions: {
         Row: {
           book_id: string
