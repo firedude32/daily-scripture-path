@@ -138,12 +138,13 @@ function QuizPage() {
     if (picked !== null) return;
     setPicked(i);
     setPickedCorrect(correct);
-    if (!correct) setHasWrong(true);
+    const nextWrong = wrongCount + (correct ? 0 : 1);
+    if (!correct) setWrongCount(nextWrong);
     setTimeout(() => {
       // Quiz advances regardless of correctness — failure only revealed at end.
-      // (Spec: don't tell users which questions were wrong.)
+      // Pass threshold: at most 1 wrong (4/5 correct).
       if (idx + 1 >= questions.length) {
-        if (hasWrong || !correct) {
+        if (nextWrong > 1) {
           setWrongScreen(true);
           setCooldown(30);
           return;
