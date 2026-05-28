@@ -242,3 +242,86 @@ function HomePage() {
     </PhoneFrame>
   );
 }
+
+function BalancedStat({
+  value,
+  suffix,
+  label,
+  highlight = false,
+}: {
+  value: number;
+  suffix?: string;
+  label: string;
+  highlight?: boolean;
+}) {
+  return (
+    <div className="text-center">
+      <div
+        className="font-display tabular leading-none"
+        style={{
+          fontSize: 44,
+          color: highlight ? "var(--color-gold)" : "var(--color-ink)",
+          fontWeight: 300,
+          letterSpacing: "-0.01em",
+        }}
+      >
+        {value}
+        {suffix && (
+          <span
+            className="font-display tabular"
+            style={{
+              fontSize: 18,
+              color: "var(--color-ink-muted)",
+              fontWeight: 300,
+            }}
+          >
+            {suffix}
+          </span>
+        )}
+      </div>
+      <div className="mt-3">
+        <SmallCaps tone="ink">{label}</SmallCaps>
+      </div>
+    </div>
+  );
+}
+
+function daysReadInLast(state: ReturnType<typeof useAppState>, days: number): number {
+  const today = new Date();
+  let count = 0;
+  for (let i = 0; i < days; i++) {
+    const d = new Date(today);
+    d.setDate(today.getDate() - i);
+    const key = d.toISOString().slice(0, 10);
+    if ((state.dailyCounts[key] ?? 0) > 0) count++;
+  }
+  return count;
+}
+
+function perfectWeeks(state: ReturnType<typeof useAppState>): number {
+  // Count completed ISO weeks (Mon-Sun) where every day has a read.
+  const keys = Object.keys(state.dailyCounts).filter((k) => (state.dailyCounts[k] ?? 0) > 0);
+  if (keys.length === 0) return 0;
+  const readSet = new Set(keys);
+  // Find earliest date
+  const dates = keys.map((k) => new Date(k)).sort((a, b) => a.getTime() - b.getTime());
+  const start = dates[0];
+  // Move start back to Monday
+  const startDow = (start.getDay() + 6) % 7; // 0=Mon
+  start.setDate(start.getDate() - startDow);
+  const today = new Date();
+  today.setHours(0, 0, 0, 0);
+  let perfect = 0;
+  const cursor = new Date(start);
+  while (cursor < today) {
+    let all = true;
+    for (let i = 0; i < 7; i++) {
+      const d = new Date(cursor);
+      d.setDate(cursor.getDate() + i);
+      if (d >= today) { all = false; break; }
+      if (!readSet.has(d.toISOString().slice(0, 10))) { all = false; break; }
+    }
+    if (all) perfect++;
+    cursor.setDate(cursor.getDate() + 7);
+  }
+  return perfect;
