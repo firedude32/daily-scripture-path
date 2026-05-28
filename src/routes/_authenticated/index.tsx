@@ -188,7 +188,7 @@ function HomePage() {
                 Longest · {state.longestStreak}
               </span>
             </div>
-            <CalendarHeatmap months={1} cell={40} />
+            <CalendarHeatmap months={1} cell={40} showDayNumbers />
           </motion.div>
         </div>
 
