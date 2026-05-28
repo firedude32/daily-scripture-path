@@ -96,43 +96,24 @@ function HomePage() {
             />
           </motion.div>
 
-          {/* Hero streak */}
+          {/* Balanced stats row */}
           <motion.div
-            initial={{ opacity: 0, scale: 0.96 }}
-            animate={{ opacity: 1, scale: 1 }}
+            initial={{ opacity: 0, y: 6 }}
+            animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.5, ease: [0.22, 1, 0.36, 1], delay: 0.1 }}
-            className="mt-11 text-center"
+            className="mt-11"
           >
-            {state.currentStreak > 0 ? (
-              <>
-                <div
-                  className="font-display tabular leading-none"
-                  style={{
-                    fontSize: 96,
-                    color: "var(--color-gold)",
-                    fontWeight: 300,
-                    letterSpacing: "-0.02em",
-                  }}
-                >
-                  {state.currentStreak}
-                </div>
-                <div className="mt-3">
-                  <SmallCaps tone="ink">Day Streak</SmallCaps>
-                </div>
-              </>
-            ) : (
-              <>
-                <div
-                  className="font-display tabular leading-none"
-                  style={{ fontSize: 96, color: "var(--color-ink)", fontWeight: 300 }}
-                >
-                  0
-                </div>
-                <div className="mt-3">
-                  <SmallCaps tone="ink">Start your streak today</SmallCaps>
-                </div>
-              </>
-            )}
+            <div className="grid grid-cols-3 gap-3">
+              <BalancedStat value={state.currentStreak} label="Day Streak" highlight />
+              <BalancedStat value={daysReadInLast(state, 7)} suffix="/7" label="Last 7 Days" />
+              <BalancedStat value={daysReadInLast(state, 30)} suffix="/30" label="Last 30 Days" />
+            </div>
+            <p
+              className="mt-5 text-center font-ui uppercase tracking-[0.18em] text-[color:var(--color-ink-muted)]"
+              style={{ fontSize: 10 }}
+            >
+              {perfectWeeks(state)} Perfect {perfectWeeks(state) === 1 ? "Week" : "Weeks"} · Lifetime
+            </p>
           </motion.div>
 
           {/* Status */}
