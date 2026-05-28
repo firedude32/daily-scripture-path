@@ -325,3 +325,4 @@ function perfectWeeks(state: ReturnType<typeof useAppState>): number {
     cursor.setDate(cursor.getDate() + 7);
   }
   return perfect;
+}
