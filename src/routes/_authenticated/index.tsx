@@ -96,43 +96,24 @@ function HomePage() {
             />
           </motion.div>
 
-          {/* Hero streak */}
+          {/* Balanced stats row */}
           <motion.div
-            initial={{ opacity: 0, scale: 0.96 }}
-            animate={{ opacity: 1, scale: 1 }}
+            initial={{ opacity: 0, y: 6 }}
+            animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.5, ease: [0.22, 1, 0.36, 1], delay: 0.1 }}
-            className="mt-11 text-center"
+            className="mt-11"
           >
-            {state.currentStreak > 0 ? (
-              <>
-                <div
-                  className="font-display tabular leading-none"
-                  style={{
-                    fontSize: 96,
-                    color: "var(--color-gold)",
-                    fontWeight: 300,
-                    letterSpacing: "-0.02em",
-                  }}
-                >
-                  {state.currentStreak}
-                </div>
-                <div className="mt-3">
-                  <SmallCaps tone="ink">Day Streak</SmallCaps>
-                </div>
-              </>
-            ) : (
-              <>
-                <div
-                  className="font-display tabular leading-none"
-                  style={{ fontSize: 96, color: "var(--color-ink)", fontWeight: 300 }}
-                >
-                  0
-                </div>
-                <div className="mt-3">
-                  <SmallCaps tone="ink">Start your streak today</SmallCaps>
-                </div>
-              </>
-            )}
+            <div className="grid grid-cols-3 gap-3">
+              <BalancedStat value={state.currentStreak} label="Day Streak" highlight />
+              <BalancedStat value={daysReadInLast(state, 7)} suffix="/7" label="Last 7 Days" />
+              <BalancedStat value={daysReadInLast(state, 30)} suffix="/30" label="Last 30 Days" />
+            </div>
+            <p
+              className="mt-5 text-center font-ui uppercase tracking-[0.18em] text-[color:var(--color-ink-muted)]"
+              style={{ fontSize: 10 }}
+            >
+              {perfectWeeks(state)} Perfect {perfectWeeks(state) === 1 ? "Week" : "Weeks"} · Lifetime
+            </p>
           </motion.div>
 
           {/* Status */}
@@ -207,7 +188,7 @@ function HomePage() {
                 Longest · {state.longestStreak}
               </span>
             </div>
-            <CalendarHeatmap months={1} cell={40} />
+            <CalendarHeatmap months={1} cell={40} showDayNumbers />
           </motion.div>
         </div>
 
@@ -260,4 +241,88 @@ function HomePage() {
       </Screen>
     </PhoneFrame>
   );
+}
+
+function BalancedStat({
+  value,
+  suffix,
+  label,
+  highlight = false,
+}: {
+  value: number;
+  suffix?: string;
+  label: string;
+  highlight?: boolean;
+}) {
+  return (
+    <div className="text-center">
+      <div
+        className="font-display tabular leading-none"
+        style={{
+          fontSize: 44,
+          color: highlight ? "var(--color-gold)" : "var(--color-ink)",
+          fontWeight: 300,
+          letterSpacing: "-0.01em",
+        }}
+      >
+        {value}
+        {suffix && (
+          <span
+            className="font-display tabular"
+            style={{
+              fontSize: 18,
+              color: "var(--color-ink-muted)",
+              fontWeight: 300,
+            }}
+          >
+            {suffix}
+          </span>
+        )}
+      </div>
+      <div className="mt-3">
+        <SmallCaps tone="ink">{label}</SmallCaps>
+      </div>
+    </div>
+  );
+}
+
+function daysReadInLast(state: ReturnType<typeof useAppState>, days: number): number {
+  const today = new Date();
+  let count = 0;
+  for (let i = 0; i < days; i++) {
+    const d = new Date(today);
+    d.setDate(today.getDate() - i);
+    const key = d.toISOString().slice(0, 10);
+    if ((state.dailyCounts[key] ?? 0) > 0) count++;
+  }
+  return count;
+}
+
+function perfectWeeks(state: ReturnType<typeof useAppState>): number {
+  // Count completed ISO weeks (Mon-Sun) where every day has a read.
+  const keys = Object.keys(state.dailyCounts).filter((k) => (state.dailyCounts[k] ?? 0) > 0);
+  if (keys.length === 0) return 0;
+  const readSet = new Set(keys);
+  // Find earliest date
+  const dates = keys.map((k) => new Date(k)).sort((a, b) => a.getTime() - b.getTime());
+  const start = dates[0];
+  // Move start back to Monday
+  const startDow = (start.getDay() + 6) % 7; // 0=Mon
+  start.setDate(start.getDate() - startDow);
+  const today = new Date();
+  today.setHours(0, 0, 0, 0);
+  let perfect = 0;
+  const cursor = new Date(start);
+  while (cursor < today) {
+    let all = true;
+    for (let i = 0; i < 7; i++) {
+      const d = new Date(cursor);
+      d.setDate(cursor.getDate() + i);
+      if (d >= today) { all = false; break; }
+      if (!readSet.has(d.toISOString().slice(0, 10))) { all = false; break; }
+    }
+    if (all) perfect++;
+    cursor.setDate(cursor.getDate() + 7);
+  }
+  return perfect;
 }
