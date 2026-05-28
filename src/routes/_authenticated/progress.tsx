@@ -197,6 +197,13 @@ function ProgressPage() {
               See Advanced Analytics →
             </Link>
           </div>
+
+          <div className="mt-12"><Rule /></div>
+
+          {/* Yearly calendar — bottom of page */}
+          <Section title="The Last Year">
+            <CalendarHeatmap months={12} cell={11} columns={3} />
+          </Section>
         </div>
 
         <AnimatePresence>
