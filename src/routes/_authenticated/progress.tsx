@@ -5,6 +5,7 @@ import { X } from "lucide-react";
 import { PhoneFrame } from "@/components/PhoneFrame";
 import { Screen } from "@/components/Screen";
 import { CalendarHeatmap } from "@/components/CalendarHeatmap";
+import { Heatmap } from "@/components/Heatmap";
 import {
   useAppState,
   useClientReady,
