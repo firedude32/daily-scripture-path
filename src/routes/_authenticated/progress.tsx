@@ -98,7 +98,6 @@ function ProgressPage() {
           <Section title="The Last Year">
             <CalendarHeatmap months={12} cell={11} columns={3} />
           </Section>
-          </Section>
 
           <Rule />
 
