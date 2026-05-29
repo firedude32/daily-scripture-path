@@ -17,6 +17,7 @@ export function MilestoneShareModal() {
   const state = useAppState();
   const m = state.pendingMilestone;
   const [sharing, setSharing] = useState(false);
+  console.log("[MilestoneShareModal] render, pendingMilestone =", m);
 
   if (!m) return null;
   const kind = m.kind as ShareKind;
