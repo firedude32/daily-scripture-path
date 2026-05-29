@@ -125,6 +125,51 @@ function HomePage() {
             <GoldMotif name={dailyMotif(today)} size={44} />
           </div>
 
+          {/* Inviter suggestion — shown once when a user signed up via someone's ref link */}
+          <AnimatePresence>
+            {referrer && (
+              <motion.div
+                initial={{ opacity: 0, y: -6 }}
+                animate={{ opacity: 1, y: 0 }}
+                exit={{ opacity: 0, y: -6 }}
+                transition={{ duration: 0.4, ease: [0.22, 1, 0.36, 1] }}
+                className="mt-5 flex items-center gap-3 rounded-[12px] px-4 py-3"
+                style={{
+                  background: "var(--color-paper-soft)",
+                  border: "1px solid var(--color-gold)",
+                }}
+              >
+                <UserPlus size={16} strokeWidth={1.5} className="text-[color:var(--color-gold)] shrink-0" />
+                <div className="flex-1 min-w-0">
+                  <div className="font-display text-[color:var(--color-ink)] truncate" style={{ fontSize: 14 }}>
+                    {referrer.name} invited you
+                  </div>
+                  <div className="font-body italic text-[color:var(--color-ink-muted)]" style={{ fontSize: 12 }}>
+                    Read alongside them?
+                  </div>
+                </div>
+                <button
+                  onClick={addReferrer}
+                  className="rounded-[10px] px-3 py-1.5 font-ui uppercase tracking-[0.14em]"
+                  style={{
+                    background: "var(--color-gold)",
+                    color: "var(--color-paper)",
+                    fontSize: 10,
+                  }}
+                >
+                  Add
+                </button>
+                <button
+                  onClick={dismissReferrer}
+                  aria-label="Dismiss"
+                  className="p-1 -m-1 text-[color:var(--color-ink-muted)] hover:text-[color:var(--color-ink)]"
+                >
+                  <X size={14} strokeWidth={1.5} />
+                </button>
+              </motion.div>
+            )}
+          </AnimatePresence>
+
           {/* Bread illustration */}
           <motion.div
             initial={{ opacity: 0, y: 6 }}
