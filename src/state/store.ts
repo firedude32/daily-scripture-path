@@ -209,6 +209,7 @@ export async function hydrateFromSupabase(): Promise<void> {
       reminderTime: profile?.reminder_time ?? "07:00",
       pathBookId: profile?.path_book_id ?? "mrk",
       progressView: (profile?.progress_view as "simple" | "detailed") ?? "simple",
+      avatarIcon: (profile as { avatar_icon?: string | null } | null)?.avatar_icon ?? null,
     },
     xp: profile?.xp ?? 0,
     currentStreak: effectiveStreak(profile?.last_read_date ?? null, profile?.current_streak ?? 0),
