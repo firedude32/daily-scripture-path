@@ -103,7 +103,7 @@ export async function findProfileByEmailOrUsername(
     .eq("username", q)
     .maybeSingle();
   if (error) throw error;
-  if (!data) return null;
+  if (!data || !data.id) return null;
   return {
     id: data.id,
     name: data.name ?? "Friend",
