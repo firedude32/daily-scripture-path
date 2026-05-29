@@ -40,7 +40,7 @@ export function BottomSheet({
             exit={{ y: 60 }}
             transition={{ duration: 0.3, ease: [0.22, 1, 0.36, 1] }}
             onClick={(e) => e.stopPropagation()}
-            className="w-full px-7 pt-7 pb-10 overflow-y-auto"
+            className="w-full md:max-w-[440px] px-7 pt-7 pb-10 overflow-y-auto"
             style={{
               background: "var(--color-paper)",
               borderTopLeftRadius: 24,
