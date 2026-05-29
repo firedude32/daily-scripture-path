@@ -45,7 +45,15 @@ export function shareCardUrl(
   return `/api/public/share-card/${kind}?${q.toString()}`;
 }
 
-async function svgUrlToPngFile(url: string, filename: string): Promise<File | null> {
+// Instagram accepts JPEG most reliably across feed/Stories and via the iOS
+// share sheet. We rasterize the SVG into a JPEG (paper-white background so
+// there's no transparency artifact) for the best handoff.
+async function svgUrlToJpegFile(
+  url: string,
+  filename: string,
+  fallbackW = 1080,
+  fallbackH = 1080,
+): Promise<File | null> {
   try {
     const res = await fetch(url);
     if (!res.ok) return null;
@@ -62,22 +70,24 @@ async function svgUrlToPngFile(url: string, filename: string): Promise<File | nu
         i.src = blobUrl;
       });
 
-      // Detect dimensions from the SVG viewBox or natural size
-      const w = img.naturalWidth || 1080;
-      const h = img.naturalHeight || 1920;
+      const w = img.naturalWidth || fallbackW;
+      const h = img.naturalHeight || fallbackH;
 
       const canvas = document.createElement("canvas");
       canvas.width = w;
       canvas.height = h;
       const ctx = canvas.getContext("2d");
       if (!ctx) return null;
+      // JPEG has no alpha — fill paper white first.
+      ctx.fillStyle = "#F4EFE6";
+      ctx.fillRect(0, 0, w, h);
       ctx.drawImage(img, 0, 0, w, h);
 
-      const pngBlob = await new Promise<Blob | null>((resolve) =>
-        canvas.toBlob(resolve, "image/png", 0.95),
+      const jpegBlob = await new Promise<Blob | null>((resolve) =>
+        canvas.toBlob(resolve, "image/jpeg", 0.92),
       );
-      if (!pngBlob) return null;
-      return new File([pngBlob], filename, { type: "image/png" });
+      if (!jpegBlob) return null;
+      return new File([jpegBlob], filename, { type: "image/jpeg" });
     } finally {
       URL.revokeObjectURL(blobUrl);
     }
@@ -89,14 +99,15 @@ async function svgUrlToPngFile(url: string, filename: string): Promise<File | nu
 export async function shareMilestone(
   kind: ShareKind,
   params: ShareParams,
-  size: "story" | "square" = "story",
+  size: "story" | "square" = "square",
 ): Promise<{ ok: boolean; reason?: string }> {
   const url = shareCardUrl(kind, params, size);
   const absoluteUrl = typeof window !== "undefined" ? new URL(url, window.location.origin).toString() : url;
   const caption = CAPTIONS[kind](params);
-  const filename = `lectio-${kind}-${Date.now()}.png`;
+  const filename = `lectio-${kind}-${Date.now()}.jpg`;
+  const [fw, fh] = size === "square" ? [1080, 1080] : [1080, 1920];
 
-  const file = await svgUrlToPngFile(absoluteUrl, filename);
+  const file = await svgUrlToJpegFile(absoluteUrl, filename, fw, fh);
 
   // Prefer file share (iOS share sheet → Photos, Messages, Instagram Stories)
   if (file && typeof navigator !== "undefined" && "share" in navigator) {

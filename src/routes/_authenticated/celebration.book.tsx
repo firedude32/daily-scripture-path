@@ -41,7 +41,7 @@ function BookCelebration() {
     streak: state.currentStreak,
     books: booksCompleted(state),
   };
-  const cardUrl = shareCardUrl("book", params, "story");
+  const cardUrl = shareCardUrl("book", params, "square");
 
   function done() {
     clearPendingCelebration();
@@ -62,7 +62,7 @@ function BookCelebration() {
   async function onShare() {
     setSharing(true);
     try {
-      await shareMilestone("book", params, "story");
+      await shareMilestone("book", params, "square");
     } finally {
       setSharing(false);
     }
@@ -88,7 +88,7 @@ function BookCelebration() {
             <div
               className="w-full rounded-[14px] overflow-hidden"
               style={{
-                aspectRatio: "9 / 16",
+                aspectRatio: "1 / 1",
                 maxHeight: "100%",
                 border: "1px solid var(--color-rule)",
                 boxShadow: "0 30px 60px -30px rgba(40, 32, 20, 0.25), 0 8px 20px -10px rgba(40, 32, 20, 0.15)",

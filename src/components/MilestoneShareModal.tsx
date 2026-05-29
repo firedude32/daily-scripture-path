@@ -66,7 +66,7 @@ export function MilestoneShareModal() {
       </div>
 
       <div className="mt-3">
-        <SmallCaps>1080 × 1920 · Stories</SmallCaps>
+        <SmallCaps>1080 × 1080 · Square</SmallCaps>
       </div>
 
       <div className="mt-7 grid grid-cols-1 gap-3">
@@ -76,7 +76,7 @@ export function MilestoneShareModal() {
             await shareMilestone(
               kind,
               { title: m.title, streak: m.streak, books: m.books },
-              "story",
+              "square",
             );
             clearPendingMilestone();
           }}

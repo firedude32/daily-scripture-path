@@ -40,7 +40,7 @@ function RankCelebration() {
     streak: state.currentStreak,
     books: booksCompleted(state),
   };
-  const cardUrl = shareCardUrl("rank", params, "story");
+  const cardUrl = shareCardUrl("rank", params, "square");
 
   function done() {
     clearPendingRankUp();
@@ -50,7 +50,7 @@ function RankCelebration() {
   async function onShare() {
     setSharing(true);
     try {
-      await shareMilestone("rank", params, "story");
+      await shareMilestone("rank", params, "square");
     } finally {
       setSharing(false);
     }
@@ -76,7 +76,7 @@ function RankCelebration() {
             <div
               className="w-full rounded-[14px] overflow-hidden"
               style={{
-                aspectRatio: "9 / 16",
+                aspectRatio: "1 / 1",
                 maxHeight: "100%",
                 border: "1px solid var(--color-rule)",
                 boxShadow: "0 30px 60px -30px rgba(40, 32, 20, 0.25), 0 8px 20px -10px rgba(40, 32, 20, 0.15)",
