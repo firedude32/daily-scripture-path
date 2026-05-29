@@ -92,7 +92,7 @@ function AdminPage() {
           </h1>
 
           <div className="mt-5 flex gap-1.5 overflow-x-auto -mx-1 px-1">
-            {(["overview", "reports", "users", "sessions"] as Tab[]).map((t) => (
+            {(["overview", "celebrations", "reports", "users", "sessions"] as Tab[]).map((t) => (
               <button
                 key={t}
                 onClick={() => setTab(t)}
@@ -113,10 +113,12 @@ function AdminPage() {
 
           <div className="mt-6">
             {tab === "overview" && <OverviewTab />}
+            {tab === "celebrations" && <CelebrationsTab />}
             {tab === "reports" && <ReportsTab />}
             {tab === "users" && <UsersTab />}
             {tab === "sessions" && <SessionsTab />}
           </div>
+
         </div>
       </Screen>
     </PhoneFrame>
