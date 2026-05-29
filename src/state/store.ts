@@ -111,6 +111,8 @@ function emptyState(): AppState {
     silverGoldAcknowledged: false,
     pendingCelebration: null,
     pendingRankUp: null,
+    pendingMilestone: null,
+    forceTodaysNoteVariant: null,
   };
 }
 
