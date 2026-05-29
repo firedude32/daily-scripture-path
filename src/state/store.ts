@@ -91,6 +91,7 @@ function emptyState(): AppState {
       reminderTime: "07:00",
       pathBookId: "mrk",
       progressView: "simple",
+      avatarIcon: null,
     },
     xp: 0,
     currentStreak: 0,
