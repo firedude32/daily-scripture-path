@@ -1,92 +1,103 @@
-import { BottomSheet } from "@/components/ui-lectio/BottomSheet";
+import { useState } from "react";
+import { motion, AnimatePresence } from "framer-motion";
+import { Share2 } from "lucide-react";
 import { EditorialButton } from "@/components/ui-lectio/EditorialButton";
 import { SmallCaps } from "@/components/ui-lectio/SmallCaps";
 import { useAppState, clearPendingMilestone } from "@/state/store";
 import { shareMilestone, shareCardUrl, type ShareKind } from "@/lib/share";
 
-const TITLES: Record<string, { eyebrow: string; title: string; blurb: string }> = {
-  streak: {
-    eyebrow: "Quietly",
-    title: "A streak worth marking",
-    blurb: "A small designed card you can share — no scores, no charts.",
-  },
-  gospel: {
-    eyebrow: "Quietly",
-    title: "A Gospel, finished",
-    blurb: "One of the four. The whole thing read through.",
-  },
-  nt: {
-    eyebrow: "Quietly",
-    title: "New Testament — complete",
-    blurb: "Twenty-seven books. Worth noting.",
-  },
-  bible: {
-    eyebrow: "Quietly",
-    title: "The whole Bible",
-    blurb: "Sixty-six books, cover to cover.",
-  },
+const EYEBROWS: Record<string, string> = {
+  streak: "A Streak",
+  gospel: "Gospel Complete",
+  nt: "New Testament",
+  bible: "The Whole Bible",
 };
 
 export function MilestoneShareModal() {
   const state = useAppState();
   const m = state.pendingMilestone;
+  const [sharing, setSharing] = useState(false);
+
   if (!m) return null;
-  const meta = TITLES[m.kind] ?? TITLES.streak;
   const kind = m.kind as ShareKind;
-  const previewUrl = shareCardUrl(
-    kind,
-    { title: m.title, streak: m.streak, books: m.books },
-    "square",
-  );
+  const params = {
+    title: m.title,
+    streak: m.streak ?? state.currentStreak,
+    books: m.books,
+    chapters: m.chapters,
+  };
+  const cardUrl = shareCardUrl(kind, params, "square");
+
+  async function onShare() {
+    setSharing(true);
+    try {
+      await shareMilestone(kind, params, "square");
+    } finally {
+      setSharing(false);
+    }
+  }
 
   return (
-    <BottomSheet
-      open
-      onClose={clearPendingMilestone}
-      eyebrow={meta.eyebrow}
-      title={meta.title}
-    >
-      <p
-        className="font-body text-[color:var(--color-ink-soft)]"
-        style={{ fontSize: 15, lineHeight: 1.55 }}
+    <AnimatePresence>
+      <motion.div
+        key="milestone-overlay"
+        initial={{ opacity: 0 }}
+        animate={{ opacity: 1 }}
+        exit={{ opacity: 0 }}
+        transition={{ duration: 0.35 }}
+        className="absolute inset-0 z-50 flex flex-col px-6 pt-10 pb-8"
+        style={{ background: "var(--color-paper)" }}
       >
-        {meta.blurb}
-      </p>
+        <div className="text-center">
+          <SmallCaps tone="gold">{EYEBROWS[m.kind] ?? "Quietly"}</SmallCaps>
+        </div>
 
-      <div
-        className="mt-5 rounded-[12px] overflow-hidden border"
-        style={{ borderColor: "var(--color-rule)", background: "var(--color-paper-light)" }}
-      >
-        <img
-          src={previewUrl}
-          alt="Share card preview"
-          className="w-full h-auto block"
-          style={{ aspectRatio: "1 / 1" }}
-        />
-      </div>
-
-      <div className="mt-3">
-        <SmallCaps>1080 × 1080 · Square</SmallCaps>
-      </div>
-
-      <div className="mt-7 grid grid-cols-1 gap-3">
-        <EditorialButton
-          variant="primary"
-          onClick={async () => {
-            await shareMilestone(
-              kind,
-              { title: m.title, streak: m.streak, books: m.books },
-              "square",
-            );
-            clearPendingMilestone();
-          }}
+        <motion.div
+          initial={{ opacity: 0, y: 12, scale: 0.98 }}
+          animate={{ opacity: 1, y: 0, scale: 1 }}
+          transition={{ duration: 0.7, ease: [0.22, 1, 0.36, 1] }}
+          className="mt-5 flex-1 min-h-0 flex items-center justify-center"
         >
-          Share
-        </EditorialButton>
-        <EditorialButton variant="secondary" onClick={clearPendingMilestone}>
-          Not now
-        </EditorialButton>
-      </div>
-    </BottomSheet>
+          <div
+            className="w-full rounded-[14px] overflow-hidden"
+            style={{
+              aspectRatio: "1 / 1",
+              maxHeight: "100%",
+              border: "1px solid var(--color-rule)",
+              boxShadow:
+                "0 30px 60px -30px rgba(40, 32, 20, 0.25), 0 8px 20px -10px rgba(40, 32, 20, 0.15)",
+              background: "var(--color-paper-light)",
+            }}
+          >
+            <img
+              src={cardUrl}
+              alt="Milestone share card"
+              className="w-full h-full block"
+              style={{ objectFit: "cover" }}
+            />
+          </div>
+        </motion.div>
+
+        <motion.div
+          initial={{ opacity: 0 }}
+          animate={{ opacity: 1 }}
+          transition={{ delay: 0.5 }}
+          className="mt-6 flex flex-col gap-3"
+        >
+          <EditorialButton variant="primary" onClick={onShare} disabled={sharing}>
+            <span className="inline-flex items-center justify-center gap-2">
+              <Share2 size={15} strokeWidth={1.5} />
+              {sharing ? "Preparing…" : "Share"}
+            </span>
+          </EditorialButton>
+          <button
+            onClick={clearPendingMilestone}
+            className="font-ui uppercase tracking-[0.18em] text-[11px] py-2 text-[color:var(--color-ink-muted)]"
+          >
+            Done
+          </button>
+        </motion.div>
+      </motion.div>
+    </AnimatePresence>
   );
 }
