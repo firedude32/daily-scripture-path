@@ -200,6 +200,7 @@ export type Database = {
       }
       profiles: {
         Row: {
+          avatar_icon: string | null
           created_at: string
           current_streak: number
           daily_goal: number
@@ -222,6 +223,7 @@ export type Database = {
           xp: number
         }
         Insert: {
+          avatar_icon?: string | null
           created_at?: string
           current_streak?: number
           daily_goal?: number
@@ -244,6 +246,7 @@ export type Database = {
           xp?: number
         }
         Update: {
+          avatar_icon?: string | null
           created_at?: string
           current_streak?: number
           daily_goal?: number
