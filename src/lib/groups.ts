@@ -205,7 +205,7 @@ export async function inviteFriendsToGroup(
   const memberSet = new Set((existingMembers ?? []).map((m) => m.user_id));
 
   // Skip people who already have a pending invite
-  const { data: existingInvites } = await supabase
+  const { data: existingInvites } = await (supabase as any)
     .from("group_invites")
     .select("invitee_id")
     .eq("group_id", groupId)
@@ -232,7 +232,7 @@ export async function inviteFriendsToGroup(
 export async function listIncomingGroupInvites(
   currentUserId: string,
 ): Promise<IncomingGroupInvite[]> {
-  const { data, error } = await supabase
+  const { data, error } = await (supabase as any)
     .from("group_invites")
     .select("id, group_id, invited_by, created_at")
     .eq("invitee_id", currentUserId)
