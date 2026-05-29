@@ -381,7 +381,7 @@ function daysReadInLast(state: ReturnType<typeof useAppState>, days: number): nu
   for (let i = 0; i < days; i++) {
     const d = new Date(today);
     d.setDate(today.getDate() - i);
-    const key = d.toISOString().slice(0, 10);
+    const key = todayKey(d);
     if ((state.dailyCounts[key] ?? 0) > 0) count++;
   }
   return count;
