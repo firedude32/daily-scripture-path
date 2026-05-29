@@ -142,6 +142,27 @@ export type Database = {
         }
         Relationships: []
       }
+      invite_clicks: {
+        Row: {
+          clicked_at: string
+          id: string
+          ref_user_id: string
+          user_agent: string | null
+        }
+        Insert: {
+          clicked_at?: string
+          id?: string
+          ref_user_id: string
+          user_agent?: string | null
+        }
+        Update: {
+          clicked_at?: string
+          id?: string
+          ref_user_id?: string
+          user_agent?: string | null
+        }
+        Relationships: []
+      }
       profiles: {
         Row: {
           created_at: string
@@ -155,6 +176,8 @@ export type Database = {
           onboarded: boolean
           path_book_id: string
           progress_view: string
+          referred_by: string | null
+          referred_by_claimed: boolean
           reminder_time: string
           silver_gold_acknowledged: boolean
           silver_gold_unlocked: boolean
@@ -175,6 +198,8 @@ export type Database = {
           onboarded?: boolean
           path_book_id?: string
           progress_view?: string
+          referred_by?: string | null
+          referred_by_claimed?: boolean
           reminder_time?: string
           silver_gold_acknowledged?: boolean
           silver_gold_unlocked?: boolean
@@ -195,6 +220,8 @@ export type Database = {
           onboarded?: boolean
           path_book_id?: string
           progress_view?: string
+          referred_by?: string | null
+          referred_by_claimed?: boolean
           reminder_time?: string
           silver_gold_acknowledged?: boolean
           silver_gold_unlocked?: boolean
@@ -281,6 +308,7 @@ export type Database = {
         Args: { _group_id: string; _user_id: string }
         Returns: boolean
       }
+      resolve_ref_to_user_id: { Args: { _ref: string }; Returns: string }
       weekly_chapters_for: { Args: { _user_id: string }; Returns: number }
     }
     Enums: {
