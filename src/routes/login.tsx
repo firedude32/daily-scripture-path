@@ -45,7 +45,7 @@ function LoginPage() {
     const { error } = await supabase.auth.signInWithPassword({ email, password });
     setBusy(false);
     if (error) return setError(error.message);
-    navigate({ to: search.redirect });
+    navigate({ to: sanitizeRedirect(search.redirect) });
   }
 
   async function oauth(provider: "google" | "apple") {
