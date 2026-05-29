@@ -104,13 +104,6 @@ function SummaryPage() {
             <SmallCaps tone="gold">
               Chapter {NUMBER_WORDS[data.chapter] ?? data.chapter} · Complete
             </SmallCaps>
-            <button
-              onClick={() => setShareOpen(true)}
-              className="p-2 -mr-2 text-[color:var(--color-ink-muted)] hover:text-[color:var(--color-ink)] transition-colors"
-              aria-label="Share"
-            >
-              <Share2 size={18} />
-            </button>
           </div>
 
           <div className="flex-1 flex flex-col items-center text-center">
