@@ -1,78 +1,77 @@
+# Make Friends & Groups Fully Functional
 
-## Invite People Who Don't Have Lectio — Guided Flow
+Today the page already supports: sending friend invites by email/username, accepting/declining, removing friends, creating a group, joining by code, viewing a leaderboard, leaving/deleting. What's missing for it to feel "complete" is mainly **group invitations** (you can only join by code, you can't actually *invite* someone to a group), **shareable join links** (mirroring the friend-invite walkthrough), and **owner controls**. Here's the full scope.
 
-Extend the existing "Add a friend" sheet so it serves two intents from one place, and — critically — when someone searches for a friend who isn't on Lectio, the sheet quietly walks them into inviting that person instead of dead-ending.
+## 1. Invite a friend directly into a group
 
-### Where it lives
+New flow inside the group detail sheet:
+- "Invite friends" button → opens a picker of your accepted friends with checkboxes.
+- Friends already in the group are shown as disabled with "In group".
+- Submitting creates pending `group_invites` rows; the invitee sees them on the Friends tab.
 
-The `+` button in the Friends tab opens the existing `AddFriendForm` bottom sheet. We restructure that sheet (no new tab, no new top-level nav) into two calm sections separated by a hairline rule:
+## 2. Group invitations (accept / decline)
 
-1. **Find someone on Lectio** — current email/username search, unchanged on success.
-2. **Not on Lectio yet?** — invite block beneath, always visible as a quiet secondary option.
+New `group_invites` table with RLS:
+- Inviter must be a member of the group.
+- Invitee can read their own invites, accept (joins the group), or decline (deletes the row).
+- Owner/inviter can cancel a pending invite.
 
-### The guided handoff (the key change)
+UI:
+- Friends tab "Pending Invites" section gets a second group: **Group Invites**. Each row shows "{Inviter} invited you to {Group}" with Accept/Decline.
+- The gold dot on the Friends tab also lights when group invites are pending.
 
-Today, `sendFriendRequest` returns `{ ok: false, reason: "No one found with that email or username." }` and the form just shows an error toast. We replace that dead end with a graceful handoff:
+## 3. Shareable group join link (walks non-app friends in)
 
-When search returns "no one found", the sheet transitions in place (no new modal, no jarring switch) to an **Invite step** that:
+- `buildGroupJoinLink(code)` → `https://lectio.live/?join=CODE&from={username|id}`.
+- Group detail sheet gains a "Share invite link" row using the existing `InviteBlock` pattern (native share / SMS / mail / copy). Pre-fills a message: *"Join my Lectio reading group: {link}"*.
+- Root captures `?join=CODE` on load (same place we capture `?ref=`) and stores it in localStorage as `lectio.pendingJoin`.
+- After login/signup, the home page redeems it via `joinGroupByCode` and shows a toast "Joined {Group}".
 
-- Acknowledges the miss gently: *"We couldn't find anyone with that email. Want to invite them instead?"*
-- Pre-fills the invite. If the query was an email, the primary action becomes **Email an invite** with a `mailto:{email}?subject=...&body=...` already populated. If it was a username, primary becomes **Share invite** (native share sheet) since we have no contact channel.
-- Shows the personal invite link with a Copy button.
-- Offers a quiet "Search again" link to go back to step 1.
+## 4. Owner controls
 
-This way the user is never stopped — the moment they learn their friend isn't on Lectio, the next tap already drafts the invite.
+Inside the group detail sheet, when `userId === owner_id`:
+- **Rename group**: tap the title to edit inline; saves via update on `groups`.
+- **Remove member**: trash icon next to each non-owner row; confirm, then delete from `group_members`.
+- **Regenerate join code**: small "New code" action with confirm (invalidates the old code).
 
-### How invites work
+Add an RLS policy so the owner can delete `group_members` rows in their own group (currently only the member can leave themselves).
 
-Personal invite link per user: `https://lectio.live/?ref={username}` (fallback `?ref={userId}` if no username set).
+## 5. Group activity signal
 
-Share options inside the invite step:
-- **Share** (primary on mobile) — `navigator.share()` opens iOS's native share sheet (Messages, Mail, WhatsApp). Falls back to Copy on desktop.
-- **Copy link** — copies link with `toast.success("Link copied")`.
-- **Text** — `sms:?&body=...` with pre-written message.
-- **Email** — `mailto:?subject=...&body=...` with pre-written message (auto-addressed when handoff came from an email search).
+The leaderboard already shows streak + XP. Add **last-read** under each member ("Read today" / "2 days ago" / "—") using `last_read_date` from `public_profiles`. Tiny, calm — no badges.
 
-Pre-written copy stays on-brand:
-> "I've been using Lectio to read the Bible a little each day. Thought you might like it too — https://lectio.live/?ref=hannah"
+## 6. Friend list polish
 
-### Tracking (lightweight)
+- Search field at top of the AddFriendForm now also matches **name** (case-insensitive `ilike`), not just exact email/username. Existing email RPC stays as the authoritative email path.
+- Sort accepted friends by current_streak desc, then name.
 
-A soft "3 people opened your link" line appears in the invite block once at least one click has been recorded:
+## 7. Empty/loading polish
 
-- `invite_clicks` table keyed by `ref` with `clicked_at`.
-- A tiny server function records a click when `?ref=` is on the landing page (once per session via localStorage flag).
-- The `ref` is stashed in localStorage and, on signup, written to a new `profiles.referred_by` column.
+- Skeleton lines instead of the centered "Loading…" text in both tabs.
+- After accepting a group invite or joining via link, auto-open that group's detail sheet so the user lands somewhere meaningful.
 
-### Auto-connect after signup
+---
 
-When someone signs up via `?ref=`:
-- On first authenticated load, if `profiles.referred_by` is set and unclaimed, the Home page surfaces a one-tap "Add {Name}" card for a day (not auto-sent — respects both sides).
-- The referrer gets a quiet toast next time they open the app: "{Name} joined Lectio."
+## Technical notes
 
-### Landing page touch
+**Migration** (new):
+- `group_invites(id, group_id, invitee_id, invited_by, status default 'pending', created_at)` with unique `(group_id, invitee_id)` where status='pending'.
+- GRANTs for `authenticated` + `service_role`; RLS:
+  - INSERT: `auth.uid() = invited_by AND is_group_member(group_id, auth.uid())`.
+  - SELECT: invitee, inviter, or group owner.
+  - UPDATE: invitee only, pending→accepted.
+  - DELETE: invitee (decline) or inviter/owner (cancel).
+- Trigger on accepted insert into `group_members`, then delete the invite row — or do it in the client transaction; will use a SECURITY DEFINER RPC `accept_group_invite(_invite_id)` to keep it atomic.
+- New policy on `group_members` DELETE: allow `auth.uid()` to be either the member OR the group owner.
+- New RPC `regenerate_group_code(_group_id)` (owner-only) returning the new code.
+- Extend `public_profiles` view consumption to include `last_read_date` (already in the view).
 
-`/` reads `?ref=` and renders one small line under the hero: "Hannah invited you." Nothing else changes on the landing page.
+**Files**:
+- `src/lib/groups.ts` — add `inviteFriendsToGroup`, `listIncomingGroupInvites`, `acceptGroupInvite`, `declineGroupInvite`, `removeGroupMember`, `renameGroup`, `regenerateJoinCode`, `buildGroupJoinLink`.
+- `src/lib/invites.ts` — add `capturePendingJoinFromUrl` + `claimPendingJoin` (mirrors ref capture).
+- `src/routes/__root.tsx` — call `capturePendingJoinFromUrl` alongside `captureRefFromUrl`.
+- `src/routes/_authenticated/index.tsx` — call `claimPendingJoin` after `claimRefForUser`.
+- `src/routes/_authenticated/friends.tsx` — new "Group Invites" section, group invite picker sheet, owner controls in `GroupDetail`, rename/regenerate UI, share-link block in group sheet, member-removal UI, name-search in AddFriendForm.
+- `src/components/InviteBlock.tsx` — accept an optional `link` + `message` prop so it can be reused for group invites.
 
-### Out of scope (v1)
-
-- Contact-book access — too invasive for Lectio's tone.
-- QR codes — easy to add later as a secondary action.
-- Group invite links — groups already have join codes; we mention this inline so users don't conflate the two.
-
-### Files touched
-
-```text
-src/routes/_authenticated/friends.tsx     — restructure AddFriendForm into a 2-step sheet (Search → Invite handoff on miss)
-src/components/InviteBlock.tsx            — new: share/copy/sms/email actions + click counter, accepts optional prefilledEmail
-src/lib/invites.ts                        — new: build link, record click, claim ref on signup
-src/routes/index.tsx                      — read ?ref= on landing, show "X invited you"
-src/routes/_authenticated/index.tsx       — one-tap "Add X" card when referred_by is unclaimed
-supabase migration                         — invite_clicks table; profiles.referred_by column
-```
-
-### Open questions
-
-1. Personal link slug: prefer `username`, fall back to `userId`?
-2. Show the "X opened your link" counter only after the first click lands (keeps empty state quiet)?
-3. Auto-friend-request on signup vs. one-tap suggestion? Recommendation: one-tap, both sides confirm.
+**Out of scope** (call out so it doesn't surprise the user): group chat/messages, push notifications, email delivery of invites (we rely on in-app + share sheet), per-group reading plans.
