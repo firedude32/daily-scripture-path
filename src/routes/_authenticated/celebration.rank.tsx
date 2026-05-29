@@ -1,6 +1,6 @@
 import { createFileRoute, useNavigate } from "@tanstack/react-router";
 import { motion } from "framer-motion";
-import { useEffect } from "react";
+import { useEffect, useState } from "react";
 import { Share2 } from "lucide-react";
 import { PhoneFrame } from "@/components/PhoneFrame";
 import { Screen } from "@/components/Screen";
@@ -8,8 +8,7 @@ import { useAppState, clearPendingRankUp, booksCompleted } from "@/state/store";
 import { RANKS } from "@/data/ranks";
 import { EditorialButton } from "@/components/ui-lectio/EditorialButton";
 import { SmallCaps } from "@/components/ui-lectio/SmallCaps";
-import { letterReveal } from "@/lib/motion";
-import { shareMilestone } from "@/lib/share";
+import { shareMilestone, shareCardUrl } from "@/lib/share";
 
 export const Route = createFileRoute("/_authenticated/celebration/rank")({
   head: () => ({
@@ -24,6 +23,7 @@ export const Route = createFileRoute("/_authenticated/celebration/rank")({
 function RankCelebration() {
   const navigate = useNavigate();
   const state = useAppState();
+  const [sharing, setSharing] = useState(false);
   const up = state.pendingRankUp;
 
   useEffect(() => {
@@ -32,93 +32,86 @@ function RankCelebration() {
 
   if (!up) return null;
   const rank = RANKS[up.rankIndex];
-  const letters = letterReveal(rank.name.toUpperCase());
-  const totalDelay = 0.4 + letters.length * 0.06;
+
+  const params = {
+    title: rank.name,
+    subtitle: rank.blurb,
+    encouragement: rank.blurb,
+    streak: state.currentStreak,
+    books: booksCompleted(state),
+  };
+  const cardUrl = shareCardUrl("rank", params, "story");
 
   function done() {
     clearPendingRankUp();
     navigate({ to: "/" });
   }
 
+  async function onShare() {
+    setSharing(true);
+    try {
+      await shareMilestone("rank", params, "story");
+    } finally {
+      setSharing(false);
+    }
+  }
+
   return (
     <PhoneFrame>
       <Screen noTabs>
-        <motion.div
-          initial={{ opacity: 0, x: 24 }}
-          animate={{ opacity: 1, x: 0 }}
-          transition={{ duration: 0.7, ease: [0.22, 1, 0.36, 1] }}
-          className="h-full flex flex-col items-center justify-center px-8 text-center"
+        <div
+          className="absolute inset-0 flex flex-col px-6 pt-10 pb-8"
           style={{ background: "var(--color-paper)" }}
         >
-          <SmallCaps>New Rank</SmallCaps>
-
-          <h1
-            className="mt-10 font-display"
-            style={{
-              fontSize: 56,
-              color: "var(--color-gold)",
-              fontWeight: 300,
-              letterSpacing: "0.02em",
-              lineHeight: 1,
-            }}
-          >
-            {letters.map((l, i) => (
-              <motion.span
-                key={i}
-                initial={l.initial}
-                animate={l.animate}
-                transition={l.transition}
-                style={{ display: "inline-block" }}
-              >
-                {l.char}
-              </motion.span>
-            ))}
-          </h1>
+          <div className="text-center">
+            <SmallCaps tone="gold">A New Rank</SmallCaps>
+          </div>
 
           <motion.div
-            initial={{ scaleX: 0 }}
-            animate={{ scaleX: 1 }}
-            transition={{ delay: totalDelay + 0.1, duration: 0.7, ease: [0.22, 1, 0.36, 1] }}
-            className="mt-7 w-32"
-            style={{ height: 1, background: "var(--color-gold)", transformOrigin: "center" }}
-          />
-
-          <motion.p
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            transition={{ delay: totalDelay + 0.4 }}
-            className="mt-7 font-body italic text-[color:var(--color-ink-soft)] max-w-xs"
-            style={{ fontSize: 17, lineHeight: 1.5 }}
+            initial={{ opacity: 0, y: 12, scale: 0.98 }}
+            animate={{ opacity: 1, y: 0, scale: 1 }}
+            transition={{ duration: 0.7, ease: [0.22, 1, 0.36, 1] }}
+            className="mt-5 flex-1 min-h-0 flex items-center justify-center"
           >
-            {rank.blurb}
-          </motion.p>
-
-          <motion.div
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            transition={{ delay: totalDelay + 0.8 }}
-            className="mt-16 w-full max-w-xs flex flex-col gap-3"
-          >
-            <button
-              onClick={() =>
-                shareMilestone("rank", {
-                  title: rank.name,
-                  subtitle: rank.blurb,
-                  encouragement: rank.blurb,
-                  streak: state.currentStreak,
-                  books: booksCompleted(state),
-                })
-              }
-              className="flex items-center justify-center gap-2 font-ui uppercase tracking-[0.16em] text-[11px] py-2 text-[color:var(--color-ink-muted)] hover:text-[color:var(--color-ink)] transition-colors"
+            <div
+              className="w-full rounded-[14px] overflow-hidden"
+              style={{
+                aspectRatio: "9 / 16",
+                maxHeight: "100%",
+                border: "1px solid var(--color-rule)",
+                boxShadow: "0 30px 60px -30px rgba(40, 32, 20, 0.25), 0 8px 20px -10px rgba(40, 32, 20, 0.15)",
+                background: "var(--color-paper-light)",
+              }}
             >
-              <Share2 size={14} strokeWidth={1.5} />
-              Share
-            </button>
-            <EditorialButton variant="primary" onClick={done}>
-              Continue
-            </EditorialButton>
+              <img
+                src={cardUrl}
+                alt={`${rank.name} rank`}
+                className="w-full h-full block"
+                style={{ objectFit: "cover" }}
+              />
+            </div>
           </motion.div>
-        </motion.div>
+
+          <motion.div
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            transition={{ delay: 0.5 }}
+            className="mt-6 flex flex-col gap-3"
+          >
+            <EditorialButton variant="primary" onClick={onShare} disabled={sharing}>
+              <span className="inline-flex items-center justify-center gap-2">
+                <Share2 size={15} strokeWidth={1.5} />
+                {sharing ? "Preparing…" : "Share"}
+              </span>
+            </EditorialButton>
+            <button
+              onClick={done}
+              className="font-ui uppercase tracking-[0.18em] text-[11px] py-2 text-[color:var(--color-ink-muted)]"
+            >
+              Done
+            </button>
+          </motion.div>
+        </div>
       </Screen>
     </PhoneFrame>
   );
