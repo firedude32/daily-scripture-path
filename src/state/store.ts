@@ -519,6 +519,11 @@ export function setUserEmail(email: string) {
   void persistProfile({ email });
 }
 
+export function setAvatarIcon(avatarIcon: string | null) {
+  setState((s) => { s.user = { ...s.user, avatarIcon }; return s; });
+  void persistProfile({ avatar_icon: avatarIcon });
+}
+
 export async function setUsername(username: string): Promise<{ ok: true } | { ok: false; reason: string }> {
   const v = username.trim().toLowerCase();
   if (!/^[a-z0-9_]{3,24}$/.test(v)) {
