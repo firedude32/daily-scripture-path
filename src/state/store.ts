@@ -138,8 +138,9 @@ function getSnapshot(): AppState {
   return memoryState;
 }
 
+const SERVER_SNAPSHOT: AppState = emptyState();
 function getServerSnapshot(): AppState {
-  return emptyState();
+  return SERVER_SNAPSHOT;
 }
 
 export function useAppState(): AppState {
