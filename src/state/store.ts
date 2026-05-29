@@ -397,6 +397,22 @@ export function recordSession(bookId: string, chapter: number, durationSec: numb
     if (bookCelebration) s.pendingCelebration = bookCelebration;
     if (afterRank > beforeRank) s.pendingRankUp = { rankIndex: afterRank };
 
+    // Lightweight milestone detection (streak / Gospel / NT / whole Bible)
+    const GOSPELS: Record<string, string> = { mat: "Matthew", mrk: "Mark", luk: "Luke", jhn: "John" };
+    if (bookCelebration && GOSPELS[bookCelebration.bookId]) {
+      s.pendingMilestone = { kind: "gospel", title: GOSPELS[bookCelebration.bookId] };
+    } else if (streak === 7 || streak === 30) {
+      s.pendingMilestone = { kind: "streak", title: String(streak), streak };
+    }
+    if (bookCelebration) {
+      const ntDone = NT_ORDER.every((id) => (s.bookProgress[id]?.readThroughs ?? 0) >= 1);
+      const allDone = BOOKS.every((b) => (s.bookProgress[b.id]?.readThroughs ?? 0) >= 1);
+      if (allDone) s.pendingMilestone = { kind: "bible", title: "Sixty-six books", books: 66 };
+      else if (ntDone && NT_ORDER.includes(bookCelebration.bookId)) {
+        s.pendingMilestone = { kind: "nt", title: "New Testament", books: 27 };
+      }
+    }
+
     profilePatch = {
       xp: s.xp,
       current_streak: s.currentStreak,
