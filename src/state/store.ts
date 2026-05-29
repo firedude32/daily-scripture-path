@@ -57,6 +57,7 @@ export interface AppState {
     title: string;
     streak?: number;
     books?: number;
+    chapters?: number;
   };
   forceTodaysNoteVariant: string | null;
 }
