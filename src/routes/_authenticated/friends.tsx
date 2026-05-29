@@ -1,6 +1,6 @@
 import { createFileRoute } from "@tanstack/react-router";
-import { useCallback, useEffect, useState } from "react";
-import { Plus, Check, X, Flame, Users, Copy, ChevronRight } from "lucide-react";
+import { useCallback, useEffect, useMemo, useState } from "react";
+import { Plus, Check, X, Flame, Users, Copy, ChevronRight, Pencil, RefreshCw, Trash2 } from "lucide-react";
 import { PhoneFrame } from "@/components/PhoneFrame";
 import { Screen } from "@/components/Screen";
 import { SmallCaps } from "@/components/ui-lectio/SmallCaps";
@@ -15,17 +15,26 @@ import {
   type FriendRow,
 } from "@/lib/friends";
 import {
+  acceptGroupInvite,
   createGroup,
+  declineGroupInvite,
   deleteGroup,
+  inviteFriendsToGroup,
   joinGroupByCode,
   leaveGroup,
   listGroupMembers,
+  listIncomingGroupInvites,
   listMyGroups,
+  regenerateJoinCode,
+  removeGroupMember,
+  renameGroup,
   type Group,
   type GroupMember,
+  type IncomingGroupInvite,
 } from "@/lib/groups";
 import { toast } from "sonner";
 import { InviteBlock } from "@/components/InviteBlock";
+import { buildGroupJoinLink, groupInviteMessage } from "@/lib/invites";
 
 export const Route = createFileRoute("/_authenticated/friends")({
   head: () => ({
@@ -45,6 +54,7 @@ function FriendsPage() {
   const [openJoin, setOpenJoin] = useState(false);
   const [rows, setRows] = useState<FriendRow[]>([]);
   const [groups, setGroups] = useState<Group[]>([]);
+  const [groupInvites, setGroupInvites] = useState<IncomingGroupInvite[]>([]);
   const [loading, setLoading] = useState(true);
   const [openGroup, setOpenGroup] = useState<Group | null>(null);
   const [openFriend, setOpenFriend] = useState<FriendRow | null>(null);
@@ -53,9 +63,14 @@ function FriendsPage() {
     if (!userId) return;
     setLoading(true);
     try {
-      const [r, g] = await Promise.all([listFriendships(userId), listMyGroups(userId)]);
+      const [r, g, gi] = await Promise.all([
+        listFriendships(userId),
+        listMyGroups(userId),
+        listIncomingGroupInvites(userId),
+      ]);
       setRows(r);
       setGroups(g);
+      setGroupInvites(gi);
     } catch (e) {
       console.error(e);
     } finally {
@@ -67,9 +82,26 @@ function FriendsPage() {
     void refresh();
   }, [refresh]);
 
-  const accepted = rows.filter((r) => r.friendship.status === "accepted");
+  // Keep the currently-open group in sync with refreshed list (e.g. after rename)
+  useEffect(() => {
+    if (!openGroup) return;
+    const fresh = groups.find((g) => g.id === openGroup.id);
+    if (fresh && (fresh.name !== openGroup.name || fresh.join_code !== openGroup.join_code)) {
+      setOpenGroup(fresh);
+    }
+  }, [groups, openGroup]);
+
+  const accepted = useMemo(
+    () =>
+      rows
+        .filter((r) => r.friendship.status === "accepted")
+        .sort((a, b) => b.other.current_streak - a.other.current_streak || a.other.name.localeCompare(b.other.name)),
+    [rows],
+  );
   const incoming = rows.filter((r) => r.isIncoming);
   const outgoing = rows.filter((r) => r.isOutgoing);
+
+  const friendsTabBadge = incoming.length > 0 || groupInvites.length > 0;
 
   return (
     <PhoneFrame>
@@ -88,7 +120,7 @@ function FriendsPage() {
 
           <div className="mt-5 flex items-center gap-7 border-b" style={{ borderColor: "var(--color-rule)" }}>
             {(["friends", "groups"] as const).map((t) => {
-              const showDot = t === "friends" && rows.some((r) => r.isIncoming);
+              const showDot = t === "friends" && friendsTabBadge;
               return (
                 <button
                   key={t}
@@ -118,15 +150,13 @@ function FriendsPage() {
           {tab === "friends" && (
             <>
               {loading ? (
-                <p className="mt-16 text-center font-body italic text-[color:var(--color-ink-muted)]" style={{ fontSize: 14 }}>
-                  Loading…
-                </p>
-              ) : accepted.length === 0 && incoming.length === 0 && outgoing.length === 0 ? (
+                <SkeletonList />
+              ) : accepted.length === 0 && incoming.length === 0 && outgoing.length === 0 && groupInvites.length === 0 ? (
                 <EmptyFriends onInvite={() => setOpenAdd(true)} />
               ) : (
                 <div className="mt-8 space-y-8">
                   {incoming.length > 0 && (
-                    <Section title={`Pending Invites · ${incoming.length}`}>
+                    <Section title={`Friend Invites · ${incoming.length}`}>
                       {incoming.map((r) => (
                         <PendingRow
                           key={r.other.id}
@@ -138,6 +168,34 @@ function FriendsPage() {
                           }}
                           onDecline={async () => {
                             await removeFriendship(userId!, r.other.id);
+                            void refresh();
+                          }}
+                        />
+                      ))}
+                    </Section>
+                  )}
+
+                  {groupInvites.length > 0 && (
+                    <Section title={`Group Invites · ${groupInvites.length}`}>
+                      {groupInvites.map((inv) => (
+                        <GroupInviteRow
+                          key={inv.id}
+                          invite={inv}
+                          onAccept={async () => {
+                            try {
+                              const gid = await acceptGroupInvite(inv.id);
+                              toast.success(`Joined "${inv.group_name}".`);
+                              await refresh();
+                              // Open the group sheet so the user lands somewhere
+                              const fresh = await listMyGroups(userId!);
+                              const g = fresh.find((x) => x.id === gid);
+                              if (g) setOpenGroup(g);
+                            } catch (e) {
+                              toast.error((e as Error).message);
+                            }
+                          }}
+                          onDecline={async () => {
+                            await declineGroupInvite(inv.id);
                             void refresh();
                           }}
                         />
@@ -183,9 +241,7 @@ function FriendsPage() {
           {tab === "groups" && (
             <>
               {loading ? (
-                <p className="mt-16 text-center font-body italic text-[color:var(--color-ink-muted)]" style={{ fontSize: 14 }}>
-                  Loading…
-                </p>
+                <SkeletonList />
               ) : groups.length === 0 ? (
                 <div className="mt-16 text-center">
                   <SmallCaps tone="gold">No Groups Yet</SmallCaps>
@@ -269,6 +325,8 @@ function FriendsPage() {
           {openGroup && (
             <GroupDetail
               group={openGroup}
+              friends={accepted}
+              onChanged={refresh}
               onLeft={() => {
                 setOpenGroup(null);
                 void refresh();
@@ -287,6 +345,20 @@ function FriendsPage() {
         </BottomSheet>
       </Screen>
     </PhoneFrame>
+  );
+}
+
+function SkeletonList() {
+  return (
+    <div className="mt-8 space-y-3">
+      {[0, 1, 2].map((i) => (
+        <div
+          key={i}
+          className="h-14 rounded-[12px]"
+          style={{ background: "var(--color-paper-soft)", border: "1px solid var(--color-rule)", opacity: 0.6 }}
+        />
+      ))}
+    </div>
   );
 }
 
@@ -475,6 +547,52 @@ function PendingRow({
   );
 }
 
+function GroupInviteRow({
+  invite,
+  onAccept,
+  onDecline,
+}: {
+  invite: IncomingGroupInvite;
+  onAccept: () => void;
+  onDecline: () => void;
+}) {
+  return (
+    <div className="flex items-center gap-3 py-3" style={{ borderTop: "1px solid var(--color-rule)" }}>
+      <div
+        className="flex items-center justify-center rounded-full"
+        style={{
+          width: 40,
+          height: 40,
+          background: "var(--color-paper-soft)",
+          color: "var(--color-ink)",
+          border: "1px solid var(--color-rule)",
+        }}
+      >
+        <Users size={16} strokeWidth={1.5} />
+      </div>
+      <div className="flex-1 min-w-0">
+        <div className="font-display text-[color:var(--color-ink)] truncate" style={{ fontSize: 16 }}>
+          {invite.group_name}
+        </div>
+        <div className="text-[color:var(--color-ink-muted)] mt-0.5 truncate" style={{ fontSize: 12 }}>
+          {invite.invited_by_name} invited you
+        </div>
+      </div>
+      <button onClick={onDecline} aria-label="Decline" className="p-2 text-[color:var(--color-ink-muted)] hover:text-[color:var(--color-ink)]">
+        <X size={16} strokeWidth={1.5} />
+      </button>
+      <button
+        onClick={onAccept}
+        aria-label="Accept"
+        className="p-2 rounded-full"
+        style={{ background: "var(--color-gold)", color: "var(--color-paper)" }}
+      >
+        <Check size={16} strokeWidth={2} />
+      </button>
+    </div>
+  );
+}
+
 function SentRow({ row, onCancel }: { row: FriendRow; onCancel: () => void }) {
   return (
     <div className="flex items-center gap-3 py-3" style={{ borderTop: "1px solid var(--color-rule)" }}>
@@ -513,7 +631,6 @@ function AddFriendForm({ onSent }: { onSent: () => void }) {
         toast.success(`Invite sent to ${result.friend.name}.`);
         onSent();
       } else if (result.reason.toLowerCase().includes("no one")) {
-        // Graceful handoff: walk the user into inviting instead of dead-ending
         setHandoff({ query: value.trim(), isEmail: value.includes("@") });
       } else {
         toast.error(result.reason);
@@ -580,7 +697,6 @@ function AddFriendForm({ onSent }: { onSent: () => void }) {
         </EditorialButton>
       </div>
 
-      {/* Quiet secondary path: invite someone not on Lectio yet */}
       <div className="mt-8 pt-6" style={{ borderTop: "1px solid var(--color-rule)" }}>
         <InviteBlock eyebrow="Not on Lectio yet?" />
       </div>
@@ -698,20 +814,54 @@ function JoinGroupForm({ onJoined }: { onJoined: (g: Group) => void }) {
   );
 }
 
-function GroupDetail({ group, onLeft }: { group: Group; onLeft: () => void }) {
-  const { userId } = useAppState();
+function relativeDay(iso: string | null): string {
+  if (!iso) return "—";
+  try {
+    const d = new Date(iso + "T00:00:00");
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
+    const diff = Math.round((today.getTime() - d.getTime()) / (1000 * 60 * 60 * 24));
+    if (diff <= 0) return "Read today";
+    if (diff === 1) return "Yesterday";
+    if (diff < 7) return `${diff} days ago`;
+    if (diff < 30) return `${Math.floor(diff / 7)}w ago`;
+    return `${Math.floor(diff / 30)}mo ago`;
+  } catch {
+    return "—";
+  }
+}
+
+function GroupDetail({
+  group,
+  friends,
+  onLeft,
+  onChanged,
+}: {
+  group: Group;
+  friends: FriendRow[];
+  onLeft: () => void;
+  onChanged: () => void;
+}) {
+  const { userId, user } = useAppState();
   const [members, setMembers] = useState<GroupMember[] | null>(null);
+  const [editingName, setEditingName] = useState(false);
+  const [draftName, setDraftName] = useState(group.name);
+  const [openInvite, setOpenInvite] = useState(false);
+  const [openShare, setOpenShare] = useState(false);
   const isOwner = userId === group.owner_id;
 
-  useEffect(() => {
-    let alive = true;
-    void listGroupMembers(group.id).then((m) => {
-      if (alive) setMembers(m);
-    });
-    return () => {
-      alive = false;
-    };
+  const loadMembers = useCallback(() => {
+    void listGroupMembers(group.id).then(setMembers);
   }, [group.id]);
+
+  useEffect(() => {
+    setMembers(null);
+    loadMembers();
+  }, [loadMembers]);
+
+  useEffect(() => {
+    setDraftName(group.name);
+  }, [group.name]);
 
   const copyCode = async () => {
     try {
@@ -734,13 +884,94 @@ function GroupDetail({ group, onLeft }: { group: Group; onLeft: () => void }) {
     onLeft();
   };
 
+  const handleRename = async () => {
+    if (draftName.trim() === group.name) {
+      setEditingName(false);
+      return;
+    }
+    try {
+      await renameGroup(group.id, draftName);
+      toast.success("Group renamed.");
+      setEditingName(false);
+      onChanged();
+    } catch (e) {
+      toast.error((e as Error).message);
+    }
+  };
+
+  const handleRegenerate = async () => {
+    if (!confirm("Generate a new join code? The old code will stop working.")) return;
+    try {
+      await regenerateJoinCode(group.id);
+      toast.success("New code generated.");
+      onChanged();
+    } catch (e) {
+      toast.error((e as Error).message);
+    }
+  };
+
+  const handleRemoveMember = async (m: GroupMember) => {
+    if (!confirm(`Remove ${m.name} from this group?`)) return;
+    try {
+      await removeGroupMember(group.id, m.id);
+      toast.success(`${m.name} removed.`);
+      loadMembers();
+    } catch (e) {
+      toast.error((e as Error).message);
+    }
+  };
+
+  const shareLink = userId
+    ? buildGroupJoinLink({ joinCode: group.join_code, username: user.username, userId })
+    : "";
+
   return (
     <div>
+      {isOwner && editingName ? (
+        <div className="flex items-center gap-2 mb-4">
+          <input
+            value={draftName}
+            onChange={(e) => setDraftName(e.target.value)}
+            autoFocus
+            className="flex-1 bg-transparent border-b py-2 font-display text-[color:var(--color-ink)] focus:outline-none"
+            style={{ fontSize: 20, borderColor: "var(--color-rule)" }}
+          />
+          <button
+            onClick={handleRename}
+            className="font-ui uppercase tracking-[0.14em] text-[color:var(--color-gold)]"
+            style={{ fontSize: 11 }}
+          >
+            Save
+          </button>
+          <button
+            onClick={() => {
+              setDraftName(group.name);
+              setEditingName(false);
+            }}
+            className="font-ui uppercase tracking-[0.14em] text-[color:var(--color-ink-muted)]"
+            style={{ fontSize: 11 }}
+          >
+            Cancel
+          </button>
+        </div>
+      ) : (
+        isOwner && (
+          <button
+            onClick={() => setEditingName(true)}
+            className="flex items-center gap-2 mb-4 text-[color:var(--color-ink-muted)] hover:text-[color:var(--color-ink)] font-ui uppercase tracking-[0.14em]"
+            style={{ fontSize: 11 }}
+          >
+            <Pencil size={12} strokeWidth={1.5} />
+            Rename
+          </button>
+        )
+      )}
+
       <div
         className="flex items-center justify-between rounded-[12px] px-4 py-3"
         style={{ background: "var(--color-paper-soft)", border: "1px solid var(--color-rule)" }}
       >
-        <div>
+        <div className="min-w-0">
           <div className="font-ui uppercase tracking-[0.14em] text-[color:var(--color-ink-muted)]" style={{ fontSize: 10 }}>
             Join Code
           </div>
@@ -748,14 +979,36 @@ function GroupDetail({ group, onLeft }: { group: Group; onLeft: () => void }) {
             {group.join_code}
           </div>
         </div>
-        <button
-          onClick={copyCode}
-          className="flex items-center gap-2 font-ui uppercase tracking-[0.14em] text-[color:var(--color-ink)]"
-          style={{ fontSize: 11 }}
-        >
-          <Copy size={14} strokeWidth={1.5} />
-          Copy
-        </button>
+        <div className="flex items-center gap-3">
+          {isOwner && (
+            <button
+              onClick={handleRegenerate}
+              aria-label="Regenerate code"
+              className="flex items-center gap-1.5 font-ui uppercase tracking-[0.14em] text-[color:var(--color-ink-muted)] hover:text-[color:var(--color-ink)]"
+              style={{ fontSize: 11 }}
+            >
+              <RefreshCw size={13} strokeWidth={1.5} />
+              New
+            </button>
+          )}
+          <button
+            onClick={copyCode}
+            className="flex items-center gap-1.5 font-ui uppercase tracking-[0.14em] text-[color:var(--color-ink)]"
+            style={{ fontSize: 11 }}
+          >
+            <Copy size={14} strokeWidth={1.5} />
+            Copy
+          </button>
+        </div>
+      </div>
+
+      <div className="mt-4 grid grid-cols-2 gap-3">
+        <EditorialButton variant="secondary" size="sm" onClick={() => setOpenInvite(true)}>
+          Invite Friends
+        </EditorialButton>
+        <EditorialButton variant="secondary" size="sm" onClick={() => setOpenShare(true)}>
+          Share Link
+        </EditorialButton>
       </div>
 
       <div className="mt-6">
@@ -785,7 +1038,8 @@ function GroupDetail({ group, onLeft }: { group: Group; onLeft: () => void }) {
                 <Avatar name={m.name} />
                 <div className="flex-1 min-w-0">
                   <div className="font-display text-[color:var(--color-ink)] truncate" style={{ fontSize: 15 }}>
-                    {m.name} {m.id === group.owner_id && (
+                    {m.name}{" "}
+                    {m.id === group.owner_id && (
                       <span className="font-ui uppercase tracking-[0.14em] text-[color:var(--color-gold)] ml-1" style={{ fontSize: 10 }}>
                         Owner
                       </span>
@@ -794,6 +1048,8 @@ function GroupDetail({ group, onLeft }: { group: Group; onLeft: () => void }) {
                   <div className="flex items-center gap-2 mt-0.5 text-[color:var(--color-ink-muted)]" style={{ fontSize: 12 }}>
                     <Flame size={12} strokeWidth={1.5} />
                     <span className="tabular">{m.current_streak}d</span>
+                    <span>·</span>
+                    <span>{relativeDay(m.last_read_date)}</span>
                   </div>
                 </div>
                 <div
@@ -802,6 +1058,15 @@ function GroupDetail({ group, onLeft }: { group: Group; onLeft: () => void }) {
                 >
                   {m.xp.toLocaleString()} XP
                 </div>
+                {isOwner && m.id !== group.owner_id && (
+                  <button
+                    onClick={() => handleRemoveMember(m)}
+                    aria-label={`Remove ${m.name}`}
+                    className="ml-1 p-1.5 text-[color:var(--color-ink-muted)] hover:text-[color:var(--color-ink)]"
+                  >
+                    <Trash2 size={14} strokeWidth={1.5} />
+                  </button>
+                )}
               </div>
             ))}
           </div>
@@ -811,6 +1076,156 @@ function GroupDetail({ group, onLeft }: { group: Group; onLeft: () => void }) {
       <div className="mt-7">
         <EditorialButton variant="secondary" onClick={handleLeave}>
           {isOwner ? "Delete Group" : "Leave Group"}
+        </EditorialButton>
+      </div>
+
+      <BottomSheet
+        open={openInvite}
+        onClose={() => setOpenInvite(false)}
+        eyebrow="Invite"
+        title={`Add to ${group.name}`}
+      >
+        <InviteFriendsPicker
+          group={group}
+          friends={friends}
+          members={members ?? []}
+          onDone={() => {
+            setOpenInvite(false);
+            onChanged();
+          }}
+        />
+      </BottomSheet>
+
+      <BottomSheet
+        open={openShare}
+        onClose={() => setOpenShare(false)}
+        eyebrow="Share"
+        title="Invite by link"
+      >
+        <p className="font-body text-[color:var(--color-ink)]" style={{ fontSize: 14, lineHeight: 1.55 }}>
+          Anyone with this link can join {group.name}. They'll be guided through signup if they're new.
+        </p>
+        <div className="mt-6">
+          <InviteBlock
+            eyebrow={`Share "${group.name}"`}
+            customUrl={shareLink}
+            customMessage={groupInviteMessage(user.name, group.name, shareLink)}
+            customSubject={`Join my Lectio group: ${group.name}`}
+            hideClicks
+          />
+        </div>
+      </BottomSheet>
+    </div>
+  );
+}
+
+function InviteFriendsPicker({
+  group,
+  friends,
+  members,
+  onDone,
+}: {
+  group: Group;
+  friends: FriendRow[];
+  members: GroupMember[];
+  onDone: () => void;
+}) {
+  const { userId } = useAppState();
+  const [selected, setSelected] = useState<Set<string>>(new Set());
+  const [busy, setBusy] = useState(false);
+
+  const memberIds = useMemo(() => new Set(members.map((m) => m.id)), [members]);
+
+  const toggle = (id: string) => {
+    setSelected((prev) => {
+      const next = new Set(prev);
+      if (next.has(id)) next.delete(id);
+      else next.add(id);
+      return next;
+    });
+  };
+
+  const submit = async () => {
+    if (!userId || selected.size === 0) return;
+    setBusy(true);
+    try {
+      const res = await inviteFriendsToGroup(group.id, userId, Array.from(selected));
+      if (res.invited > 0) {
+        toast.success(
+          `Invited ${res.invited} ${res.invited === 1 ? "friend" : "friends"}.${res.skipped ? ` ${res.skipped} skipped.` : ""}`,
+        );
+      } else {
+        toast.message("Already invited or already in the group.");
+      }
+      onDone();
+    } catch (e) {
+      toast.error((e as Error).message);
+    } finally {
+      setBusy(false);
+    }
+  };
+
+  if (friends.length === 0) {
+    return (
+      <div>
+        <p className="font-body italic text-[color:var(--color-ink-muted)]" style={{ fontSize: 14, lineHeight: 1.55 }}>
+          You don't have any friends on Lectio yet. Use the share link to invite people directly.
+        </p>
+      </div>
+    );
+  }
+
+  return (
+    <div>
+      <SmallCaps>Your Friends</SmallCaps>
+      <div className="mt-3 max-h-80 overflow-y-auto">
+        {friends.map((r) => {
+          const inGroup = memberIds.has(r.other.id);
+          const isSelected = selected.has(r.other.id);
+          return (
+            <button
+              key={r.other.id}
+              onClick={() => !inGroup && toggle(r.other.id)}
+              disabled={inGroup}
+              className="w-full flex items-center gap-3 py-3 text-left"
+              style={{ borderTop: "1px solid var(--color-rule)", opacity: inGroup ? 0.5 : 1 }}
+            >
+              <Avatar name={r.other.name} />
+              <div className="flex-1 min-w-0">
+                <div className="font-display text-[color:var(--color-ink)] truncate" style={{ fontSize: 15 }}>
+                  {r.other.name}
+                </div>
+                {r.other.username && (
+                  <div className="text-[color:var(--color-ink-muted)] mt-0.5 truncate" style={{ fontSize: 12 }}>
+                    @{r.other.username}
+                  </div>
+                )}
+              </div>
+              {inGroup ? (
+                <span className="font-ui uppercase tracking-[0.14em] text-[color:var(--color-ink-muted)]" style={{ fontSize: 10 }}>
+                  In group
+                </span>
+              ) : (
+                <div
+                  className="flex items-center justify-center rounded"
+                  style={{
+                    width: 22,
+                    height: 22,
+                    background: isSelected ? "var(--color-gold)" : "transparent",
+                    border: `1px solid ${isSelected ? "var(--color-gold)" : "var(--color-rule)"}`,
+                    color: "var(--color-paper)",
+                  }}
+                >
+                  {isSelected && <Check size={14} strokeWidth={2.5} />}
+                </div>
+              )}
+            </button>
+          );
+        })}
+      </div>
+      <div className="mt-6">
+        <EditorialButton variant="gold" disabled={selected.size === 0 || busy} onClick={submit}>
+          {busy ? "Sending…" : `Invite ${selected.size || ""}`.trim()}
         </EditorialButton>
       </div>
     </div>

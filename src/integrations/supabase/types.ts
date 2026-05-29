@@ -92,6 +92,41 @@ export type Database = {
         }
         Relationships: []
       }
+      group_invites: {
+        Row: {
+          created_at: string
+          group_id: string
+          id: string
+          invited_by: string
+          invitee_id: string
+          status: string
+        }
+        Insert: {
+          created_at?: string
+          group_id: string
+          id?: string
+          invited_by: string
+          invitee_id: string
+          status?: string
+        }
+        Update: {
+          created_at?: string
+          group_id?: string
+          id?: string
+          invited_by?: string
+          invitee_id?: string
+          status?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "group_invites_group_id_fkey"
+            columns: ["group_id"]
+            isOneToOne: false
+            referencedRelation: "groups"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       group_members: {
         Row: {
           group_id: string
@@ -329,6 +364,7 @@ export type Database = {
       }
     }
     Functions: {
+      accept_group_invite: { Args: { _invite_id: string }; Returns: string }
       books_completed_for: { Args: { _user_id: string }; Returns: number }
       find_group_by_code: {
         Args: { _code: string }
@@ -354,6 +390,7 @@ export type Database = {
         Args: { _group_id: string; _user_id: string }
         Returns: boolean
       }
+      regenerate_group_code: { Args: { _group_id: string }; Returns: string }
       resolve_ref_to_user_id: { Args: { _ref: string }; Returns: string }
       weekly_chapters_for: { Args: { _user_id: string }; Returns: number }
     }

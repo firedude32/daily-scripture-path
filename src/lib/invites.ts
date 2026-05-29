@@ -2,6 +2,7 @@ import { supabase } from "@/integrations/supabase/client";
 
 const REF_KEY = "lectio.ref";
 const REF_CLICKED_KEY = "lectio.ref.clicked";
+const PENDING_JOIN_KEY = "lectio.pendingJoin";
 
 export function getStoredRef(): string | null {
   if (typeof window === "undefined") return null;
@@ -68,6 +69,39 @@ export async function captureRefFromUrl(): Promise<void> {
 }
 
 /**
+ * Read `?join=CODE` from the current URL and stash it for redemption after login.
+ */
+export function capturePendingJoinFromUrl(): void {
+  if (typeof window === "undefined") return;
+  const params = new URLSearchParams(window.location.search);
+  const code = params.get("join");
+  if (!code) return;
+  try {
+    localStorage.setItem(PENDING_JOIN_KEY, code.toUpperCase());
+  } catch {
+    /* ignore */
+  }
+}
+
+export function getPendingJoin(): string | null {
+  if (typeof window === "undefined") return null;
+  try {
+    return localStorage.getItem(PENDING_JOIN_KEY);
+  } catch {
+    return null;
+  }
+}
+
+export function clearPendingJoin(): void {
+  if (typeof window === "undefined") return;
+  try {
+    localStorage.removeItem(PENDING_JOIN_KEY);
+  } catch {
+    /* ignore */
+  }
+}
+
+/**
  * After authentication, if we have a stored ref, write it to the new user's
  * `profiles.referred_by`. Only sets it if currently null (first-time claim).
  */
@@ -120,8 +154,30 @@ export function buildInviteLink(opts: {
   return { url: `${base}/?ref=${encodeURIComponent(slug)}`, slug };
 }
 
+/**
+ * Build a group join link. Always pairs the join code with a personal ref slug
+ * so the inviter still gets credit if the recipient signs up.
+ */
+export function buildGroupJoinLink(opts: {
+  joinCode: string;
+  username: string | null;
+  userId: string;
+}): string {
+  const base =
+    typeof window !== "undefined"
+      ? `${window.location.origin}`
+      : "https://lectio.live";
+  const slug = (opts.username && opts.username.trim()) || opts.userId;
+  const code = opts.joinCode.toUpperCase();
+  return `${base}/?join=${encodeURIComponent(code)}&ref=${encodeURIComponent(slug)}`;
+}
+
 export function inviteMessage(name: string, url: string): string {
   return `Hi! I've been using Lectio to read a little Scripture each day — calm, no pressure. Thought you might like it: ${url}\n— ${name}`;
+}
+
+export function groupInviteMessage(name: string, groupName: string, url: string): string {
+  return `Hi! Join my Lectio reading group "${groupName}" — we read a chapter a day together: ${url}\n— ${name}`;
 }
 
 export async function countInviteClicks(userId: string): Promise<number> {
