@@ -44,7 +44,8 @@ type SheetKey =
   | "about"
   | "translation"
   | "reminder"
-  | "signout";
+  | "signout"
+  | "avatar";
 
 const TRANSLATIONS = ["ESV", "NIV", "KJV", "NKJV", "NLT", "NASB", "CSB", "NRSV", "MSG", "AMP"];
 
