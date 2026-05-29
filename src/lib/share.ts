@@ -99,14 +99,15 @@ async function svgUrlToJpegFile(
 export async function shareMilestone(
   kind: ShareKind,
   params: ShareParams,
-  size: "story" | "square" = "story",
+  size: "story" | "square" = "square",
 ): Promise<{ ok: boolean; reason?: string }> {
   const url = shareCardUrl(kind, params, size);
   const absoluteUrl = typeof window !== "undefined" ? new URL(url, window.location.origin).toString() : url;
   const caption = CAPTIONS[kind](params);
-  const filename = `lectio-${kind}-${Date.now()}.png`;
+  const filename = `lectio-${kind}-${Date.now()}.jpg`;
+  const [fw, fh] = size === "square" ? [1080, 1080] : [1080, 1920];
 
-  const file = await svgUrlToPngFile(absoluteUrl, filename);
+  const file = await svgUrlToJpegFile(absoluteUrl, filename, fw, fh);
 
   // Prefer file share (iOS share sheet → Photos, Messages, Instagram Stories)
   if (file && typeof navigator !== "undefined" && "share" in navigator) {
