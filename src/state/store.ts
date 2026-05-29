@@ -207,6 +207,7 @@ export async function hydrateFromSupabase(): Promise<void> {
     xpEarned: r.xp_earned ?? 10,
   }));
 
+  const prev = memoryState;
   memoryState = {
     hydrated: true,
     userId,
@@ -231,10 +232,12 @@ export async function hydrateFromSupabase(): Promise<void> {
     sessions,
     silverGoldUnlocked: profile?.silver_gold_unlocked ?? false,
     silverGoldAcknowledged: profile?.silver_gold_acknowledged ?? false,
-    pendingCelebration: null,
-    pendingRankUp: null,
-    pendingMilestone: null,
-    forceTodaysNoteVariant: null,
+    // Preserve any pending* set locally (e.g. by admin previews) so async
+    // hydration doesn't wipe them after the user just triggered something.
+    pendingCelebration: prev.pendingCelebration ?? null,
+    pendingRankUp: prev.pendingRankUp ?? null,
+    pendingMilestone: prev.pendingMilestone ?? null,
+    forceTodaysNoteVariant: prev.forceTodaysNoteVariant ?? null,
   };
   emit();
 }
