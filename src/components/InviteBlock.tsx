@@ -14,19 +14,37 @@ interface Props {
   prefilledEmail?: string;
   /** Optional eyebrow override; defaults to "Invite to Lectio". */
   eyebrow?: string;
+  /** Override the URL being shared (e.g. a group join link). */
+  customUrl?: string;
+  /** Override the share/sms/mail message body. */
+  customMessage?: string;
+  /** Override the email subject. */
+  customSubject?: string;
+  /** Hide the personal click counter (useful for non-personal links). */
+  hideClicks?: boolean;
 }
 
-export function InviteBlock({ prefilledEmail, eyebrow = "Invite to Lectio" }: Props) {
+export function InviteBlock({
+  prefilledEmail,
+  eyebrow = "Invite to Lectio",
+  customUrl,
+  customMessage,
+  customSubject,
+  hideClicks = false,
+}: Props) {
   const { userId, user } = useAppState();
   const [clicks, setClicks] = useState<number>(0);
 
-  const link = userId
+  const personalLink = userId
     ? buildInviteLink({ username: user.username, userId })
     : { url: "https://lectio.live", slug: "" };
-  const message = inviteMessage(user.name, link.url);
+  const link = { url: customUrl ?? personalLink.url, slug: personalLink.slug };
+  const message = customMessage ?? inviteMessage(user.name, link.url);
+  const subject = customSubject ?? "A quiet way to read the Bible";
+
 
   useEffect(() => {
-    if (!userId) return;
+    if (!userId || hideClicks || customUrl) return;
     let alive = true;
     countInviteClicks(userId)
       .then((n) => alive && setClicks(n))
@@ -34,7 +52,9 @@ export function InviteBlock({ prefilledEmail, eyebrow = "Invite to Lectio" }: Pr
     return () => {
       alive = false;
     };
-  }, [userId]);
+  }, [userId, hideClicks, customUrl]);
+
+
 
   const copy = async () => {
     try {
@@ -65,10 +85,9 @@ export function InviteBlock({ prefilledEmail, eyebrow = "Invite to Lectio" }: Pr
   const canNativeShare =
     typeof navigator !== "undefined" && "share" in navigator;
 
-  const smsHref = `sms:${prefilledEmail ? "" : ""}?&body=${encodeURIComponent(message)}`;
-  const mailHref = `mailto:${prefilledEmail ?? ""}?subject=${encodeURIComponent(
-    "A quiet way to read the Bible",
-  )}&body=${encodeURIComponent(message)}`;
+  const smsHref = `sms:?&body=${encodeURIComponent(message)}`;
+  const mailHref = `mailto:${prefilledEmail ?? ""}?subject=${encodeURIComponent(subject)}&body=${encodeURIComponent(message)}`;
+
 
   return (
     <div>
