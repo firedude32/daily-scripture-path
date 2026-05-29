@@ -1,25 +1,29 @@
 import { createServerFn } from "@tanstack/react-start";
 import { supabaseAdmin } from "@/integrations/supabase/client.server";
+import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
 
-const ADMIN_PASSWORD = "admin123";
-
-function checkPassword(password: string) {
-  if (password !== ADMIN_PASSWORD) {
-    throw new Error("Invalid admin password");
-  }
+async function assertAdmin(userId: string) {
+  const { data, error } = await supabaseAdmin
+    .from("user_roles")
+    .select("role")
+    .eq("user_id", userId)
+    .eq("role", "admin")
+    .maybeSingle();
+  if (error) throw new Error(error.message);
+  if (!data) throw new Error("Forbidden");
 }
 
-export const verifyAdminPassword = createServerFn({ method: "POST" })
-  .inputValidator((data: { password: string }) => data)
-  .handler(async ({ data }) => {
-    checkPassword(data.password);
+export const checkAdminAccess = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .handler(async ({ context }) => {
+    await assertAdmin(context.userId);
     return { ok: true };
   });
 
 export const getAdminOverview = createServerFn({ method: "POST" })
-  .inputValidator((data: { password: string }) => data)
-  .handler(async ({ data }) => {
-    checkPassword(data.password);
+  .middleware([requireSupabaseAuth])
+  .handler(async ({ context }) => {
+    await assertAdmin(context.userId);
 
     const since7 = new Date(Date.now() - 7 * 86400_000).toISOString();
     const since1 = new Date(Date.now() - 86400_000).toISOString();
@@ -56,9 +60,10 @@ export const getAdminOverview = createServerFn({ method: "POST" })
   });
 
 export const getAdminUsers = createServerFn({ method: "POST" })
-  .inputValidator((data: { password: string; limit?: number }) => data)
-  .handler(async ({ data }) => {
-    checkPassword(data.password);
+  .middleware([requireSupabaseAuth])
+  .inputValidator((data: { limit?: number }) => data)
+  .handler(async ({ data, context }) => {
+    await assertAdmin(context.userId);
     const limit = Math.min(data.limit ?? 100, 500);
     const { data: rows, error } = await supabaseAdmin
       .from("profiles")
@@ -70,9 +75,9 @@ export const getAdminUsers = createServerFn({ method: "POST" })
   });
 
 export const getAdminReports = createServerFn({ method: "POST" })
-  .inputValidator((data: { password: string }) => data)
-  .handler(async ({ data }) => {
-    checkPassword(data.password);
+  .middleware([requireSupabaseAuth])
+  .handler(async ({ context }) => {
+    await assertAdmin(context.userId);
     const { data: rows, error } = await supabaseAdmin
       .from("quiz_reports")
       .select("*")
@@ -83,9 +88,10 @@ export const getAdminReports = createServerFn({ method: "POST" })
   });
 
 export const updateReportStatus = createServerFn({ method: "POST" })
-  .inputValidator((data: { password: string; id: string; status: string }) => data)
-  .handler(async ({ data }) => {
-    checkPassword(data.password);
+  .middleware([requireSupabaseAuth])
+  .inputValidator((data: { id: string; status: string }) => data)
+  .handler(async ({ data, context }) => {
+    await assertAdmin(context.userId);
     const { error } = await supabaseAdmin
       .from("quiz_reports")
       .update({ status: data.status })
@@ -95,18 +101,19 @@ export const updateReportStatus = createServerFn({ method: "POST" })
   });
 
 export const deleteReport = createServerFn({ method: "POST" })
-  .inputValidator((data: { password: string; id: string }) => data)
-  .handler(async ({ data }) => {
-    checkPassword(data.password);
+  .middleware([requireSupabaseAuth])
+  .inputValidator((data: { id: string }) => data)
+  .handler(async ({ data, context }) => {
+    await assertAdmin(context.userId);
     const { error } = await supabaseAdmin.from("quiz_reports").delete().eq("id", data.id);
     if (error) throw new Error(error.message);
     return { ok: true };
   });
 
 export const getRecentSessions = createServerFn({ method: "POST" })
-  .inputValidator((data: { password: string }) => data)
-  .handler(async ({ data }) => {
-    checkPassword(data.password);
+  .middleware([requireSupabaseAuth])
+  .handler(async ({ context }) => {
+    await assertAdmin(context.userId);
     const { data: rows, error } = await supabaseAdmin
       .from("reading_sessions")
       .select("id, user_id, book_id, chapter, duration_sec, xp_earned, completed_at")
@@ -117,9 +124,10 @@ export const getRecentSessions = createServerFn({ method: "POST" })
   });
 
 export const adminResetUserStreak = createServerFn({ method: "POST" })
-  .inputValidator((data: { password: string; userId: string }) => data)
-  .handler(async ({ data }) => {
-    checkPassword(data.password);
+  .middleware([requireSupabaseAuth])
+  .inputValidator((data: { userId: string }) => data)
+  .handler(async ({ data, context }) => {
+    await assertAdmin(context.userId);
     const { error } = await supabaseAdmin
       .from("profiles")
       .update({ current_streak: 0, longest_streak: 0 })
@@ -129,9 +137,10 @@ export const adminResetUserStreak = createServerFn({ method: "POST" })
   });
 
 export const adminDeleteUserData = createServerFn({ method: "POST" })
-  .inputValidator((data: { password: string; userId: string }) => data)
-  .handler(async ({ data }) => {
-    checkPassword(data.password);
+  .middleware([requireSupabaseAuth])
+  .inputValidator((data: { userId: string }) => data)
+  .handler(async ({ data, context }) => {
+    await assertAdmin(context.userId);
     const uid = data.userId;
     await supabaseAdmin.from("reading_sessions").delete().eq("user_id", uid);
     await supabaseAdmin.from("book_progress").delete().eq("user_id", uid);

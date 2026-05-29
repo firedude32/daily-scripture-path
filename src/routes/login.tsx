@@ -8,19 +8,27 @@ import { EditorialButton } from "@/components/ui-lectio/EditorialButton";
 import { SmallCaps } from "@/components/ui-lectio/SmallCaps";
 import { Rule } from "@/components/ui-lectio/Rule";
 
+function sanitizeRedirect(r: unknown): string {
+  if (typeof r !== "string") return "/";
+  // Only allow same-origin relative paths beginning with a single "/"
+  if (!r.startsWith("/") || r.startsWith("//") || r.startsWith("/\\")) return "/";
+  return r;
+}
+
 export const Route = createFileRoute("/login")({
   validateSearch: (search: Record<string, unknown>): { redirect?: string } => {
-    const r = search.redirect;
-    return typeof r === "string" ? { redirect: r } : {};
+    const r = sanitizeRedirect(search.redirect);
+    return r === "/" ? {} : { redirect: r };
   },
   beforeLoad: async ({ search }) => {
     if (typeof window === "undefined") return;
     const { data } = await supabase.auth.getSession();
-    if (data.session) throw redirect({ to: search.redirect ?? "/" });
+    if (data.session) throw redirect({ to: sanitizeRedirect(search.redirect) });
   },
   head: () => ({ meta: [{ title: "Sign in — Lectio" }] }),
   component: LoginPage,
 });
+
 
 function LoginPage() {
   const search = Route.useSearch();
@@ -37,7 +45,7 @@ function LoginPage() {
     const { error } = await supabase.auth.signInWithPassword({ email, password });
     setBusy(false);
     if (error) return setError(error.message);
-    navigate({ to: search.redirect });
+    navigate({ to: sanitizeRedirect(search.redirect) });
   }
 
   async function oauth(provider: "google" | "apple") {
