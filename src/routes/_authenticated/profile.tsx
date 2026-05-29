@@ -446,6 +446,65 @@ function ProfilePage() {
         </BottomSheet>
 
         <BottomSheet
+          open={sheet === "avatar"}
+          onClose={() => setSheet(null)}
+          eyebrow="Profile Icon"
+          title="Choose a symbol"
+        >
+          <p className="font-body italic text-[color:var(--color-ink-muted)]" style={{ fontSize: 13, lineHeight: 1.55 }}>
+            A quiet mark to carry with you.
+          </p>
+          <div className="mt-6 grid grid-cols-4 gap-3">
+            {AVATAR_ICONS.map(({ key, label, Icon }) => {
+              const active = state.user.avatarIcon === key;
+              return (
+                <button
+                  key={key}
+                  type="button"
+                  onClick={() => {
+                    setAvatarIcon(key);
+                    setTimeout(() => setSheet(null), 180);
+                  }}
+                  aria-label={label}
+                  className="flex flex-col items-center justify-center gap-2 py-4 rounded-[14px] border transition-colors"
+                  style={{
+                    borderColor: active ? "var(--color-gold)" : "var(--color-rule)",
+                    background: active ? "var(--color-paper-light)" : "transparent",
+                  }}
+                >
+                  <Icon
+                    size={26}
+                    strokeWidth={1.25}
+                    style={{ color: active ? "var(--color-gold)" : "var(--color-ink)" }}
+                    aria-hidden
+                  />
+                  <span
+                    className="font-ui uppercase tracking-[0.12em] text-[10px]"
+                    style={{ color: active ? "var(--color-gold)" : "var(--color-ink-muted)" }}
+                  >
+                    {label}
+                  </span>
+                </button>
+              );
+            })}
+          </div>
+          {state.user.avatarIcon && (
+            <button
+              type="button"
+              onClick={() => {
+                setAvatarIcon(null);
+                setSheet(null);
+              }}
+              className="mt-6 w-full font-ui uppercase tracking-[0.14em] text-[11px] text-[color:var(--color-ink-muted)] hover:text-[color:var(--color-ink)] transition-colors py-2"
+            >
+              Use initial instead
+            </button>
+          )}
+        </BottomSheet>
+
+
+
+        <BottomSheet
           open={sheet === "signout"}
           onClose={() => setSheet(null)}
           eyebrow="Sign Out"
