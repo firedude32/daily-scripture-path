@@ -40,7 +40,7 @@ function RankCelebration() {
     streak: state.currentStreak,
     books: booksCompleted(state),
   };
-  const cardUrl = shareCardUrl("rank", params, "story");
+  const cardUrl = shareCardUrl("rank", params, "square");
 
   function done() {
     clearPendingRankUp();
