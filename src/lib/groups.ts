@@ -211,7 +211,7 @@ export async function inviteFriendsToGroup(
     .eq("group_id", groupId)
     .eq("status", "pending")
     .in("invitee_id", inviteeIds);
-  const pendingSet = new Set((existingInvites ?? []).map((m) => m.invitee_id));
+  const pendingSet = new Set((existingInvites ?? []).map((m: { invitee_id: string }) => m.invitee_id));
 
   const toInvite = inviteeIds.filter((id) => !memberSet.has(id) && !pendingSet.has(id));
   if (toInvite.length === 0) {
@@ -239,7 +239,8 @@ export async function listIncomingGroupInvites(
     .eq("status", "pending");
   if (error) throw error;
 
-  const rows = data ?? [];
+  type InviteRow = { id: string; group_id: string; invited_by: string; created_at: string };
+  const rows = (data ?? []) as InviteRow[];
   if (rows.length === 0) return [];
 
   const groupIds = Array.from(new Set(rows.map((r) => r.group_id)));
