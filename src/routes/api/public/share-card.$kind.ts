@@ -1,9 +1,9 @@
 import { createFileRoute } from "@tanstack/react-router";
 
 // Lectio share card renderer. Returns an SVG sized for either Instagram
-// Stories (1080×1920) or feed/square (1080×1080). Pure SVG — no fonts to
-// fetch, no Node-only deps. The client-side share helper rasterizes this
-// SVG to a PNG via canvas before handing to the iOS share sheet.
+// Stories (1080×1920) or feed/square (1080×1080). Pure SVG, no external
+// fonts. Layout uses a vertical stack with fixed gaps so nothing overlaps
+// regardless of text length.
 
 type Kind = "book" | "rank" | "streak" | "gospel" | "nt" | "bible";
 
@@ -30,7 +30,7 @@ function esc(s: string): string {
     .replace(/"/g, "&quot;");
 }
 
-// Simple Lucide-style glyphs per kind (24px viewBox, stroke 1.5).
+// Lucide-style glyphs (24px viewBox).
 const GLYPHS: Record<string, string> = {
   book: `<path d="M4 19.5v-15A2.5 2.5 0 0 1 6.5 2H20v20H6.5a2.5 2.5 0 0 1 0-5H20"/>`,
   rank: `<circle cx="12" cy="8" r="6"/><path d="M8.21 13.89 7 22l5-3 5 3-1.21-8.12"/>`,
@@ -45,7 +45,6 @@ interface CardConfig {
   height: number;
   kind: Kind;
   title: string;
-  subtitle: string;
   eyebrow: string;
   encouragement: string;
   tier?: string | null;
@@ -54,98 +53,171 @@ interface CardConfig {
   chapters?: number;
 }
 
+const SERIF = "'Cormorant Garamond', 'EB Garamond', Garamond, 'Times New Roman', Georgia, serif";
+const SANS = "'Inter', 'Helvetica Neue', Helvetica, Arial, sans-serif";
+
+function fitTitleSize(title: string, maxWidth: number, isStory: boolean): number {
+  // Rough heuristic: serif at weight 300 ~0.48em per char average.
+  const baseMax = isStory ? 180 : 130;
+  const baseMin = isStory ? 64 : 48;
+  const estPerChar = 0.48;
+  const sizeForWidth = maxWidth / Math.max(title.length, 1) / estPerChar;
+  return Math.max(baseMin, Math.min(baseMax, Math.floor(sizeForWidth)));
+}
+
 function renderSvg(cfg: CardConfig): string {
   const { width: W, height: H } = cfg;
   const isStory = H > W;
   const accent = cfg.kind === "rank" ? GOLD : tierColor(cfg.tier);
 
-  // Layout proportions
-  const centerY = isStory ? H * 0.42 : H * 0.48;
-  const glyphSize = isStory ? 200 : 160;
-  const titleSize = isStory ? Math.min(160, 1500 / Math.max(cfg.title.length, 8)) : 110;
-  const eyebrowSize = isStory ? 32 : 26;
-  const subtitleSize = isStory ? 40 : 32;
-  const encSize = isStory ? 38 : 30;
-  const metaSize = isStory ? 26 : 22;
+  // Padding
+  const padX = isStory ? 90 : 70;
+  const safeTop = isStory ? 110 : 70;
+  const safeBottom = isStory ? 150 : 90;
+  const contentWidth = W - padX * 2;
 
+  // Build stats list (always include streak; only show others if non-zero)
+  const stats: Array<{ label: string; value: string }> = [];
+  if (cfg.streakDays != null && cfg.streakDays > 0) {
+    stats.push({ label: cfg.streakDays === 1 ? "Day" : "Days", value: String(cfg.streakDays) });
+  }
+  if (cfg.chapters != null && cfg.chapters > 0) {
+    stats.push({ label: "Chapters", value: String(cfg.chapters) });
+  }
+  if (cfg.booksRead != null && cfg.booksRead > 0) {
+    stats.push({ label: cfg.booksRead === 1 ? "Book" : "Books", value: String(cfg.booksRead) });
+  }
+
+  // Vertical stack with fixed gaps. Start from top safe-area and lay out.
+  let y = safeTop;
+  const parts: string[] = [];
+
+  // Background
+  parts.push(
+    `<defs>
+       <radialGradient id="wash" cx="50%" cy="${isStory ? "34%" : "42%"}" r="${isStory ? "62%" : "58%"}">
+         <stop offset="0%" stop-color="${accent}" stop-opacity="0.18"/>
+         <stop offset="100%" stop-color="${accent}" stop-opacity="0"/>
+       </radialGradient>
+       <linearGradient id="paper" x1="0" y1="0" x2="0" y2="1">
+         <stop offset="0%" stop-color="${PAPER_LIGHT}"/>
+         <stop offset="100%" stop-color="${PAPER}"/>
+       </linearGradient>
+     </defs>
+     <rect width="${W}" height="${H}" fill="url(#paper)"/>
+     <rect width="${W}" height="${H}" fill="url(#wash)"/>`,
+  );
+
+  // 1. Wordmark
+  const wordmarkSize = isStory ? 42 : 34;
+  parts.push(
+    `<text x="${W / 2}" y="${y + wordmarkSize * 0.8}" text-anchor="middle"
+       font-family="${SERIF}" font-size="${wordmarkSize}" font-style="italic"
+       fill="${INK_SOFT}" letter-spacing="6">Lectio</text>`,
+  );
+  y += wordmarkSize + (isStory ? 100 : 60);
+
+  // 2. Eyebrow chip
+  const eyebrowSize = isStory ? 28 : 22;
+  parts.push(
+    `<text x="${W / 2}" y="${y + eyebrowSize}" text-anchor="middle"
+       font-family="${SANS}" font-size="${eyebrowSize}" font-weight="600"
+       fill="${accent}" letter-spacing="${eyebrowSize * 0.22}">${esc(cfg.eyebrow.toUpperCase())}</text>`,
+  );
+  y += eyebrowSize + (isStory ? 70 : 50);
+
+  // 3. Glyph
+  const glyphSize = isStory ? 160 : 120;
   const glyphPath = GLYPHS[cfg.kind] ?? GLYPHS.book;
+  parts.push(
+    `<g transform="translate(${(W - glyphSize) / 2} ${y})">
+       <svg width="${glyphSize}" height="${glyphSize}" viewBox="0 0 24 24"
+         fill="none" stroke="${accent}" stroke-width="0.9"
+         stroke-linecap="round" stroke-linejoin="round">${glyphPath}</svg>
+     </g>`,
+  );
+  y += glyphSize + (isStory ? 70 : 50);
 
-  // Bottom stats row
-  const statsParts: string[] = [];
-  if (cfg.streakDays && cfg.streakDays > 0) statsParts.push(`${cfg.streakDays} DAY STREAK`);
-  if (cfg.booksRead && cfg.booksRead > 0) statsParts.push(`${cfg.booksRead} BOOK${cfg.booksRead === 1 ? "" : "S"}`);
-  if (cfg.chapters && cfg.chapters > 0) statsParts.push(`${cfg.chapters} CHAPTERS`);
-  const stats = statsParts.join("   ·   ");
+  // 4. Title (focal)
+  const titleSize = fitTitleSize(cfg.title, contentWidth, isStory);
+  parts.push(
+    `<text x="${W / 2}" y="${y + titleSize * 0.78}" text-anchor="middle"
+       font-family="${SERIF}" font-size="${titleSize}" font-weight="300"
+       fill="${INK}" letter-spacing="-1">${esc(cfg.title)}</text>`,
+  );
+  y += titleSize + (isStory ? 50 : 36);
 
-  // Use widely-available system serifs/sans for max compatibility.
-  const SERIF = "'Cormorant Garamond', 'EB Garamond', Garamond, 'Times New Roman', Georgia, serif";
-  const SANS = "'Inter', 'Helvetica Neue', Helvetica, Arial, sans-serif";
+  // 5. Hairline rule
+  parts.push(
+    `<line x1="${W / 2 - 70}" y1="${y}" x2="${W / 2 + 70}" y2="${y}"
+       stroke="${accent}" stroke-width="2"/>`,
+  );
+  y += isStory ? 60 : 40;
+
+  // 6. Encouragement (single line, italic, may wrap to 2)
+  const encSize = isStory ? 36 : 28;
+  const enc = cfg.encouragement;
+  // Simple wrap: if too long, break at midpoint near a space.
+  const encMaxChars = Math.floor(contentWidth / (encSize * 0.42));
+  let encLines: string[] = [enc];
+  if (enc.length > encMaxChars) {
+    const mid = Math.floor(enc.length / 2);
+    let split = enc.lastIndexOf(" ", mid + 8);
+    if (split < mid - 8 || split < 0) split = enc.indexOf(" ", mid);
+    if (split > 0) encLines = [enc.slice(0, split).trim(), enc.slice(split).trim()];
+  }
+  encLines.forEach((line, i) => {
+    parts.push(
+      `<text x="${W / 2}" y="${y + encSize * 0.8 + i * encSize * 1.25}" text-anchor="middle"
+         font-family="${SERIF}" font-size="${encSize}" font-style="italic"
+         fill="${INK_SOFT}">${esc(line)}</text>`,
+    );
+  });
+  y += encSize * (encLines.length * 1.25) + (isStory ? 30 : 20);
+
+  // 7. Stats grid pinned to bottom area (anchored from bottom)
+  const statsY = H - safeBottom - (isStory ? 80 : 60);
+  const footerY = H - safeBottom + (isStory ? 40 : 24);
+
+  if (stats.length > 0) {
+    const cols = stats.length;
+    const colWidth = contentWidth / cols;
+    const valueSize = isStory ? 64 : 48;
+    const labelSize = isStory ? 22 : 18;
+    stats.forEach((s, i) => {
+      const cx = padX + colWidth * i + colWidth / 2;
+      parts.push(
+        `<text x="${cx}" y="${statsY}" text-anchor="middle"
+           font-family="${SERIF}" font-size="${valueSize}" font-weight="300"
+           fill="${INK}" letter-spacing="-1">${esc(s.value)}</text>`,
+        `<text x="${cx}" y="${statsY + labelSize + 14}" text-anchor="middle"
+           font-family="${SANS}" font-size="${labelSize}" font-weight="500"
+           fill="${INK_MUTED}" letter-spacing="${labelSize * 0.22}">${esc(s.label.toUpperCase())}</text>`,
+      );
+      // Vertical separator between columns
+      if (i > 0) {
+        const sepX = padX + colWidth * i;
+        parts.push(
+          `<line x1="${sepX}" y1="${statsY - valueSize * 0.75}" x2="${sepX}" y2="${statsY + labelSize + 22}"
+             stroke="${INK_MUTED}" stroke-width="1" opacity="0.3"/>`,
+        );
+      }
+    });
+  }
+
+  // 8. Footer wordmark
+  parts.push(
+    `<line x1="${W * 0.38}" y1="${footerY - (isStory ? 24 : 16)}"
+       x2="${W * 0.62}" y2="${footerY - (isStory ? 24 : 16)}"
+       stroke="${INK_MUTED}" stroke-width="1" opacity="0.35"/>
+     <text x="${W / 2}" y="${footerY + (isStory ? 18 : 12)}" text-anchor="middle"
+       font-family="${SANS}" font-size="${isStory ? 22 : 18}" font-weight="500"
+       fill="${INK_MUTED}" letter-spacing="${(isStory ? 22 : 18) * 0.22}">LECTIO.LIVE</text>`,
+  );
 
   return `<?xml version="1.0" encoding="UTF-8"?>
 <svg xmlns="http://www.w3.org/2000/svg" width="${W}" height="${H}" viewBox="0 0 ${W} ${H}" preserveAspectRatio="xMidYMid meet">
-  <defs>
-    <radialGradient id="wash" cx="50%" cy="${isStory ? "32%" : "40%"}" r="65%">
-      <stop offset="0%" stop-color="${accent}" stop-opacity="0.16"/>
-      <stop offset="100%" stop-color="${accent}" stop-opacity="0"/>
-    </radialGradient>
-    <linearGradient id="paper" x1="0" y1="0" x2="0" y2="1">
-      <stop offset="0%" stop-color="${PAPER_LIGHT}"/>
-      <stop offset="100%" stop-color="${PAPER}"/>
-    </linearGradient>
-  </defs>
-  <rect width="${W}" height="${H}" fill="url(#paper)"/>
-  <rect width="${W}" height="${H}" fill="url(#wash)"/>
-
-  <!-- Wordmark top -->
-  <text x="${W / 2}" y="${isStory ? 130 : 90}" text-anchor="middle"
-    font-family="${SERIF}" font-size="${isStory ? 44 : 36}" font-style="italic"
-    fill="${INK_SOFT}" letter-spacing="6">Lectio</text>
-
-  <!-- Eyebrow -->
-  <text x="${W / 2}" y="${centerY - glyphSize / 2 - 80}" text-anchor="middle"
-    font-family="${SANS}" font-size="${eyebrowSize}" font-weight="500"
-    fill="${accent}" letter-spacing="${eyebrowSize * 0.18}">${esc(cfg.eyebrow.toUpperCase())}</text>
-
-  <!-- Glyph -->
-  <g transform="translate(${(W - glyphSize) / 2} ${centerY - glyphSize / 2 - 20})">
-    <svg width="${glyphSize}" height="${glyphSize}" viewBox="0 0 24 24"
-      fill="none" stroke="${accent}" stroke-width="0.8"
-      stroke-linecap="round" stroke-linejoin="round">
-      ${glyphPath}
-    </svg>
-  </g>
-
-  <!-- Title (focal) -->
-  <text x="${W / 2}" y="${centerY + glyphSize / 2 + titleSize * 0.35}" text-anchor="middle"
-    font-family="${SERIF}" font-size="${titleSize}" font-weight="300"
-    fill="${INK}" letter-spacing="-2">${esc(cfg.title)}</text>
-
-  <!-- Hairline rule -->
-  <line x1="${W / 2 - 60}" y1="${centerY + glyphSize / 2 + titleSize + 50}"
-    x2="${W / 2 + 60}" y2="${centerY + glyphSize / 2 + titleSize + 50}"
-    stroke="${accent}" stroke-width="2"/>
-
-  <!-- Subtitle -->
-  <text x="${W / 2}" y="${centerY + glyphSize / 2 + titleSize + 130}" text-anchor="middle"
-    font-family="${SERIF}" font-size="${subtitleSize}" font-style="italic"
-    fill="${INK_SOFT}">${esc(cfg.subtitle)}</text>
-
-  <!-- Encouragement -->
-  <text x="${W / 2}" y="${centerY + glyphSize / 2 + titleSize + 130 + encSize + 40}" text-anchor="middle"
-    font-family="${SERIF}" font-size="${encSize}" font-style="italic"
-    fill="${INK_SOFT}">${esc(cfg.encouragement)}</text>
-
-  <!-- Bottom meta -->
-  ${stats ? `<text x="${W / 2}" y="${H - (isStory ? 140 : 80)}" text-anchor="middle"
-    font-family="${SANS}" font-size="${metaSize}" font-weight="500"
-    fill="${INK_MUTED}" letter-spacing="${metaSize * 0.2}">${esc(stats)}</text>` : ""}
-
-  <!-- Bottom hairline -->
-  <line x1="${W * 0.3}" y1="${H - (isStory ? 90 : 50)}" x2="${W * 0.7}" y2="${H - (isStory ? 90 : 50)}"
-    stroke="${INK_MUTED}" stroke-width="1" opacity="0.4"/>
-  <text x="${W / 2}" y="${H - (isStory ? 50 : 25)}" text-anchor="middle"
-    font-family="${SANS}" font-size="${metaSize * 0.75}" font-weight="500"
-    fill="${INK_MUTED}" letter-spacing="${metaSize * 0.18}">lectio.live</text>
+${parts.join("\n")}
 </svg>`;
 }
 
@@ -162,13 +234,15 @@ function buildConfig(kind: Kind, q: URLSearchParams): CardConfig {
   const chapters = q.get("chapters") ? Number(q.get("chapters")) : undefined;
 
   let eyebrow = "Quietly";
-  let subtitle = "";
   let encouragement = "";
+  let resolvedTitle = title;
 
   switch (kind) {
     case "book":
-      eyebrow = tier === "gold" ? "Third Completion" : tier === "silver" ? "Second Completion" : "First Completion";
-      subtitle = chapters ? `${chapters} chapters · complete` : "Complete";
+      eyebrow =
+        tier === "gold" ? "Third Completion"
+        : tier === "silver" ? "Second Completion"
+        : "Book Complete";
       encouragement =
         tier === "gold" ? "Three times. The book lives in you."
         : tier === "silver" ? "Twice through. Quiet, real depth."
@@ -176,27 +250,28 @@ function buildConfig(kind: Kind, q: URLSearchParams): CardConfig {
       break;
     case "rank":
       eyebrow = "New Rank";
-      subtitle = q.get("subtitle") ?? "";
       encouragement = q.get("encouragement") ?? "Earned with time.";
       break;
-    case "streak":
-      eyebrow = "Streak";
-      subtitle = `Day ${title}`;
-      encouragement = Number(title) >= 30 ? "A month of showing up." : "A week of showing up.";
+    case "streak": {
+      const n = Number(title) || streakDays || 0;
+      eyebrow = "A Streak";
+      resolvedTitle = `Day ${n}`;
+      encouragement = n >= 30 ? "A month of showing up." : "A week of showing up.";
       break;
+    }
     case "gospel":
       eyebrow = "Gospel Complete";
-      subtitle = `The book of ${title}`;
-      encouragement = "A whole Gospel read through.";
+      resolvedTitle = title || "Gospel";
+      encouragement = "A whole Gospel, read through.";
       break;
     case "nt":
       eyebrow = "New Testament";
-      subtitle = "Complete";
+      resolvedTitle = "Complete";
       encouragement = "Twenty-seven books. One long read.";
       break;
     case "bible":
       eyebrow = "The Whole Bible";
-      subtitle = "Sixty-six books";
+      resolvedTitle = "Sixty-six";
       encouragement = "Cover to cover.";
       break;
   }
@@ -205,8 +280,7 @@ function buildConfig(kind: Kind, q: URLSearchParams): CardConfig {
     width: W,
     height: H,
     kind,
-    title: title || subtitle || eyebrow,
-    subtitle: kind === "book" ? subtitle : (kind === "rank" ? subtitle : ""),
+    title: resolvedTitle || eyebrow,
     eyebrow,
     encouragement,
     tier,
@@ -220,7 +294,7 @@ export const Route = createFileRoute("/api/public/share-card/$kind")({
   server: {
     handlers: {
       GET: async ({ request, params }) => {
-        const kind = (params.kind as Kind);
+        const kind = params.kind as Kind;
         if (!["book", "rank", "streak", "gospel", "nt", "bible"].includes(kind)) {
           return new Response("Unknown card kind", { status: 404 });
         }
