@@ -53,8 +53,6 @@ function SummaryPage() {
   const state = useAppState();
   const [data, setData] = useState<SummaryData | null>(null);
   const [headline] = useState(() => HEADLINES[Math.floor(Math.random() * HEADLINES.length)]);
-  const [shareOpen, setShareOpen] = useState(false);
-  const [copied, setCopied] = useState(false);
 
   useEffect(() => {
     const raw = sessionStorage.getItem("brt:summary");
