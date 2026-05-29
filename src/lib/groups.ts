@@ -140,7 +140,7 @@ export async function listGroupMembers(groupId: string): Promise<GroupMember[]> 
   if (ids.length === 0) return [];
 
   const { data: profiles, error: e2 } = await supabase
-    .from("profiles")
+    .from("public_profiles")
     .select("id, name, username, current_streak, xp")
     .in("id", ids);
   if (e2) throw e2;
@@ -149,13 +149,14 @@ export async function listGroupMembers(groupId: string): Promise<GroupMember[]> 
   for (const r of rows ?? []) joinedMap[r.user_id] = r.joined_at;
 
   return (profiles ?? [])
+    .filter((p) => !!p.id)
     .map((p) => ({
-      id: p.id,
-      name: p.name,
+      id: p.id as string,
+      name: p.name ?? "Friend",
       username: p.username,
       current_streak: p.current_streak ?? 0,
       xp: p.xp ?? 0,
-      joined_at: joinedMap[p.id] ?? "",
+      joined_at: joinedMap[p.id as string] ?? "",
     }))
     .sort((a, b) => b.xp - a.xp);
 }
