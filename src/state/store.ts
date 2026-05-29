@@ -125,8 +125,9 @@ function emit() {
 }
 
 export function setState(updater: (s: AppState) => AppState | void) {
-  const next = updater(memoryState);
-  memoryState = next ?? memoryState;
+  const draft = { ...memoryState };
+  const next = updater(draft);
+  memoryState = next ?? draft;
   emit();
 }
 
