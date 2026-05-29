@@ -1,13 +1,15 @@
 import { createFileRoute, useNavigate } from "@tanstack/react-router";
 import { motion } from "framer-motion";
 import { useEffect, useState } from "react";
+import { Share2 } from "lucide-react";
 import { PhoneFrame } from "@/components/PhoneFrame";
 import { Screen } from "@/components/Screen";
-import { useAppState, clearPendingCelebration, acknowledgeSilverGold } from "@/state/store";
+import { useAppState, clearPendingCelebration, acknowledgeSilverGold, booksCompleted } from "@/state/store";
 import { bookById } from "@/data/books";
 import { EditorialButton } from "@/components/ui-lectio/EditorialButton";
 import { SmallCaps } from "@/components/ui-lectio/SmallCaps";
 import { GoldMotif, bookMotif } from "@/components/GoldMotif";
+import { shareMilestone } from "@/lib/share";
 
 export const Route = createFileRoute("/_authenticated/celebration/book")({
   head: () => ({
