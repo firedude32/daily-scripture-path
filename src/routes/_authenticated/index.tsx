@@ -46,10 +46,44 @@ function HomePage() {
   const ready = useClientReady();
   const state = useAppState();
   const [pickerOpen, setPickerOpen] = useState(false);
+  const [referrer, setReferrer] = useState<ReferrerInfo | null>(null);
 
   useEffect(() => {
     if (ready && !state.onboarded) navigate({ to: "/onboarding" });
   }, [ready, state.onboarded, navigate]);
+
+  // Claim ref from localStorage (set when they arrived via ?ref=) and surface
+  // a one-tap "Add X" card so invited users find their inviter instantly.
+  useEffect(() => {
+    if (!ready || !state.userId) return;
+    let alive = true;
+    (async () => {
+      await claimRefForUser(state.userId!);
+      const r = await getUnclaimedReferrer(state.userId!);
+      if (alive) setReferrer(r);
+    })();
+    return () => {
+      alive = false;
+    };
+  }, [ready, state.userId]);
+
+  async function addReferrer() {
+    if (!state.userId || !referrer) return;
+    const res = await sendFriendRequest(state.userId, referrer.id);
+    if (res.ok) {
+      toast.success(`Invite sent to ${referrer.name}.`);
+    } else {
+      toast.error(res.reason);
+    }
+    await markReferrerClaimed(state.userId);
+    setReferrer(null);
+  }
+
+  async function dismissReferrer() {
+    if (!state.userId) return;
+    await markReferrerClaimed(state.userId);
+    setReferrer(null);
+  }
 
   function startRecommended() {
     clearReadOverride();
