@@ -52,6 +52,13 @@ export interface AppState {
     days: number;
   };
   pendingRankUp: null | { rankIndex: number };
+  pendingMilestone: null | {
+    kind: "streak" | "gospel" | "nt" | "bible";
+    title: string;
+    streak?: number;
+    books?: number;
+  };
+  forceTodaysNoteVariant: string | null;
 }
 
 function todayKey(d = new Date()): string {
@@ -104,6 +111,8 @@ function emptyState(): AppState {
     silverGoldAcknowledged: false,
     pendingCelebration: null,
     pendingRankUp: null,
+    pendingMilestone: null,
+    forceTodaysNoteVariant: null,
   };
 }
 
@@ -222,6 +231,8 @@ export async function hydrateFromSupabase(): Promise<void> {
     silverGoldAcknowledged: profile?.silver_gold_acknowledged ?? false,
     pendingCelebration: null,
     pendingRankUp: null,
+    pendingMilestone: null,
+    forceTodaysNoteVariant: null,
   };
   emit();
 }
@@ -386,6 +397,22 @@ export function recordSession(bookId: string, chapter: number, durationSec: numb
     if (bookCelebration) s.pendingCelebration = bookCelebration;
     if (afterRank > beforeRank) s.pendingRankUp = { rankIndex: afterRank };
 
+    // Lightweight milestone detection (streak / Gospel / NT / whole Bible)
+    const GOSPELS: Record<string, string> = { mat: "Matthew", mrk: "Mark", luk: "Luke", jhn: "John" };
+    if (bookCelebration && GOSPELS[bookCelebration.bookId]) {
+      s.pendingMilestone = { kind: "gospel", title: GOSPELS[bookCelebration.bookId] };
+    } else if (streak === 7 || streak === 30) {
+      s.pendingMilestone = { kind: "streak", title: String(streak), streak };
+    }
+    if (bookCelebration) {
+      const ntDone = NT_ORDER.every((id) => (s.bookProgress[id]?.readThroughs ?? 0) >= 1);
+      const allDone = BOOKS.every((b) => (s.bookProgress[b.id]?.readThroughs ?? 0) >= 1);
+      if (allDone) s.pendingMilestone = { kind: "bible", title: "Sixty-six books", books: 66 };
+      else if (ntDone && NT_ORDER.includes(bookCelebration.bookId)) {
+        s.pendingMilestone = { kind: "nt", title: "New Testament", books: 27 };
+      }
+    }
+
     profilePatch = {
       xp: s.xp,
       current_streak: s.currentStreak,
@@ -544,6 +571,52 @@ export function acknowledgeSilverGold() {
   setState((s) => { s.silverGoldAcknowledged = true; return s; });
   void persistProfile({ silver_gold_acknowledged: true });
 }
+
+export function setPendingMilestone(m: AppState["pendingMilestone"]) {
+  setState((s) => { s.pendingMilestone = m; return s; });
+}
+
+export function clearPendingMilestone() {
+  setState((s) => { s.pendingMilestone = null; return s; });
+}
+
+export function setForceTodaysNoteVariant(v: string | null) {
+  setState((s) => { s.forceTodaysNoteVariant = v; return s; });
+}
+
+// ---- Admin / dev test setters (local-only, no DB writes) ----
+
+export function adminTriggerBookCelebration(bookId: string, tier: "green" | "silver" | "gold") {
+  setState((s) => {
+    const book = bookById(bookId);
+    s.pendingCelebration = {
+      bookId,
+      tier,
+      chapters: book?.chapters ?? 16,
+      days: Math.max(1, Math.ceil((book?.chapters ?? 16) / Math.max(1, s.user.dailyGoal))),
+    };
+    return s;
+  });
+}
+
+export function adminTriggerRankUp(rankIndex: number) {
+  setState((s) => { s.pendingRankUp = { rankIndex }; return s; });
+}
+
+export function adminTriggerSilverGoldUnlock() {
+  setState((s) => {
+    s.silverGoldUnlocked = true;
+    s.silverGoldAcknowledged = false;
+    s.pendingCelebration = {
+      bookId: "mrk",
+      tier: "gold",
+      chapters: 16,
+      days: 16,
+    };
+    return s;
+  });
+}
+
 
 // ---- Analytics helpers ----
 

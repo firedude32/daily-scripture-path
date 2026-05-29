@@ -1,13 +1,15 @@
 import { createFileRoute, useNavigate } from "@tanstack/react-router";
 import { motion } from "framer-motion";
 import { useEffect, useState } from "react";
+import { Share2 } from "lucide-react";
 import { PhoneFrame } from "@/components/PhoneFrame";
 import { Screen } from "@/components/Screen";
-import { useAppState, clearPendingCelebration, acknowledgeSilverGold } from "@/state/store";
+import { useAppState, clearPendingCelebration, acknowledgeSilverGold, booksCompleted } from "@/state/store";
 import { bookById } from "@/data/books";
 import { EditorialButton } from "@/components/ui-lectio/EditorialButton";
 import { SmallCaps } from "@/components/ui-lectio/SmallCaps";
 import { GoldMotif, bookMotif } from "@/components/GoldMotif";
+import { shareMilestone } from "@/lib/share";
 
 export const Route = createFileRoute("/_authenticated/celebration/book")({
   head: () => ({
@@ -157,8 +159,23 @@ function BookCelebration() {
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
             transition={{ delay: 3.0 }}
-            className="absolute bottom-0 left-0 right-0 px-7 pb-10"
+            className="absolute bottom-0 left-0 right-0 px-7 pb-10 flex flex-col gap-3"
           >
+            <button
+              onClick={() =>
+                shareMilestone("book", {
+                  title: book.name,
+                  tier: cel.tier,
+                  chapters: book.chapters,
+                  streak: state.currentStreak,
+                  books: booksCompleted(state),
+                })
+              }
+              className="flex items-center justify-center gap-2 font-ui uppercase tracking-[0.16em] text-[11px] py-2 text-[color:var(--color-ink-muted)] hover:text-[color:var(--color-ink)] transition-colors"
+            >
+              <Share2 size={14} strokeWidth={1.5} />
+              Share
+            </button>
             <EditorialButton variant="primary" onClick={done}>
               Continue
             </EditorialButton>

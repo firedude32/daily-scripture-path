@@ -1,7 +1,7 @@
 import { createFileRoute, useNavigate } from "@tanstack/react-router";
 import { motion } from "framer-motion";
 import { useEffect, useState } from "react";
-import { Check, Share2, Copy, Twitter, MessageCircle } from "lucide-react";
+import { Check } from "lucide-react";
 import { PhoneFrame } from "@/components/PhoneFrame";
 import { Screen } from "@/components/Screen";
 import { bookById } from "@/data/books";
@@ -9,7 +9,6 @@ import { useAppState, clearPendingCelebration, clearPendingRankUp } from "@/stat
 import { EditorialButton } from "@/components/ui-lectio/EditorialButton";
 import { SmallCaps } from "@/components/ui-lectio/SmallCaps";
 import { Rule } from "@/components/ui-lectio/Rule";
-import { BottomSheet } from "@/components/ui-lectio/BottomSheet";
 import { staggerUp } from "@/lib/motion";
 
 export const Route = createFileRoute("/_authenticated/summary")({
@@ -54,8 +53,6 @@ function SummaryPage() {
   const state = useAppState();
   const [data, setData] = useState<SummaryData | null>(null);
   const [headline] = useState(() => HEADLINES[Math.floor(Math.random() * HEADLINES.length)]);
-  const [shareOpen, setShareOpen] = useState(false);
-  const [copied, setCopied] = useState(false);
 
   useEffect(() => {
     const raw = sessionStorage.getItem("brt:summary");
@@ -107,13 +104,6 @@ function SummaryPage() {
             <SmallCaps tone="gold">
               Chapter {NUMBER_WORDS[data.chapter] ?? data.chapter} · Complete
             </SmallCaps>
-            <button
-              onClick={() => setShareOpen(true)}
-              className="p-2 -mr-2 text-[color:var(--color-ink-muted)] hover:text-[color:var(--color-ink)] transition-colors"
-              aria-label="Share"
-            >
-              <Share2 size={18} />
-            </button>
           </div>
 
           <div className="flex-1 flex flex-col items-center text-center">

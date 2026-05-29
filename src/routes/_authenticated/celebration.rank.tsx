@@ -1,13 +1,15 @@
 import { createFileRoute, useNavigate } from "@tanstack/react-router";
 import { motion } from "framer-motion";
 import { useEffect } from "react";
+import { Share2 } from "lucide-react";
 import { PhoneFrame } from "@/components/PhoneFrame";
 import { Screen } from "@/components/Screen";
-import { useAppState, clearPendingRankUp } from "@/state/store";
+import { useAppState, clearPendingRankUp, booksCompleted } from "@/state/store";
 import { RANKS } from "@/data/ranks";
 import { EditorialButton } from "@/components/ui-lectio/EditorialButton";
 import { SmallCaps } from "@/components/ui-lectio/SmallCaps";
 import { letterReveal } from "@/lib/motion";
+import { shareMilestone } from "@/lib/share";
 
 export const Route = createFileRoute("/_authenticated/celebration/rank")({
   head: () => ({
@@ -95,8 +97,23 @@ function RankCelebration() {
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
             transition={{ delay: totalDelay + 0.8 }}
-            className="mt-16 w-full max-w-xs"
+            className="mt-16 w-full max-w-xs flex flex-col gap-3"
           >
+            <button
+              onClick={() =>
+                shareMilestone("rank", {
+                  title: rank.name,
+                  subtitle: rank.blurb,
+                  encouragement: rank.blurb,
+                  streak: state.currentStreak,
+                  books: booksCompleted(state),
+                })
+              }
+              className="flex items-center justify-center gap-2 font-ui uppercase tracking-[0.16em] text-[11px] py-2 text-[color:var(--color-ink-muted)] hover:text-[color:var(--color-ink)] transition-colors"
+            >
+              <Share2 size={14} strokeWidth={1.5} />
+              Share
+            </button>
             <EditorialButton variant="primary" onClick={done}>
               Continue
             </EditorialButton>

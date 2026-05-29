@@ -1,77 +1,80 @@
-# Make Friends & Groups Fully Functional
+## Scope
 
-Today the page already supports: sending friend invites by email/username, accepting/declining, removing friends, creating a group, joining by code, viewing a leaderboard, leaving/deleting. What's missing for it to feel "complete" is mainly **group invitations** (you can only join by code, you can't actually *invite* someone to a group), **shareable join links** (mirroring the friend-invite walkthrough), and **owner controls**. Here's the full scope.
+Features 1–4 already exist. This plan covers (a) adding share to the existing book + rank celebrations, (b) adding a lightweight share-only modal for streak / Gospel / NT / Bible milestones, (c) removing the daily summary share sheet, and (d) a new Admin "Celebrations" tab so every state is testable.
 
-## 1. Invite a friend directly into a group
+## 1. Server-rendered share cards
 
-New flow inside the group detail sheet:
-- "Invite friends" button → opens a picker of your accepted friends with checkboxes.
-- Friends already in the group are shown as disabled with "In group".
-- Submitting creates pending `group_invites` rows; the invitee sees them on the Friends tab.
+New server route `src/routes/api/public/share-card.$kind.ts` using `@vercel/og` (Satori) to render PNGs.
 
-## 2. Group invitations (accept / decline)
+- Kinds: `book`, `rank`, `streak`, `gospel`, `nt`, `bible`.
+- Query params include `title`, `subtitle`, `tier`, `streak`, `books`, `size` (`story` = 1080×1920, `square` = 1080×1080).
+- Layout: centered focal element (book/rank/milestone name in display serif + a single Lucide-style SVG glyph), small Lectio wordmark + supporting stats (streak days, books read) along sides/bottom. Lectio parchment palette, hairline gold rule, generous whitespace.
+- Fonts: load Cormorant Garamond + Inter via Satori `fetch` from Google Fonts at request time (cached by Worker).
+- Endpoint is public (no PII), returns `image/png` with long cache headers.
 
-New `group_invites` table with RLS:
-- Inviter must be a member of the group.
-- Invitee can read their own invites, accept (joins the group), or decline (deletes the row).
-- Owner/inviter can cancel a pending invite.
+Install: `bun add @vercel/og` (Worker-compatible per Vercel docs; uses WASM Satori + Resvg). Verify build; if Resvg-WASM is blocked on Workers, fall back to `satori` + `@resvg/resvg-wasm` directly with the WASM imported as URL asset.
 
-UI:
-- Friends tab "Pending Invites" section gets a second group: **Group Invites**. Each row shows "{Inviter} invited you to {Group}" with Accept/Decline.
-- The gold dot on the Friends tab also lights when group invites are pending.
+## 2. Share helper
 
-## 3. Shareable group join link (walks non-app friends in)
+`src/lib/share.ts` — `shareMilestone({ kind, params })`:
+- Builds two URLs (story + square).
+- Fetches the story PNG as a `File`.
+- Calls `navigator.share({ files, title, text })` if `canShare({ files })`; otherwise opens the PNG in a new tab and copies a fallback caption.
 
-- `buildGroupJoinLink(code)` → `https://lectio.live/?join=CODE&from={username|id}`.
-- Group detail sheet gains a "Share invite link" row using the existing `InviteBlock` pattern (native share / SMS / mail / copy). Pre-fills a message: *"Join my Lectio reading group: {link}"*.
-- Root captures `?join=CODE` on load (same place we capture `?ref=`) and stores it in localStorage as `lectio.pendingJoin`.
-- After login/signup, the home page redeems it via `joinGroupByCode` and shows a toast "Joined {Group}".
+## 3. Celebration screen share buttons
 
-## 4. Owner controls
+- `celebration.book.tsx`: add a "Share" `EditorialButton variant="secondary"` below Done. Wires to `shareMilestone({ kind: 'book', params: { bookId, tier, streak, booksCompleted } })`.
+- `celebration.rank.tsx`: same, kind `rank`, params `{ rankName, blurb }`.
 
-Inside the group detail sheet, when `userId === owner_id`:
-- **Rename group**: tap the title to edit inline; saves via update on `groups`.
-- **Remove member**: trash icon next to each non-owner row; confirm, then delete from `group_members`.
-- **Regenerate join code**: small "New code" action with confirm (invalidates the old code).
+## 4. Streak / Gospel / NT / Bible share modal
 
-Add an RLS policy so the owner can delete `group_members` rows in their own group (currently only the member can leave themselves).
+New `src/components/MilestoneShareModal.tsx` — a `BottomSheet` with: eyebrow ("Quietly"), milestone title, a small preview thumbnail (the square card via `<img src=...>`), one Share button, one Dismiss.
 
-## 5. Group activity signal
+Triggered from a new helper `src/lib/milestones.ts` that, after each reading session, inspects the new state vs prior:
+- Day 7 streak crossed → kind `streak`, days=7.
+- Day 30 streak crossed → kind `streak`, days=30.
+- Final chapter of Matthew/Mark/Luke/John just completed → kind `gospel`, name.
+- Last NT book completed → kind `nt`.
+- All 66 books completed ≥1 → kind `bible`.
 
-The leaderboard already shows streak + XP. Add **last-read** under each member ("Read today" / "2 days ago" / "—") using `last_read_date` from `public_profiles`. Tiny, calm — no badges.
+Triggers run after the existing book celebration / rank-up navigation, surfacing the modal on the next Home render via a `pendingMilestone` field on the store. Only one fires per session; rank/book celebrations take precedence and the milestone surfaces after they're dismissed.
 
-## 6. Friend list polish
+## 5. Remove daily summary share sheet
 
-- Search field at top of the AddFriendForm now also matches **name** (case-insensitive `ilike`), not just exact email/username. Existing email RPC stays as the authoritative email path.
-- Sort accepted friends by current_streak desc, then name.
+`src/routes/_authenticated/summary.tsx`: delete the `Share2` icon, `shareOpen` state, the `BottomSheet`, the `ShareBtn` component, and related imports. Keep the rest of the summary intact.
 
-## 7. Empty/loading polish
+## 6. Admin "Celebrations" tab
 
-- Skeleton lines instead of the centered "Loading…" text in both tabs.
-- After accepting a group invite or joining via link, auto-open that group's detail sheet so the user lands somewhere meaningful.
+New tab in `src/routes/_authenticated/admin.tsx` (added to the tab list and rendered via a `CelebrationsTab` component). Buttons:
 
----
+- **Book completion** — book picker (default Mark) + tier toggle Green / Silver / Gold → sets `pendingCelebration` and navigates `/celebration/book`.
+- **Rank-up** — rank index picker (0–9) → sets `pendingRankUp` and navigates `/celebration/rank`.
+- **Silver/Gold unlock** — sets `silverGoldUnlocked = true`, `silverGoldAcknowledged = false`, `pendingCelebration` (Mark/gold) → navigates `/celebration/book` (modal fires after Done).
+- **Today's Note variants** — 6 buttons (`left_off`, `another_look`, `on_chapter`, `record`, `book_note`, `favorite`). Each writes a tiny `forceTodaysNoteVariant` field on the store; `TodaysNote.tsx` honors it if set (dev/admin only) and navigates to `/`.
+- **Milestone share modals** — 5 buttons: Day 7, Day 30, Gospel (Mark), NT, Bible. Each sets `pendingMilestone` and navigates `/`.
+- **Share card preview** — for each kind, two anchor links open the story/square PNG endpoints directly so the designed card itself is reviewable.
+
+All admin actions are local store mutations + navigation, no DB writes.
+
+## 7. Store additions (`src/state/store.ts`)
+
+- `pendingMilestone: { kind, params } | null` + `setPendingMilestone` / `clearPendingMilestone`.
+- `forceTodaysNoteVariant: VariantKey | null` + setter (admin-only override; cleared after one read).
 
 ## Technical notes
 
-**Migration** (new):
-- `group_invites(id, group_id, invitee_id, invited_by, status default 'pending', created_at)` with unique `(group_id, invitee_id)` where status='pending'.
-- GRANTs for `authenticated` + `service_role`; RLS:
-  - INSERT: `auth.uid() = invited_by AND is_group_member(group_id, auth.uid())`.
-  - SELECT: invitee, inviter, or group owner.
-  - UPDATE: invitee only, pending→accepted.
-  - DELETE: invitee (decline) or inviter/owner (cancel).
-- Trigger on accepted insert into `group_members`, then delete the invite row — or do it in the client transaction; will use a SECURITY DEFINER RPC `accept_group_invite(_invite_id)` to keep it atomic.
-- New policy on `group_members` DELETE: allow `auth.uid()` to be either the member OR the group owner.
-- New RPC `regenerate_group_code(_group_id)` (owner-only) returning the new code.
-- Extend `public_profiles` view consumption to include `last_read_date` (already in the view).
+```text
+src/routes/api/public/share-card.$kind.ts     server route, returns PNG
+src/lib/share.ts                              navigator.share wrapper
+src/lib/milestones.ts                         detects + queues milestones
+src/components/MilestoneShareModal.tsx        bottom sheet UI
+src/state/store.ts                            pendingMilestone + force variant
+src/routes/_authenticated/admin.tsx           + Celebrations tab
+src/routes/_authenticated/celebration.book.tsx + Share button
+src/routes/_authenticated/celebration.rank.tsx + Share button
+src/routes/_authenticated/summary.tsx         remove share sheet
+src/routes/_authenticated/index.tsx           render MilestoneShareModal when pending
+src/components/TodaysNote.tsx                 honor forceTodaysNoteVariant
+```
 
-**Files**:
-- `src/lib/groups.ts` — add `inviteFriendsToGroup`, `listIncomingGroupInvites`, `acceptGroupInvite`, `declineGroupInvite`, `removeGroupMember`, `renameGroup`, `regenerateJoinCode`, `buildGroupJoinLink`.
-- `src/lib/invites.ts` — add `capturePendingJoinFromUrl` + `claimPendingJoin` (mirrors ref capture).
-- `src/routes/__root.tsx` — call `capturePendingJoinFromUrl` alongside `captureRefFromUrl`.
-- `src/routes/_authenticated/index.tsx` — call `claimPendingJoin` after `claimRefForUser`.
-- `src/routes/_authenticated/friends.tsx` — new "Group Invites" section, group invite picker sheet, owner controls in `GroupDetail`, rename/regenerate UI, share-link block in group sheet, member-removal UI, name-search in AddFriendForm.
-- `src/components/InviteBlock.tsx` — accept an optional `link` + `message` prop so it can be reused for group invites.
-
-**Out of scope** (call out so it doesn't surprise the user): group chat/messages, push notifications, email delivery of invites (we rely on in-app + share sheet), per-group reading plans.
+Risk: if `@vercel/og` fails on Cloudflare Workers in this template, fall back to a client-rendered `html2canvas` approach in `src/lib/share.ts` without changing the call sites. Decided after first build attempt.
