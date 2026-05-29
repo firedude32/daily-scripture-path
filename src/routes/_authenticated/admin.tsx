@@ -1,4 +1,4 @@
-import { createFileRoute } from "@tanstack/react-router";
+import { createFileRoute, useNavigate } from "@tanstack/react-router";
 import { useEffect, useState } from "react";
 import { useServerFn } from "@tanstack/react-start";
 import { PhoneFrame } from "@/components/PhoneFrame";
@@ -17,14 +17,23 @@ import {
   adminResetUserStreak,
   adminDeleteUserData,
 } from "@/lib/admin.functions";
-import { bookById } from "@/data/books";
+import { bookById, NT_ORDER } from "@/data/books";
+import {
+  adminTriggerBookCelebration,
+  adminTriggerRankUp,
+  adminTriggerSilverGoldUnlock,
+  setPendingMilestone,
+  setForceTodaysNoteVariant,
+} from "@/state/store";
+import { RANKS } from "@/data/ranks";
 
 export const Route = createFileRoute("/_authenticated/admin")({
   head: () => ({ meta: [{ title: "Admin — Lectio" }] }),
   component: AdminPage,
 });
 
-type Tab = "overview" | "users" | "reports" | "sessions";
+type Tab = "overview" | "users" | "reports" | "sessions" | "celebrations";
+
 
 function AdminPage() {
   const check = useServerFn(checkAdminAccess);
