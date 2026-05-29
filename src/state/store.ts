@@ -34,6 +34,7 @@ export interface AppState {
     reminderTime: string;
     pathBookId: string;
     progressView: "simple" | "detailed";
+    avatarIcon: string | null;
   };
   xp: number;
   currentStreak: number;
@@ -90,6 +91,7 @@ function emptyState(): AppState {
       reminderTime: "07:00",
       pathBookId: "mrk",
       progressView: "simple",
+      avatarIcon: null,
     },
     xp: 0,
     currentStreak: 0,
@@ -207,6 +209,7 @@ export async function hydrateFromSupabase(): Promise<void> {
       reminderTime: profile?.reminder_time ?? "07:00",
       pathBookId: profile?.path_book_id ?? "mrk",
       progressView: (profile?.progress_view as "simple" | "detailed") ?? "simple",
+      avatarIcon: (profile as { avatar_icon?: string | null } | null)?.avatar_icon ?? null,
     },
     xp: profile?.xp ?? 0,
     currentStreak: effectiveStreak(profile?.last_read_date ?? null, profile?.current_streak ?? 0),
@@ -251,6 +254,7 @@ type ProfilePatch = Partial<{
   silver_gold_unlocked: boolean;
   silver_gold_acknowledged: boolean;
   onboarded: boolean;
+  avatar_icon: string | null;
 }>;
 
 async function persistProfile(patch: ProfilePatch) {
@@ -513,6 +517,11 @@ export function setUserName(name: string) {
 export function setUserEmail(email: string) {
   setState((s) => { s.user = { ...s.user, email }; return s; });
   void persistProfile({ email });
+}
+
+export function setAvatarIcon(avatarIcon: string | null) {
+  setState((s) => { s.user = { ...s.user, avatarIcon }; return s; });
+  void persistProfile({ avatar_icon: avatarIcon });
 }
 
 export async function setUsername(username: string): Promise<{ ok: true } | { ok: false; reason: string }> {

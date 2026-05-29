@@ -15,9 +15,11 @@ import {
   setUserName,
   setUserEmail,
   setUsername,
+  setAvatarIcon,
 } from "@/state/store";
 import { getRank, getNextRank, RANKS } from "@/data/ranks";
 import { NT_CHAPTERS, TOTAL_CHAPTERS, bookById } from "@/data/books";
+import { AVATAR_ICONS, avatarIconByKey } from "@/data/avatarIcons";
 import { SmallCaps } from "@/components/ui-lectio/SmallCaps";
 import { Rule } from "@/components/ui-lectio/Rule";
 import { EditorialButton } from "@/components/ui-lectio/EditorialButton";
@@ -42,7 +44,8 @@ type SheetKey =
   | "about"
   | "translation"
   | "reminder"
-  | "signout";
+  | "signout"
+  | "avatar";
 
 const TRANSLATIONS = ["ESV", "NIV", "KJV", "NKJV", "NLT", "NASB", "CSB", "NRSV", "MSG", "AMP"];
 
@@ -83,8 +86,11 @@ function ProfilePage() {
 
           {/* Avatar + name */}
           <div className="mt-6 flex items-center gap-4">
-            <div
-              className="flex items-center justify-center font-display rounded-full shrink-0"
+            <button
+              type="button"
+              onClick={() => setSheet("avatar")}
+              aria-label="Change profile icon"
+              className="flex items-center justify-center font-display rounded-full shrink-0 transition-colors hover:border-[color:var(--color-gold)]"
               style={{
                 width: 64,
                 height: 64,
@@ -95,8 +101,15 @@ function ProfilePage() {
                 fontWeight: 400,
               }}
             >
-              {state.user.name[0]?.toUpperCase()}
-            </div>
+              {(() => {
+                const picked = avatarIconByKey(state.user.avatarIcon);
+                if (picked) {
+                  const Icon = picked.Icon;
+                  return <Icon size={28} strokeWidth={1.25} style={{ color: "var(--color-gold)" }} aria-hidden />;
+                }
+                return state.user.name[0]?.toUpperCase();
+              })()}
+            </button>
             <div className="flex-1 min-w-0">
               <p className="font-display text-[color:var(--color-ink)]" style={{ fontSize: 22, fontWeight: 400 }}>
                 {state.user.name}
@@ -431,6 +444,65 @@ function ProfilePage() {
             </EditorialButton>
           </div>
         </BottomSheet>
+
+        <BottomSheet
+          open={sheet === "avatar"}
+          onClose={() => setSheet(null)}
+          eyebrow="Profile Icon"
+          title="Choose a symbol"
+        >
+          <p className="font-body italic text-[color:var(--color-ink-muted)]" style={{ fontSize: 13, lineHeight: 1.55 }}>
+            A quiet mark to carry with you.
+          </p>
+          <div className="mt-6 grid grid-cols-4 gap-3">
+            {AVATAR_ICONS.map(({ key, label, Icon }) => {
+              const active = state.user.avatarIcon === key;
+              return (
+                <button
+                  key={key}
+                  type="button"
+                  onClick={() => {
+                    setAvatarIcon(key);
+                    setTimeout(() => setSheet(null), 180);
+                  }}
+                  aria-label={label}
+                  className="flex flex-col items-center justify-center gap-2 py-4 rounded-[14px] border transition-colors"
+                  style={{
+                    borderColor: active ? "var(--color-gold)" : "var(--color-rule)",
+                    background: active ? "var(--color-paper-light)" : "transparent",
+                  }}
+                >
+                  <Icon
+                    size={26}
+                    strokeWidth={1.25}
+                    style={{ color: active ? "var(--color-gold)" : "var(--color-ink)" }}
+                    aria-hidden
+                  />
+                  <span
+                    className="font-ui uppercase tracking-[0.12em] text-[10px]"
+                    style={{ color: active ? "var(--color-gold)" : "var(--color-ink-muted)" }}
+                  >
+                    {label}
+                  </span>
+                </button>
+              );
+            })}
+          </div>
+          {state.user.avatarIcon && (
+            <button
+              type="button"
+              onClick={() => {
+                setAvatarIcon(null);
+                setSheet(null);
+              }}
+              className="mt-6 w-full font-ui uppercase tracking-[0.14em] text-[11px] text-[color:var(--color-ink-muted)] hover:text-[color:var(--color-ink)] transition-colors py-2"
+            >
+              Use initial instead
+            </button>
+          )}
+        </BottomSheet>
+
+
 
         <BottomSheet
           open={sheet === "signout"}
