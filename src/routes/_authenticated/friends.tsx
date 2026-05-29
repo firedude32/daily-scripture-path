@@ -25,6 +25,7 @@ import {
   type GroupMember,
 } from "@/lib/groups";
 import { toast } from "sonner";
+import { InviteBlock } from "@/components/InviteBlock";
 
 export const Route = createFileRoute("/_authenticated/friends")({
   head: () => ({
