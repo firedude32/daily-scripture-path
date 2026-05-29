@@ -31,7 +31,7 @@ export function BottomSheet({
           animate={{ opacity: 1 }}
           exit={{ opacity: 0 }}
           onClick={onClose}
-          className="absolute inset-0 z-50 flex items-end"
+          className="fixed inset-0 z-50 flex items-end justify-center"
           style={{ background: "rgba(28, 25, 21, 0.4)" }}
         >
           <motion.div
