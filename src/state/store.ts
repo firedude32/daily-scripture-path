@@ -231,6 +231,8 @@ export async function hydrateFromSupabase(): Promise<void> {
     silverGoldAcknowledged: profile?.silver_gold_acknowledged ?? false,
     pendingCelebration: null,
     pendingRankUp: null,
+    pendingMilestone: null,
+    forceTodaysNoteVariant: null,
   };
   emit();
 }
