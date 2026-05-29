@@ -5,10 +5,9 @@ import { PhoneFrame } from "@/components/PhoneFrame";
 import { Screen } from "@/components/Screen";
 import { SmallCaps } from "@/components/ui-lectio/SmallCaps";
 import { Rule } from "@/components/ui-lectio/Rule";
-import { EditorialButton } from "@/components/ui-lectio/EditorialButton";
 import { EditorialCard } from "@/components/ui-lectio/EditorialCard";
 import {
-  verifyAdminPassword,
+  checkAdminAccess,
   getAdminOverview,
   getAdminUsers,
   getAdminReports,
@@ -28,31 +27,26 @@ export const Route = createFileRoute("/_authenticated/admin")({
 type Tab = "overview" | "users" | "reports" | "sessions";
 
 function AdminPage() {
-  const verify = useServerFn(verifyAdminPassword);
-  const [password, setPassword] = useState("");
-  const [authed, setAuthed] = useState(false);
-  const [err, setErr] = useState("");
+  const check = useServerFn(checkAdminAccess);
+  const [authed, setAuthed] = useState<null | boolean>(null);
   const [tab, setTab] = useState<Tab>("overview");
 
   useEffect(() => {
-    const saved = sessionStorage.getItem("lectio:admin");
-    if (saved) {
-      setPassword(saved);
-      verify({ data: { password: saved } })
-        .then(() => setAuthed(true))
-        .catch(() => sessionStorage.removeItem("lectio:admin"));
-    }
-  }, [verify]);
+    check()
+      .then(() => setAuthed(true))
+      .catch(() => setAuthed(false));
+  }, [check]);
 
-  async function tryLogin() {
-    setErr("");
-    try {
-      await verify({ data: { password } });
-      sessionStorage.setItem("lectio:admin", password);
-      setAuthed(true);
-    } catch {
-      setErr("Incorrect password");
-    }
+  if (authed === null) {
+    return (
+      <PhoneFrame>
+        <Screen>
+          <div className="px-7 pt-20">
+            <Loading />
+          </div>
+        </Screen>
+      </PhoneFrame>
+    );
   }
 
   if (!authed) {
@@ -68,32 +62,8 @@ function AdminPage() {
               Admin
             </h1>
             <p className="mt-4 font-body text-[color:var(--color-ink-soft)]" style={{ fontSize: 15 }}>
-              Enter the admin password.
+              Your account does not have admin access.
             </p>
-            <input
-              type="password"
-              value={password}
-              onChange={(e) => setPassword(e.target.value)}
-              onKeyDown={(e) => e.key === "Enter" && tryLogin()}
-              placeholder="Password"
-              className="mt-6 w-full p-3 font-body outline-none"
-              style={{
-                fontSize: 16,
-                border: "1px solid var(--color-rule)",
-                borderRadius: 8,
-                background: "transparent",
-              }}
-            />
-            {err && (
-              <p className="mt-3 font-ui text-[12px] text-[color:var(--color-ink)]" style={{ color: "#b14747" }}>
-                {err}
-              </p>
-            )}
-            <div className="mt-5">
-              <EditorialButton variant="gold" onClick={tryLogin}>
-                Enter
-              </EditorialButton>
-            </div>
           </div>
         </Screen>
       </PhoneFrame>
@@ -104,19 +74,7 @@ function AdminPage() {
     <PhoneFrame>
       <Screen>
         <div className="px-7 pt-12 pb-10">
-          <div className="flex items-center justify-between">
-            <SmallCaps>Admin</SmallCaps>
-            <button
-              onClick={() => {
-                sessionStorage.removeItem("lectio:admin");
-                setAuthed(false);
-                setPassword("");
-              }}
-              className="font-ui uppercase tracking-[0.16em] text-[10px] text-[color:var(--color-ink-muted)]"
-            >
-              Sign out
-            </button>
-          </div>
+          <SmallCaps>Admin</SmallCaps>
           <h1
             className="mt-2 font-display text-[color:var(--color-ink)]"
             style={{ fontSize: 32, fontWeight: 400 }}
@@ -145,10 +103,10 @@ function AdminPage() {
           <div className="mt-6"><Rule /></div>
 
           <div className="mt-6">
-            {tab === "overview" && <OverviewTab password={password} />}
-            {tab === "reports" && <ReportsTab password={password} />}
-            {tab === "users" && <UsersTab password={password} />}
-            {tab === "sessions" && <SessionsTab password={password} />}
+            {tab === "overview" && <OverviewTab />}
+            {tab === "reports" && <ReportsTab />}
+            {tab === "users" && <UsersTab />}
+            {tab === "sessions" && <SessionsTab />}
           </div>
         </div>
       </Screen>
@@ -172,17 +130,17 @@ function Stat({ label, value }: { label: string; value: number | string }) {
   );
 }
 
-function OverviewTab({ password }: { password: string }) {
+function OverviewTab() {
   const fn = useServerFn(getAdminOverview);
   const [data, setData] = useState<Awaited<ReturnType<typeof fn>> | null>(null);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
     setLoading(true);
-    fn({ data: { password } })
+    fn()
       .then(setData)
       .finally(() => setLoading(false));
-  }, [fn, password]);
+  }, [fn]);
 
   if (loading || !data) return <Loading />;
   const t = data.totals;
@@ -201,7 +159,7 @@ function OverviewTab({ password }: { password: string }) {
   );
 }
 
-function ReportsTab({ password }: { password: string }) {
+function ReportsTab() {
   const fn = useServerFn(getAdminReports);
   const upd = useServerFn(updateReportStatus);
   const del = useServerFn(deleteReport);
@@ -211,7 +169,7 @@ function ReportsTab({ password }: { password: string }) {
 
   async function refresh() {
     setLoading(true);
-    const r = await fn({ data: { password } });
+    const r = await fn();
     setReports(r.reports);
     setLoading(false);
   }
@@ -291,7 +249,7 @@ function ReportsTab({ password }: { password: string }) {
                 {r.status === "open" ? (
                   <button
                     onClick={async () => {
-                      await upd({ data: { password, id: r.id, status: "resolved" } });
+                      await upd({ data: { id: r.id, status: "resolved" } });
                       refresh();
                     }}
                     className="font-ui uppercase tracking-[0.14em] text-[10px] px-3 py-1.5"
@@ -306,7 +264,7 @@ function ReportsTab({ password }: { password: string }) {
                 ) : (
                   <button
                     onClick={async () => {
-                      await upd({ data: { password, id: r.id, status: "open" } });
+                      await upd({ data: { id: r.id, status: "open" } });
                       refresh();
                     }}
                     className="font-ui uppercase tracking-[0.14em] text-[10px] px-3 py-1.5"
@@ -322,7 +280,7 @@ function ReportsTab({ password }: { password: string }) {
                 <button
                   onClick={async () => {
                     if (!confirm("Delete this report?")) return;
-                    await del({ data: { password, id: r.id } });
+                    await del({ data: { id: r.id } });
                     refresh();
                   }}
                   className="font-ui uppercase tracking-[0.14em] text-[10px] px-3 py-1.5"
@@ -343,7 +301,7 @@ function ReportsTab({ password }: { password: string }) {
   );
 }
 
-function UsersTab({ password }: { password: string }) {
+function UsersTab() {
   const fn = useServerFn(getAdminUsers);
   const resetStreak = useServerFn(adminResetUserStreak);
   const deleteData = useServerFn(adminDeleteUserData);
@@ -353,7 +311,7 @@ function UsersTab({ password }: { password: string }) {
 
   async function refresh() {
     setLoading(true);
-    const r = await fn({ data: { password } });
+    const r = await fn({ data: {} });
     setUsers(r.users);
     setLoading(false);
   }
@@ -411,7 +369,7 @@ function UsersTab({ password }: { password: string }) {
               <button
                 onClick={async () => {
                   if (!confirm(`Reset streak for ${u.email}?`)) return;
-                  await resetStreak({ data: { password, userId: u.id } });
+                  await resetStreak({ data: { userId: u.id } });
                   refresh();
                 }}
                 className="font-ui uppercase tracking-[0.14em] text-[10px] px-3 py-1.5"
@@ -422,7 +380,7 @@ function UsersTab({ password }: { password: string }) {
               <button
                 onClick={async () => {
                   if (!confirm(`Wipe ALL reading data for ${u.email}? This cannot be undone.`)) return;
-                  await deleteData({ data: { password, userId: u.id } });
+                  await deleteData({ data: { userId: u.id } });
                   refresh();
                 }}
                 className="font-ui uppercase tracking-[0.14em] text-[10px] px-3 py-1.5"
@@ -438,17 +396,17 @@ function UsersTab({ password }: { password: string }) {
   );
 }
 
-function SessionsTab({ password }: { password: string }) {
+function SessionsTab() {
   const fn = useServerFn(getRecentSessions);
   const [sessions, setSessions] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
     setLoading(true);
-    fn({ data: { password } })
+    fn()
       .then((r) => setSessions(r.sessions))
       .finally(() => setLoading(false));
-  }, [fn, password]);
+  }, [fn]);
 
   if (loading) return <Loading />;
   return (
