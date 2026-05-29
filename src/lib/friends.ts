@@ -34,6 +34,7 @@ async function fetchProfilesByIds(ids: string[]): Promise<Record<string, FriendP
   if (error) throw error;
   const map: Record<string, FriendProfile> = {};
   for (const p of data ?? []) {
+    if (!p.id) continue;
     map[p.id] = {
       id: p.id,
       name: p.name ?? "Friend",
