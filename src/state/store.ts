@@ -400,18 +400,20 @@ export function recordSession(bookId: string, chapter: number, durationSec: numb
     if (afterRank > beforeRank) s.pendingRankUp = { rankIndex: afterRank };
 
     // Lightweight milestone detection (streak / Gospel / NT / whole Bible)
+    const totalChapters = Object.values(s.dailyCounts).reduce((a, b) => a + b, 0);
+    const totalBooks = Object.values(s.bookProgress).filter((b) => b.readThroughs >= 1).length;
     const GOSPELS: Record<string, string> = { mat: "Matthew", mrk: "Mark", luk: "Luke", jhn: "John" };
     if (bookCelebration && GOSPELS[bookCelebration.bookId]) {
-      s.pendingMilestone = { kind: "gospel", title: GOSPELS[bookCelebration.bookId] };
-    } else if (streak === 7 || streak === 30) {
-      s.pendingMilestone = { kind: "streak", title: String(streak), streak };
+      s.pendingMilestone = { kind: "gospel", title: GOSPELS[bookCelebration.bookId], streak, books: totalBooks, chapters: totalChapters };
+    } else if (streak === 7 || streak === 30 || streak === 100 || streak === 365) {
+      s.pendingMilestone = { kind: "streak", title: String(streak), streak, books: totalBooks, chapters: totalChapters };
     }
     if (bookCelebration) {
       const ntDone = NT_ORDER.every((id) => (s.bookProgress[id]?.readThroughs ?? 0) >= 1);
       const allDone = BOOKS.every((b) => (s.bookProgress[b.id]?.readThroughs ?? 0) >= 1);
-      if (allDone) s.pendingMilestone = { kind: "bible", title: "Sixty-six books", books: 66 };
+      if (allDone) s.pendingMilestone = { kind: "bible", title: "Sixty-six books", books: 66, streak, chapters: totalChapters };
       else if (ntDone && NT_ORDER.includes(bookCelebration.bookId)) {
-        s.pendingMilestone = { kind: "nt", title: "New Testament", books: 27 };
+        s.pendingMilestone = { kind: "nt", title: "New Testament", books: 27, streak, chapters: totalChapters };
       }
     }
 
