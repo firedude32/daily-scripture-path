@@ -451,3 +451,192 @@ function Loading() {
     </p>
   );
 }
+
+function CelebrationsTab() {
+  const navigate = useNavigate();
+  const [bookId, setBookId] = useState<string>("mrk");
+  const [tier, setTier] = useState<"green" | "silver" | "gold">("green");
+  const [rankIdx, setRankIdx] = useState<number>(1);
+  const [variant, setVariant] = useState<string>("left_off");
+
+  const variants = [
+    "left_off",
+    "book_note",
+    "favorite",
+    "in_motion",
+    "record",
+    "on_chapter",
+    "another_look",
+  ];
+
+  return (
+    <div className="flex flex-col gap-5">
+      {/* Book completion */}
+      <EditorialCard padding="md">
+        <SmallCaps tone="gold">Book Completion</SmallCaps>
+        <div className="mt-3 flex flex-col gap-2">
+          <select
+            value={bookId}
+            onChange={(e) => setBookId(e.target.value)}
+            className="p-2 font-body"
+            style={{ fontSize: 13, border: "1px solid var(--color-rule)", borderRadius: 8, background: "transparent" }}
+          >
+            {NT_ORDER.map((id) => {
+              const b = bookById(id);
+              return <option key={id} value={id}>{b?.name ?? id}</option>;
+            })}
+          </select>
+          <div className="flex gap-1.5">
+            {(["green", "silver", "gold"] as const).map((t) => (
+              <button
+                key={t}
+                onClick={() => setTier(t)}
+                className="font-ui uppercase tracking-[0.14em] text-[10px] px-3 py-1.5"
+                style={{
+                  background: tier === t ? "var(--color-ink)" : "transparent",
+                  color: tier === t ? "var(--color-paper)" : "var(--color-ink-muted)",
+                  border: "1px solid var(--color-rule)",
+                  borderRadius: 999,
+                }}
+              >
+                {t}
+              </button>
+            ))}
+          </div>
+          <CelebrationButton
+            label="Trigger Book Celebration"
+            onClick={() => {
+              adminTriggerBookCelebration(bookId, tier);
+              navigate({ to: "/celebration/book" });
+            }}
+          />
+        </div>
+      </EditorialCard>
+
+      {/* Rank up */}
+      <EditorialCard padding="md">
+        <SmallCaps tone="gold">Rank-Up</SmallCaps>
+        <div className="mt-3 flex flex-col gap-2">
+          <select
+            value={rankIdx}
+            onChange={(e) => setRankIdx(Number(e.target.value))}
+            className="p-2 font-body"
+            style={{ fontSize: 13, border: "1px solid var(--color-rule)", borderRadius: 8, background: "transparent" }}
+          >
+            {RANKS.map((r, i) => (
+              <option key={i} value={i}>{i}. {r.name}</option>
+            ))}
+          </select>
+          <CelebrationButton
+            label="Trigger Rank-Up"
+            onClick={() => {
+              adminTriggerRankUp(rankIdx);
+              navigate({ to: "/celebration/rank" });
+            }}
+          />
+        </div>
+      </EditorialCard>
+
+      {/* Silver/Gold unlock */}
+      <EditorialCard padding="md">
+        <SmallCaps tone="gold">Half-Bible Unlock</SmallCaps>
+        <p className="mt-2 font-body text-[color:var(--color-ink-soft)]" style={{ fontSize: 13 }}>
+          Reveals the silver/gold replay modal on the home screen.
+        </p>
+        <div className="mt-3">
+          <CelebrationButton
+            label="Trigger Silver/Gold Unlock"
+            onClick={() => {
+              adminTriggerSilverGoldUnlock();
+              navigate({ to: "/" });
+            }}
+          />
+        </div>
+      </EditorialCard>
+
+      {/* Today's Note variants */}
+      <EditorialCard padding="md">
+        <SmallCaps tone="gold">Today's Note Variant</SmallCaps>
+        <div className="mt-3 flex flex-col gap-2">
+          <select
+            value={variant}
+            onChange={(e) => setVariant(e.target.value)}
+            className="p-2 font-body"
+            style={{ fontSize: 13, border: "1px solid var(--color-rule)", borderRadius: 8, background: "transparent" }}
+          >
+            {variants.map((v) => (
+              <option key={v} value={v}>{v}</option>
+            ))}
+          </select>
+          <CelebrationButton
+            label="Force Variant on Home"
+            onClick={() => {
+              setForceTodaysNoteVariant(variant);
+              navigate({ to: "/" });
+            }}
+          />
+        </div>
+      </EditorialCard>
+
+      {/* Milestone share modals */}
+      <EditorialCard padding="md">
+        <SmallCaps tone="gold">Milestone Share Cards</SmallCaps>
+        <div className="mt-3 grid grid-cols-1 gap-2">
+          <CelebrationButton
+            label="Day 7 Streak"
+            onClick={() => {
+              setPendingMilestone({ kind: "streak", title: "7", streak: 7 });
+              navigate({ to: "/" });
+            }}
+          />
+          <CelebrationButton
+            label="Day 30 Streak"
+            onClick={() => {
+              setPendingMilestone({ kind: "streak", title: "30", streak: 30 });
+              navigate({ to: "/" });
+            }}
+          />
+          <CelebrationButton
+            label="Gospel Finished (John)"
+            onClick={() => {
+              setPendingMilestone({ kind: "gospel", title: "John" });
+              navigate({ to: "/" });
+            }}
+          />
+          <CelebrationButton
+            label="New Testament Finished"
+            onClick={() => {
+              setPendingMilestone({ kind: "nt", title: "New Testament", books: 27 });
+              navigate({ to: "/" });
+            }}
+          />
+          <CelebrationButton
+            label="Whole Bible Finished"
+            onClick={() => {
+              setPendingMilestone({ kind: "bible", title: "Sixty-six books", books: 66 });
+              navigate({ to: "/" });
+            }}
+          />
+        </div>
+      </EditorialCard>
+    </div>
+  );
+}
+
+function CelebrationButton({ label, onClick }: { label: string; onClick: () => void }) {
+  return (
+    <button
+      onClick={onClick}
+      className="font-ui uppercase tracking-[0.14em] text-[10px] px-3 py-2 text-left"
+      style={{
+        border: "1px solid var(--color-rule)",
+        borderRadius: 8,
+        color: "var(--color-ink)",
+        background: "var(--color-paper-light)",
+      }}
+    >
+      {label}
+    </button>
+  );
+}
+
