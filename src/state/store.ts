@@ -52,6 +52,13 @@ export interface AppState {
     days: number;
   };
   pendingRankUp: null | { rankIndex: number };
+  pendingMilestone: null | {
+    kind: "streak" | "gospel" | "nt" | "bible";
+    title: string;
+    streak?: number;
+    books?: number;
+  };
+  forceTodaysNoteVariant: string | null;
 }
 
 function todayKey(d = new Date()): string {
