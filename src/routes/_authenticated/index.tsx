@@ -408,7 +408,7 @@ function perfectWeeks(state: ReturnType<typeof useAppState>): number {
       const d = new Date(cursor);
       d.setDate(cursor.getDate() + i);
       if (d >= today) { all = false; break; }
-      if (!readSet.has(d.toISOString().slice(0, 10))) { all = false; break; }
+      if (!readSet.has(todayKey(d))) { all = false; break; }
     }
     if (all) perfect++;
     cursor.setDate(cursor.getDate() + 7);
