@@ -556,6 +556,52 @@ export function acknowledgeSilverGold() {
   void persistProfile({ silver_gold_acknowledged: true });
 }
 
+export function setPendingMilestone(m: AppState["pendingMilestone"]) {
+  setState((s) => { s.pendingMilestone = m; return s; });
+}
+
+export function clearPendingMilestone() {
+  setState((s) => { s.pendingMilestone = null; return s; });
+}
+
+export function setForceTodaysNoteVariant(v: string | null) {
+  setState((s) => { s.forceTodaysNoteVariant = v; return s; });
+}
+
+// ---- Admin / dev test setters (local-only, no DB writes) ----
+
+export function adminTriggerBookCelebration(bookId: string, tier: "green" | "silver" | "gold") {
+  setState((s) => {
+    const book = bookById(bookId);
+    s.pendingCelebration = {
+      bookId,
+      tier,
+      chapters: book?.chapters ?? 16,
+      days: Math.max(1, Math.ceil((book?.chapters ?? 16) / Math.max(1, s.user.dailyGoal))),
+    };
+    return s;
+  });
+}
+
+export function adminTriggerRankUp(rankIndex: number) {
+  setState((s) => { s.pendingRankUp = { rankIndex }; return s; });
+}
+
+export function adminTriggerSilverGoldUnlock() {
+  setState((s) => {
+    s.silverGoldUnlocked = true;
+    s.silverGoldAcknowledged = false;
+    s.pendingCelebration = {
+      bookId: "mrk",
+      tier: "gold",
+      chapters: 16,
+      days: 16,
+    };
+    return s;
+  });
+}
+
+
 // ---- Analytics helpers ----
 
 import { avgVersesPerChapter } from "@/data/verses";
