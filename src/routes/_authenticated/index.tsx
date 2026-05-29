@@ -27,8 +27,11 @@ import {
   claimRefForUser,
   getUnclaimedReferrer,
   markReferrerClaimed,
+  getPendingJoin,
+  clearPendingJoin,
   type ReferrerInfo,
 } from "@/lib/invites";
+import { joinGroupByCode } from "@/lib/groups";
 import { sendFriendRequest } from "@/lib/friends";
 import { toast } from "sonner";
 
@@ -60,6 +63,14 @@ function HomePage() {
     let alive = true;
     (async () => {
       await claimRefForUser(state.userId!);
+      const pendingCode = getPendingJoin();
+      if (pendingCode) {
+        const res = await joinGroupByCode(state.userId!, pendingCode);
+        clearPendingJoin();
+        if (res.ok) {
+          toast.success(`Joined "${res.group.name}".`);
+        }
+      }
       const r = await getUnclaimedReferrer(state.userId!);
       if (alive) setReferrer(r);
     })();
@@ -67,6 +78,7 @@ function HomePage() {
       alive = false;
     };
   }, [ready, state.userId]);
+
 
   async function addReferrer() {
     if (!state.userId || !referrer) return;
