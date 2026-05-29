@@ -159,8 +159,23 @@ function BookCelebration() {
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
             transition={{ delay: 3.0 }}
-            className="absolute bottom-0 left-0 right-0 px-7 pb-10"
+            className="absolute bottom-0 left-0 right-0 px-7 pb-10 flex flex-col gap-3"
           >
+            <button
+              onClick={() =>
+                shareMilestone("book", {
+                  title: book.name,
+                  tier: cel.tier,
+                  chapters: book.chapters,
+                  streak: state.currentStreak,
+                  books: booksCompleted(state),
+                })
+              }
+              className="flex items-center justify-center gap-2 font-ui uppercase tracking-[0.16em] text-[11px] py-2 text-[color:var(--color-ink-muted)] hover:text-[color:var(--color-ink)] transition-colors"
+            >
+              <Share2 size={14} strokeWidth={1.5} />
+              Share
+            </button>
             <EditorialButton variant="primary" onClick={done}>
               Continue
             </EditorialButton>
