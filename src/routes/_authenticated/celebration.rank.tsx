@@ -1,13 +1,15 @@
 import { createFileRoute, useNavigate } from "@tanstack/react-router";
 import { motion } from "framer-motion";
 import { useEffect } from "react";
+import { Share2 } from "lucide-react";
 import { PhoneFrame } from "@/components/PhoneFrame";
 import { Screen } from "@/components/Screen";
-import { useAppState, clearPendingRankUp } from "@/state/store";
+import { useAppState, clearPendingRankUp, booksCompleted } from "@/state/store";
 import { RANKS } from "@/data/ranks";
 import { EditorialButton } from "@/components/ui-lectio/EditorialButton";
 import { SmallCaps } from "@/components/ui-lectio/SmallCaps";
 import { letterReveal } from "@/lib/motion";
+import { shareMilestone } from "@/lib/share";
 
 export const Route = createFileRoute("/_authenticated/celebration/rank")({
   head: () => ({
