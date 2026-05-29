@@ -4,7 +4,6 @@ export type FriendProfile = {
   id: string;
   name: string;
   username: string | null;
-  email: string;
   current_streak: number;
   xp: number;
 };
