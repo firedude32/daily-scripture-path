@@ -45,8 +45,8 @@ export function FriendActivity() {
         // Friends' RLS won't let us read their sessions; show streak/XP only.
         // (Reading sessions are private; surface the friend + streak instead.)
         const { data: profiles } = await supabase
-          .from("profiles")
-          .select("id, name, username, email, current_streak, xp, last_read_date")
+          .from("public_profiles")
+          .select("id, name, username, current_streak, xp, last_read_date")
           .in("id", ids);
 
         const byId: Record<string, Activity> = {};
@@ -54,7 +54,7 @@ export function FriendActivity() {
           byId[r.other.id] = { friend: r.other };
         }
         for (const p of profiles ?? []) {
-          if (!byId[p.id]) continue;
+          if (!p.id || !byId[p.id]) continue;
           byId[p.id].friend = {
             ...byId[p.id].friend,
             current_streak: p.current_streak ?? 0,
