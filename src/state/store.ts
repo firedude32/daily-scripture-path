@@ -254,6 +254,7 @@ type ProfilePatch = Partial<{
   silver_gold_unlocked: boolean;
   silver_gold_acknowledged: boolean;
   onboarded: boolean;
+  avatar_icon: string | null;
 }>;
 
 async function persistProfile(patch: ProfilePatch) {
