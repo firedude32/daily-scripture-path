@@ -1,6 +1,7 @@
 import { createFileRoute, useNavigate } from "@tanstack/react-router";
 import { motion, AnimatePresence } from "framer-motion";
 import { useEffect, useState } from "react";
+import { UserPlus, X } from "lucide-react";
 import { Screen } from "@/components/Screen";
 import { PhoneFrame } from "@/components/PhoneFrame";
 import { CalendarHeatmap } from "@/components/CalendarHeatmap";
@@ -21,6 +22,14 @@ import {
   acknowledgeSilverGold,
 } from "@/state/store";
 import { bookById } from "@/data/books";
+import {
+  claimRefForUser,
+  getUnclaimedReferrer,
+  markReferrerClaimed,
+  type ReferrerInfo,
+} from "@/lib/invites";
+import { sendFriendRequest } from "@/lib/friends";
+import { toast } from "sonner";
 
 export const Route = createFileRoute("/_authenticated/")({
   head: () => ({
