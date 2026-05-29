@@ -97,8 +97,23 @@ function RankCelebration() {
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
             transition={{ delay: totalDelay + 0.8 }}
-            className="mt-16 w-full max-w-xs"
+            className="mt-16 w-full max-w-xs flex flex-col gap-3"
           >
+            <button
+              onClick={() =>
+                shareMilestone("rank", {
+                  title: rank.name,
+                  subtitle: rank.blurb,
+                  encouragement: rank.blurb,
+                  streak: state.currentStreak,
+                  books: booksCompleted(state),
+                })
+              }
+              className="flex items-center justify-center gap-2 font-ui uppercase tracking-[0.16em] text-[11px] py-2 text-[color:var(--color-ink-muted)] hover:text-[color:var(--color-ink)] transition-colors"
+            >
+              <Share2 size={14} strokeWidth={1.5} />
+              Share
+            </button>
             <EditorialButton variant="primary" onClick={done}>
               Continue
             </EditorialButton>
