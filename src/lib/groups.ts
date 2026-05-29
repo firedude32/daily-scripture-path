@@ -182,7 +182,7 @@ export async function renameGroup(groupId: string, name: string): Promise<void> 
 }
 
 export async function regenerateJoinCode(groupId: string): Promise<string> {
-  const { data, error } = await supabase.rpc("regenerate_group_code", { _group_id: groupId });
+  const { data, error } = await (supabase as any).rpc("regenerate_group_code", { _group_id: groupId });
   if (error) throw error;
   return data as string;
 }
@@ -218,7 +218,7 @@ export async function inviteFriendsToGroup(
     return { invited: 0, skipped: inviteeIds.length };
   }
 
-  const { error } = await supabase.from("group_invites").insert(
+  const { error } = await (supabase as any).from("group_invites").insert(
     toInvite.map((id) => ({
       group_id: groupId,
       invitee_id: id,
@@ -269,12 +269,12 @@ export async function listIncomingGroupInvites(
 }
 
 export async function acceptGroupInvite(inviteId: string): Promise<string> {
-  const { data, error } = await supabase.rpc("accept_group_invite", { _invite_id: inviteId });
+  const { data, error } = await (supabase as any).rpc("accept_group_invite", { _invite_id: inviteId });
   if (error) throw error;
   return data as string;
 }
 
 export async function declineGroupInvite(inviteId: string): Promise<void> {
-  const { error } = await supabase.from("group_invites").delete().eq("id", inviteId);
+  const { error } = await (supabase as any).from("group_invites").delete().eq("id", inviteId);
   if (error) throw error;
 }
