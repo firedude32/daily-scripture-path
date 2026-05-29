@@ -241,11 +241,69 @@ function ordinal(n: number): string {
   return map[n] ?? `${n}th`;
 }
 
+// Synthetic samples so admins can preview every variant on demand, even
+// when the user's real state wouldn't naturally surface it.
+const FORCED_SAMPLES: Record<VariantKey, NoteContent> = {
+  left_off: {
+    key: "left_off",
+    label: "Where You Left Off",
+    Icon: Bookmark,
+    body: "Last time, you closed the book mid\u2011passage. Pick the thread back up where you set it down \u2014 the next chapter is waiting.",
+    bottom: "MARK 4 \u00B7 READ TWO DAYS AGO",
+  },
+  book_note: {
+    key: "book_note",
+    label: "A Note on Mark",
+    Icon: BookOpen,
+    body: BOOK_NOTES.mrk,
+    bottom: "THE BOOK OF MARK \u00B7 16 CHAPTERS",
+  },
+  favorite: {
+    key: "favorite",
+    label: "From Your Favorites",
+    Icon: Star,
+    body: "You keep returning to John 1. Some chapters earn the second and third reading.",
+    bottom: "JOHN 1 \u00B7 READ 3 TIMES",
+  },
+  in_motion: {
+    key: "in_motion",
+    label: "In Motion",
+    Icon: Feather,
+    body: "A friend just finished a chapter. The work is quiet, and shared.",
+    bottom: "FRIENDS \u00B7 TODAY",
+  },
+  record: {
+    key: "record",
+    label: "Your Record",
+    Icon: BarChart3,
+    body: "You\u2019ve read for 12 hours across 28 days. That\u2019s a working day each month given quietly to scripture.",
+    bottom: "28 DAYS OF READING \u00B7 41 CHAPTERS",
+  },
+  on_chapter: {
+    key: "on_chapter",
+    label: "On This Chapter",
+    Icon: Feather,
+    body: CHAPTER_NOTES["mrk:4"],
+    bottom: "MARK 4 \u00B7 TODAY\u2019S READING",
+  },
+  another_look: {
+    key: "another_look",
+    label: "Worth Another Look",
+    Icon: RotateCcw,
+    body: "You moved quickly through Romans 8 when you read it. A second reading often opens what the first one closed.",
+    bottom: "ROMANS 8 \u00B7 READ 3 DAYS AGO",
+  },
+};
+
 export function TodaysNote() {
   const today = useMemo(() => new Date(), []);
   const state = useAppState();
 
-  const note = useMemo(() => pickVariant(state, today), [state, today]);
+  const forced = state.forceTodaysNoteVariant as VariantKey | null;
+  const note = useMemo(
+    () => (forced ? FORCED_SAMPLES[forced] ?? pickVariant(state, today) : pickVariant(state, today)),
+    [state, today, forced],
+  );
 
   if (!note) return null;
 

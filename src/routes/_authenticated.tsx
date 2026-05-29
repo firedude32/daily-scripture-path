@@ -1,6 +1,8 @@
 import { createFileRoute, Outlet, redirect } from "@tanstack/react-router";
 import { supabase } from "@/integrations/supabase/client";
 import { useHydrateStore, useAppState } from "@/state/store";
+import { MilestoneShareModal } from "@/components/MilestoneShareModal";
+
 
 export const Route = createFileRoute("/_authenticated")({
   beforeLoad: async ({ location }) => {
@@ -26,5 +28,10 @@ function AuthenticatedLayout() {
       </div>
     );
   }
-  return <Outlet />;
+  return (
+    <>
+      <Outlet />
+      <MilestoneShareModal />
+    </>
+  );
 }
