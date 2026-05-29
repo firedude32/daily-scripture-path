@@ -126,11 +126,23 @@ export async function shareMilestone(
     }
   }
 
-  // Final fallback: open in new tab so user can save
+  // Final fallback: download the PNG directly if we have it, else open in tab.
   if (typeof window !== "undefined") {
+    if (file) {
+      const objUrl = URL.createObjectURL(file);
+      const a = document.createElement("a");
+      a.href = objUrl;
+      a.download = filename;
+      document.body.appendChild(a);
+      a.click();
+      a.remove();
+      setTimeout(() => URL.revokeObjectURL(objUrl), 1000);
+      return { ok: true, reason: "downloaded" };
+    }
     window.open(absoluteUrl, "_blank", "noopener,noreferrer");
     return { ok: true, reason: "opened_in_tab" };
   }
 
   return { ok: false, reason: "no_share_api" };
 }
+

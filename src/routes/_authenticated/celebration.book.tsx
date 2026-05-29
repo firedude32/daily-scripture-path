@@ -1,15 +1,14 @@
 import { createFileRoute, useNavigate } from "@tanstack/react-router";
 import { motion } from "framer-motion";
 import { useEffect, useState } from "react";
-import { Share2 } from "lucide-react";
+import { Share2, Download } from "lucide-react";
 import { PhoneFrame } from "@/components/PhoneFrame";
 import { Screen } from "@/components/Screen";
 import { useAppState, clearPendingCelebration, acknowledgeSilverGold, booksCompleted } from "@/state/store";
 import { bookById } from "@/data/books";
 import { EditorialButton } from "@/components/ui-lectio/EditorialButton";
 import { SmallCaps } from "@/components/ui-lectio/SmallCaps";
-import { GoldMotif, bookMotif } from "@/components/GoldMotif";
-import { shareMilestone } from "@/lib/share";
+import { shareMilestone, shareCardUrl } from "@/lib/share";
 
 export const Route = createFileRoute("/_authenticated/celebration/book")({
   head: () => ({
@@ -21,28 +20,11 @@ export const Route = createFileRoute("/_authenticated/celebration/book")({
   component: BookCelebration,
 });
 
-const TIER_COLOR: Record<string, string> = {
-  green: "#4A6B4E",
-  silver: "#9A9389",
-  gold: "#B8860B",
-};
-
-const ENCOURAGEMENT = {
-  green: "One book closer.",
-  silver: "Twice through. Quiet, real depth.",
-  gold: "Three times. The book lives in you.",
-};
-
-const TIER_LABEL = {
-  green: "First Completion",
-  silver: "Second Completion",
-  gold: "Third Completion",
-};
-
 function BookCelebration() {
   const navigate = useNavigate();
   const state = useAppState();
   const [showHalfBible, setShowHalfBible] = useState(false);
+  const [sharing, setSharing] = useState(false);
   const cel = state.pendingCelebration;
 
   useEffect(() => {
@@ -51,10 +33,17 @@ function BookCelebration() {
 
   if (!cel) return null;
   const book = bookById(cel.bookId)!;
-  const tierColor = TIER_COLOR[cel.tier];
+
+  const params = {
+    title: book.name,
+    tier: cel.tier,
+    chapters: book.chapters,
+    streak: state.currentStreak,
+    books: booksCompleted(state),
+  };
+  const cardUrl = shareCardUrl("book", params, "story");
 
   function done() {
-    if (!cel) return;
     clearPendingCelebration();
     if (state.silverGoldUnlocked && !state.silverGoldAcknowledged) {
       setShowHalfBible(true);
@@ -70,117 +59,71 @@ function BookCelebration() {
     else navigate({ to: "/" });
   }
 
+  async function onShare() {
+    setSharing(true);
+    try {
+      await shareMilestone("book", params, "story");
+    } finally {
+      setSharing(false);
+    }
+  }
+
   return (
     <PhoneFrame>
       <Screen noTabs>
-        <motion.div
-          className="absolute inset-0"
-          initial={{ opacity: 0 }}
-          animate={{ opacity: 1 }}
-          transition={{ duration: 0.7, ease: [0.22, 1, 0.36, 1] }}
+        <div
+          className="absolute inset-0 flex flex-col px-6 pt-10 pb-8"
           style={{ background: "var(--color-paper)" }}
         >
-          {/* Soft tier-colored gradient wash */}
+          <div className="text-center">
+            <SmallCaps tone="gold">A Book, Complete</SmallCaps>
+          </div>
+
           <motion.div
-            className="absolute inset-0"
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 0.18 }}
-            transition={{ duration: 1.2 }}
-            style={{
-              background: `radial-gradient(ellipse at 50% 35%, ${tierColor}, transparent 65%)`,
-            }}
-          />
-
-          <div className="relative h-full flex flex-col items-center justify-center px-8 text-center">
-            <motion.div
-              initial={{ opacity: 0, scale: 0.85 }}
-              animate={{ opacity: 1, scale: 1 }}
-              transition={{ delay: 0.5, duration: 0.8 }}
+            initial={{ opacity: 0, y: 12, scale: 0.98 }}
+            animate={{ opacity: 1, y: 0, scale: 1 }}
+            transition={{ duration: 0.7, ease: [0.22, 1, 0.36, 1] }}
+            className="mt-5 flex-1 min-h-0 flex items-center justify-center"
+          >
+            <div
+              className="w-full rounded-[14px] overflow-hidden"
+              style={{
+                aspectRatio: "9 / 16",
+                maxHeight: "100%",
+                border: "1px solid var(--color-rule)",
+                boxShadow: "0 30px 60px -30px rgba(40, 32, 20, 0.25), 0 8px 20px -10px rgba(40, 32, 20, 0.15)",
+                background: "var(--color-paper-light)",
+              }}
             >
-              <GoldMotif name={bookMotif(cel.bookId)} size={88} strokeWidth={1} />
-            </motion.div>
-
-            <motion.h1
-              initial={{ opacity: 0, y: 16 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ delay: 0.8, duration: 0.7 }}
-              className="mt-8 font-display"
-              style={{ fontSize: 64, lineHeight: 1, color: "var(--color-ink)", fontWeight: 300, letterSpacing: "-0.02em" }}
-            >
-              {book.name}
-            </motion.h1>
-
-            <motion.div
-              initial={{ opacity: 0 }}
-              animate={{ opacity: 1 }}
-              transition={{ delay: 1.0 }}
-              className="mt-5"
-            >
-              <SmallCaps tone="gold">Complete</SmallCaps>
-            </motion.div>
-
-            {/* Tier fill from center outward */}
-            <div className="mt-12 w-48 relative" style={{ height: 2, background: "var(--color-rule)" }}>
-              <motion.div
-                initial={{ width: 0, left: "50%" }}
-                animate={{ width: "100%", left: "0%" }}
-                transition={{ delay: 1.2, duration: 1.7, ease: [0.22, 1, 0.36, 1] }}
-                className="absolute inset-y-0"
-                style={{ background: tierColor }}
+              <img
+                src={cardUrl}
+                alt={`${book.name} complete`}
+                className="w-full h-full block"
+                style={{ objectFit: "cover" }}
               />
             </div>
-
-            <motion.div
-              initial={{ opacity: 0 }}
-              animate={{ opacity: 1 }}
-              transition={{ delay: 2.4 }}
-              className="mt-12"
-            >
-              <p className="font-ui uppercase text-[11px] tracking-[0.18em] tabular text-[color:var(--color-ink-muted)]">
-                {book.chapters} Chapters · {cel.days} Days
-              </p>
-              <p className="mt-2">
-                <SmallCaps tone="ink">{TIER_LABEL[cel.tier]}</SmallCaps>
-              </p>
-            </motion.div>
-
-            <motion.p
-              initial={{ opacity: 0 }}
-              animate={{ opacity: 1 }}
-              transition={{ delay: 2.7 }}
-              className="mt-8 font-body italic text-[color:var(--color-ink-soft)]"
-              style={{ fontSize: 17 }}
-            >
-              {ENCOURAGEMENT[cel.tier]}
-            </motion.p>
-          </div>
+          </motion.div>
 
           <motion.div
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
-            transition={{ delay: 3.0 }}
-            className="absolute bottom-0 left-0 right-0 px-7 pb-10 flex flex-col gap-3"
+            transition={{ delay: 0.5 }}
+            className="mt-6 flex flex-col gap-3"
           >
-            <button
-              onClick={() =>
-                shareMilestone("book", {
-                  title: book.name,
-                  tier: cel.tier,
-                  chapters: book.chapters,
-                  streak: state.currentStreak,
-                  books: booksCompleted(state),
-                })
-              }
-              className="flex items-center justify-center gap-2 font-ui uppercase tracking-[0.16em] text-[11px] py-2 text-[color:var(--color-ink-muted)] hover:text-[color:var(--color-ink)] transition-colors"
-            >
-              <Share2 size={14} strokeWidth={1.5} />
-              Share
-            </button>
-            <EditorialButton variant="primary" onClick={done}>
-              Continue
+            <EditorialButton variant="primary" onClick={onShare} disabled={sharing}>
+              <span className="inline-flex items-center justify-center gap-2">
+                <Share2 size={15} strokeWidth={1.5} />
+                {sharing ? "Preparing…" : "Share"}
+              </span>
             </EditorialButton>
+            <button
+              onClick={done}
+              className="font-ui uppercase tracking-[0.18em] text-[11px] py-2 text-[color:var(--color-ink-muted)]"
+            >
+              Done
+            </button>
           </motion.div>
-        </motion.div>
+        </div>
 
         {showHalfBible && (
           <motion.div
@@ -208,3 +151,6 @@ function BookCelebration() {
     </PhoneFrame>
   );
 }
+
+// Suppress unused-import warning for Download in case we add it later.
+void Download;
