@@ -31,7 +31,7 @@ export function BottomSheet({
           animate={{ opacity: 1 }}
           exit={{ opacity: 0 }}
           onClick={onClose}
-          className="absolute inset-0 z-50 flex items-end"
+          className="fixed inset-0 z-50 flex items-end justify-center"
           style={{ background: "rgba(28, 25, 21, 0.4)" }}
         >
           <motion.div
@@ -40,7 +40,7 @@ export function BottomSheet({
             exit={{ y: 60 }}
             transition={{ duration: 0.3, ease: [0.22, 1, 0.36, 1] }}
             onClick={(e) => e.stopPropagation()}
-            className="w-full px-7 pt-7 pb-10 overflow-y-auto"
+            className="w-full md:max-w-[440px] px-7 pt-7 pb-10 overflow-y-auto"
             style={{
               background: "var(--color-paper)",
               borderTopLeftRadius: 24,
