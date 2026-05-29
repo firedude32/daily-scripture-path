@@ -26,6 +26,7 @@ import { Route as AuthenticatedAnalyticsRouteImport } from './routes/_authentica
 import { Route as AuthenticatedAdminRouteImport } from './routes/_authenticated/admin'
 import { Route as AuthenticatedCelebrationRankRouteImport } from './routes/_authenticated/celebration.rank'
 import { Route as AuthenticatedCelebrationBookRouteImport } from './routes/_authenticated/celebration.book'
+import { Route as ApiPublicShareCardKindRouteImport } from './routes/api/public/share-card.$kind'
 
 const SignupRoute = SignupRouteImport.update({
   id: '/signup',
@@ -113,6 +114,11 @@ const AuthenticatedCelebrationBookRoute =
     path: '/celebration/book',
     getParentRoute: () => AuthenticatedRoute,
   } as any)
+const ApiPublicShareCardKindRoute = ApiPublicShareCardKindRouteImport.update({
+  id: '/api/public/share-card/$kind',
+  path: '/api/public/share-card/$kind',
+  getParentRoute: () => rootRouteImport,
+} as any)
 
 export interface FileRoutesByFullPath {
   '/': typeof AuthenticatedIndexRoute
@@ -131,6 +137,7 @@ export interface FileRoutesByFullPath {
   '/summary': typeof AuthenticatedSummaryRoute
   '/celebration/book': typeof AuthenticatedCelebrationBookRoute
   '/celebration/rank': typeof AuthenticatedCelebrationRankRoute
+  '/api/public/share-card/$kind': typeof ApiPublicShareCardKindRoute
 }
 export interface FileRoutesByTo {
   '/login': typeof LoginRoute
@@ -149,6 +156,7 @@ export interface FileRoutesByTo {
   '/': typeof AuthenticatedIndexRoute
   '/celebration/book': typeof AuthenticatedCelebrationBookRoute
   '/celebration/rank': typeof AuthenticatedCelebrationRankRoute
+  '/api/public/share-card/$kind': typeof ApiPublicShareCardKindRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
@@ -169,6 +177,7 @@ export interface FileRoutesById {
   '/_authenticated/': typeof AuthenticatedIndexRoute
   '/_authenticated/celebration/book': typeof AuthenticatedCelebrationBookRoute
   '/_authenticated/celebration/rank': typeof AuthenticatedCelebrationRankRoute
+  '/api/public/share-card/$kind': typeof ApiPublicShareCardKindRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
@@ -189,6 +198,7 @@ export interface FileRouteTypes {
     | '/summary'
     | '/celebration/book'
     | '/celebration/rank'
+    | '/api/public/share-card/$kind'
   fileRoutesByTo: FileRoutesByTo
   to:
     | '/login'
@@ -207,6 +217,7 @@ export interface FileRouteTypes {
     | '/'
     | '/celebration/book'
     | '/celebration/rank'
+    | '/api/public/share-card/$kind'
   id:
     | '__root__'
     | '/_authenticated'
@@ -226,6 +237,7 @@ export interface FileRouteTypes {
     | '/_authenticated/'
     | '/_authenticated/celebration/book'
     | '/_authenticated/celebration/rank'
+    | '/api/public/share-card/$kind'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
@@ -233,6 +245,7 @@ export interface RootRouteChildren {
   LoginRoute: typeof LoginRoute
   ResetPasswordRoute: typeof ResetPasswordRoute
   SignupRoute: typeof SignupRoute
+  ApiPublicShareCardKindRoute: typeof ApiPublicShareCardKindRoute
 }
 
 declare module '@tanstack/react-router' {
@@ -356,6 +369,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedCelebrationBookRouteImport
       parentRoute: typeof AuthenticatedRoute
     }
+    '/api/public/share-card/$kind': {
+      id: '/api/public/share-card/$kind'
+      path: '/api/public/share-card/$kind'
+      fullPath: '/api/public/share-card/$kind'
+      preLoaderRoute: typeof ApiPublicShareCardKindRouteImport
+      parentRoute: typeof rootRouteImport
+    }
   }
 }
 
@@ -400,7 +420,18 @@ const rootRouteChildren: RootRouteChildren = {
   LoginRoute: LoginRoute,
   ResetPasswordRoute: ResetPasswordRoute,
   SignupRoute: SignupRoute,
+  ApiPublicShareCardKindRoute: ApiPublicShareCardKindRoute,
 }
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)
   ._addFileTypes<FileRouteTypes>()
+
+import type { getRouter } from './router.tsx'
+import type { startInstance } from './start.ts'
+declare module '@tanstack/react-start' {
+  interface Register {
+    ssr: true
+    router: Awaited<ReturnType<typeof getRouter>>
+    config: Awaited<ReturnType<typeof startInstance.getOptions>>
+  }
+}
