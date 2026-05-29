@@ -126,7 +126,7 @@ function FriendsPage() {
               ) : (
                 <div className="mt-8 space-y-8">
                   {incoming.length > 0 && (
-                    <Section title="Pending Invites">
+                    <Section title={`Pending Invites · ${incoming.length}`}>
                       {incoming.map((r) => (
                         <PendingRow
                           key={r.other.id}
