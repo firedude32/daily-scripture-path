@@ -41,7 +41,7 @@ function BookCelebration() {
     streak: state.currentStreak,
     books: booksCompleted(state),
   };
-  const cardUrl = shareCardUrl("book", params, "story");
+  const cardUrl = shareCardUrl("book", params, "square");
 
   function done() {
     clearPendingCelebration();
