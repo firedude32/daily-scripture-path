@@ -28,12 +28,20 @@ export type FriendRow = {
 async function fetchProfilesByIds(ids: string[]): Promise<Record<string, FriendProfile>> {
   if (ids.length === 0) return {};
   const { data, error } = await supabase
-    .from("profiles")
-    .select("id, name, username, email, current_streak, xp")
+    .from("public_profiles")
+    .select("id, name, username, current_streak, xp")
     .in("id", ids);
   if (error) throw error;
   const map: Record<string, FriendProfile> = {};
-  for (const p of data ?? []) map[p.id] = p as FriendProfile;
+  for (const p of data ?? []) {
+    map[p.id] = {
+      id: p.id,
+      name: p.name ?? "Friend",
+      username: p.username,
+      current_streak: p.current_streak ?? 0,
+      xp: p.xp ?? 0,
+    };
+  }
   return map;
 }
 
@@ -71,14 +79,37 @@ export async function findProfileByEmailOrUsername(
   const q = query.trim();
   if (!q) return null;
   const isEmail = q.includes("@");
-  const column = isEmail ? "email" : "username";
+  if (isEmail) {
+    // Email lookup goes through a SECURITY DEFINER RPC so we never return
+    // anyone else's email address back to the client.
+    const { data, error } = await supabase.rpc("find_profile_by_email", {
+      _email: q.toLowerCase(),
+    });
+    if (error) throw error;
+    const row = Array.isArray(data) ? data[0] : data;
+    if (!row) return null;
+    return {
+      id: row.id,
+      name: row.name ?? "Friend",
+      username: row.username,
+      current_streak: row.current_streak ?? 0,
+      xp: row.xp ?? 0,
+    };
+  }
   const { data, error } = await supabase
-    .from("profiles")
-    .select("id, name, username, email, current_streak, xp")
-    .eq(column, isEmail ? q.toLowerCase() : q)
+    .from("public_profiles")
+    .select("id, name, username, current_streak, xp")
+    .eq("username", q)
     .maybeSingle();
   if (error) throw error;
-  return (data as FriendProfile) ?? null;
+  if (!data) return null;
+  return {
+    id: data.id,
+    name: data.name ?? "Friend",
+    username: data.username,
+    current_streak: data.current_streak ?? 0,
+    xp: data.xp ?? 0,
+  };
 }
 
 export async function sendFriendRequest(
