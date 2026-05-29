@@ -86,8 +86,11 @@ function ProfilePage() {
 
           {/* Avatar + name */}
           <div className="mt-6 flex items-center gap-4">
-            <div
-              className="flex items-center justify-center font-display rounded-full shrink-0"
+            <button
+              type="button"
+              onClick={() => setSheet("avatar")}
+              aria-label="Change profile icon"
+              className="flex items-center justify-center font-display rounded-full shrink-0 transition-colors hover:border-[color:var(--color-gold)]"
               style={{
                 width: 64,
                 height: 64,
@@ -98,8 +101,15 @@ function ProfilePage() {
                 fontWeight: 400,
               }}
             >
-              {state.user.name[0]?.toUpperCase()}
-            </div>
+              {(() => {
+                const picked = avatarIconByKey(state.user.avatarIcon);
+                if (picked) {
+                  const Icon = picked.Icon;
+                  return <Icon size={28} strokeWidth={1.25} style={{ color: "var(--color-gold)" }} aria-hidden />;
+                }
+                return state.user.name[0]?.toUpperCase();
+              })()}
+            </button>
             <div className="flex-1 min-w-0">
               <p className="font-display text-[color:var(--color-ink)]" style={{ fontSize: 22, fontWeight: 400 }}>
                 {state.user.name}
