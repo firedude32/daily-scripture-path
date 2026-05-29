@@ -1,6 +1,7 @@
 import { createFileRoute, useNavigate } from "@tanstack/react-router";
 import { motion, AnimatePresence } from "framer-motion";
 import { useEffect, useState } from "react";
+import { UserPlus, X } from "lucide-react";
 import { Screen } from "@/components/Screen";
 import { PhoneFrame } from "@/components/PhoneFrame";
 import { CalendarHeatmap } from "@/components/CalendarHeatmap";
@@ -21,6 +22,14 @@ import {
   acknowledgeSilverGold,
 } from "@/state/store";
 import { bookById } from "@/data/books";
+import {
+  claimRefForUser,
+  getUnclaimedReferrer,
+  markReferrerClaimed,
+  type ReferrerInfo,
+} from "@/lib/invites";
+import { sendFriendRequest } from "@/lib/friends";
+import { toast } from "sonner";
 
 export const Route = createFileRoute("/_authenticated/")({
   head: () => ({
@@ -37,10 +46,44 @@ function HomePage() {
   const ready = useClientReady();
   const state = useAppState();
   const [pickerOpen, setPickerOpen] = useState(false);
+  const [referrer, setReferrer] = useState<ReferrerInfo | null>(null);
 
   useEffect(() => {
     if (ready && !state.onboarded) navigate({ to: "/onboarding" });
   }, [ready, state.onboarded, navigate]);
+
+  // Claim ref from localStorage (set when they arrived via ?ref=) and surface
+  // a one-tap "Add X" card so invited users find their inviter instantly.
+  useEffect(() => {
+    if (!ready || !state.userId) return;
+    let alive = true;
+    (async () => {
+      await claimRefForUser(state.userId!);
+      const r = await getUnclaimedReferrer(state.userId!);
+      if (alive) setReferrer(r);
+    })();
+    return () => {
+      alive = false;
+    };
+  }, [ready, state.userId]);
+
+  async function addReferrer() {
+    if (!state.userId || !referrer) return;
+    const res = await sendFriendRequest(state.userId, referrer.id);
+    if (res.ok) {
+      toast.success(`Invite sent to ${referrer.name}.`);
+    } else {
+      toast.error(res.reason);
+    }
+    await markReferrerClaimed(state.userId);
+    setReferrer(null);
+  }
+
+  async function dismissReferrer() {
+    if (!state.userId) return;
+    await markReferrerClaimed(state.userId);
+    setReferrer(null);
+  }
 
   function startRecommended() {
     clearReadOverride();
@@ -81,6 +124,51 @@ function HomePage() {
             <SmallCaps>Today · {dateLabel}</SmallCaps>
             <GoldMotif name={dailyMotif(today)} size={44} />
           </div>
+
+          {/* Inviter suggestion — shown once when a user signed up via someone's ref link */}
+          <AnimatePresence>
+            {referrer && (
+              <motion.div
+                initial={{ opacity: 0, y: -6 }}
+                animate={{ opacity: 1, y: 0 }}
+                exit={{ opacity: 0, y: -6 }}
+                transition={{ duration: 0.4, ease: [0.22, 1, 0.36, 1] }}
+                className="mt-5 flex items-center gap-3 rounded-[12px] px-4 py-3"
+                style={{
+                  background: "var(--color-paper-soft)",
+                  border: "1px solid var(--color-gold)",
+                }}
+              >
+                <UserPlus size={16} strokeWidth={1.5} className="text-[color:var(--color-gold)] shrink-0" />
+                <div className="flex-1 min-w-0">
+                  <div className="font-display text-[color:var(--color-ink)] truncate" style={{ fontSize: 14 }}>
+                    {referrer.name} invited you
+                  </div>
+                  <div className="font-body italic text-[color:var(--color-ink-muted)]" style={{ fontSize: 12 }}>
+                    Read alongside them?
+                  </div>
+                </div>
+                <button
+                  onClick={addReferrer}
+                  className="rounded-[10px] px-3 py-1.5 font-ui uppercase tracking-[0.14em]"
+                  style={{
+                    background: "var(--color-gold)",
+                    color: "var(--color-paper)",
+                    fontSize: 10,
+                  }}
+                >
+                  Add
+                </button>
+                <button
+                  onClick={dismissReferrer}
+                  aria-label="Dismiss"
+                  className="p-1 -m-1 text-[color:var(--color-ink-muted)] hover:text-[color:var(--color-ink)]"
+                >
+                  <X size={14} strokeWidth={1.5} />
+                </button>
+              </motion.div>
+            )}
+          </AnimatePresence>
 
           {/* Bread illustration */}
           <motion.div
