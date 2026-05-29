@@ -87,22 +87,32 @@ function FriendsPage() {
           </div>
 
           <div className="mt-5 flex items-center gap-7 border-b" style={{ borderColor: "var(--color-rule)" }}>
-            {(["friends", "groups"] as const).map((t) => (
-              <button
-                key={t}
-                onClick={() => setTab(t)}
-                className="pb-3 font-ui uppercase tracking-[0.16em] transition-colors"
-                style={{
-                  fontSize: 11,
-                  fontWeight: 500,
-                  color: tab === t ? "var(--color-ink)" : "var(--color-ink-muted)",
-                  borderBottom: tab === t ? "1.5px solid var(--color-gold)" : "1.5px solid transparent",
-                  marginBottom: -1,
-                }}
-              >
-                {t}
-              </button>
-            ))}
+            {(["friends", "groups"] as const).map((t) => {
+              const showDot = t === "friends" && rows.some((r) => r.isIncoming);
+              return (
+                <button
+                  key={t}
+                  onClick={() => setTab(t)}
+                  className="pb-3 font-ui uppercase tracking-[0.16em] transition-colors relative"
+                  style={{
+                    fontSize: 11,
+                    fontWeight: 500,
+                    color: tab === t ? "var(--color-ink)" : "var(--color-ink-muted)",
+                    borderBottom: tab === t ? "1.5px solid var(--color-gold)" : "1.5px solid transparent",
+                    marginBottom: -1,
+                  }}
+                >
+                  {t}
+                  {showDot && (
+                    <span
+                      aria-hidden
+                      className="absolute -top-1 -right-2 rounded-full"
+                      style={{ width: 6, height: 6, background: "var(--color-gold)" }}
+                    />
+                  )}
+                </button>
+              );
+            })}
           </div>
 
           {tab === "friends" && (
@@ -116,7 +126,7 @@ function FriendsPage() {
               ) : (
                 <div className="mt-8 space-y-8">
                   {incoming.length > 0 && (
-                    <Section title="Pending Invites">
+                    <Section title={`Pending Invites · ${incoming.length}`}>
                       {incoming.map((r) => (
                         <PendingRow
                           key={r.other.id}

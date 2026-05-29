@@ -100,7 +100,7 @@ export async function findProfileByEmailOrUsername(
   const { data, error } = await supabase
     .from("public_profiles")
     .select("id, name, username, current_streak, xp")
-    .eq("username", q)
+    .eq("username", q.toLowerCase())
     .maybeSingle();
   if (error) throw error;
   if (!data || !data.id) return null;

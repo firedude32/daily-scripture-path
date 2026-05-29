@@ -1,4 +1,4 @@
-import type { AppState } from "@/state/store";
+import { todayKey, type AppState } from "@/state/store";
 import { BOOKS, bookById } from "@/data/books";
 
 export const GOSPEL_IDS = ["mat", "mrk", "luk", "jhn"];
@@ -31,7 +31,7 @@ export function recentChaptersPerDay(state: AppState, days = 14): number {
   for (let i = 0; i < days; i++) {
     const d = new Date(today);
     d.setDate(today.getDate() - i);
-    const k = d.toISOString().slice(0, 10);
+    const k = todayKey(d);
     total += state.dailyCounts[k] ?? 0;
   }
   if (total === 0) return 0;

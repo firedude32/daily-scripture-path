@@ -20,6 +20,7 @@ import {
   nextChapterFor,
   chaptersReadToday,
   acknowledgeSilverGold,
+  todayKey,
 } from "@/state/store";
 import { bookById } from "@/data/books";
 import {
@@ -380,7 +381,7 @@ function daysReadInLast(state: ReturnType<typeof useAppState>, days: number): nu
   for (let i = 0; i < days; i++) {
     const d = new Date(today);
     d.setDate(today.getDate() - i);
-    const key = d.toISOString().slice(0, 10);
+    const key = todayKey(d);
     if ((state.dailyCounts[key] ?? 0) > 0) count++;
   }
   return count;
@@ -407,7 +408,7 @@ function perfectWeeks(state: ReturnType<typeof useAppState>): number {
       const d = new Date(cursor);
       d.setDate(cursor.getDate() + i);
       if (d >= today) { all = false; break; }
-      if (!readSet.has(d.toISOString().slice(0, 10))) { all = false; break; }
+      if (!readSet.has(todayKey(d))) { all = false; break; }
     }
     if (all) perfect++;
     cursor.setDate(cursor.getDate() + 7);
