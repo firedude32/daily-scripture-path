@@ -491,6 +491,7 @@ function AddFriendForm({ onSent }: { onSent: () => void }) {
   const { userId } = useAppState();
   const [value, setValue] = useState("");
   const [busy, setBusy] = useState(false);
+  const [handoff, setHandoff] = useState<{ query: string; isEmail: boolean } | null>(null);
 
   const submit = async () => {
     if (!userId) return;
@@ -500,6 +501,9 @@ function AddFriendForm({ onSent }: { onSent: () => void }) {
       if (result.ok) {
         toast.success(`Invite sent to ${result.friend.name}.`);
         onSent();
+      } else if (result.reason.toLowerCase().includes("no one")) {
+        // Graceful handoff: walk the user into inviting instead of dead-ending
+        setHandoff({ query: value.trim(), isEmail: value.includes("@") });
       } else {
         toast.error(result.reason);
       }
@@ -507,6 +511,43 @@ function AddFriendForm({ onSent }: { onSent: () => void }) {
       setBusy(false);
     }
   };
+
+  if (handoff) {
+    return (
+      <div>
+        <p
+          className="font-body text-[color:var(--color-ink)]"
+          style={{ fontSize: 15, lineHeight: 1.55 }}
+        >
+          We couldn't find anyone with that {handoff.isEmail ? "email" : "username"}.
+        </p>
+        <p
+          className="mt-2 font-body italic text-[color:var(--color-ink-muted)]"
+          style={{ fontSize: 14, lineHeight: 1.55 }}
+        >
+          Want to invite {handoff.isEmail ? "them" : `@${handoff.query}`} to Lectio instead?
+        </p>
+
+        <div className="mt-7">
+          <InviteBlock
+            prefilledEmail={handoff.isEmail ? handoff.query : undefined}
+            eyebrow={`Invite ${handoff.isEmail ? handoff.query : "Them"}`}
+          />
+        </div>
+
+        <button
+          onClick={() => {
+            setHandoff(null);
+            setValue("");
+          }}
+          className="mt-6 font-ui uppercase tracking-[0.14em] text-[color:var(--color-ink-muted)] hover:text-[color:var(--color-ink)]"
+          style={{ fontSize: 11 }}
+        >
+          ← Search again
+        </button>
+      </div>
+    );
+  }
 
   return (
     <div>
@@ -524,8 +565,13 @@ function AddFriendForm({ onSent }: { onSent: () => void }) {
       </p>
       <div className="mt-7">
         <EditorialButton variant="gold" disabled={value.trim().length < 3 || busy} onClick={submit}>
-          {busy ? "Sending…" : "Send Invite"}
+          {busy ? "Searching…" : "Send Invite"}
         </EditorialButton>
+      </div>
+
+      {/* Quiet secondary path: invite someone not on Lectio yet */}
+      <div className="mt-8 pt-6" style={{ borderTop: "1px solid var(--color-rule)" }}>
+        <InviteBlock eyebrow="Not on Lectio yet?" />
       </div>
     </div>
   );
