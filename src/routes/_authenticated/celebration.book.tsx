@@ -62,7 +62,7 @@ function BookCelebration() {
   async function onShare() {
     setSharing(true);
     try {
-      await shareMilestone("book", params, "story");
+      await shareMilestone("book", params, "square");
     } finally {
       setSharing(false);
     }
