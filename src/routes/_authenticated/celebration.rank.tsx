@@ -50,7 +50,7 @@ function RankCelebration() {
   async function onShare() {
     setSharing(true);
     try {
-      await shareMilestone("rank", params, "story");
+      await shareMilestone("rank", params, "square");
     } finally {
       setSharing(false);
     }
