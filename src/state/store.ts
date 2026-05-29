@@ -34,6 +34,7 @@ export interface AppState {
     reminderTime: string;
     pathBookId: string;
     progressView: "simple" | "detailed";
+    avatarIcon: string | null;
   };
   xp: number;
   currentStreak: number;
