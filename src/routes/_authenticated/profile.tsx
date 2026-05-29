@@ -15,9 +15,11 @@ import {
   setUserName,
   setUserEmail,
   setUsername,
+  setAvatarIcon,
 } from "@/state/store";
 import { getRank, getNextRank, RANKS } from "@/data/ranks";
 import { NT_CHAPTERS, TOTAL_CHAPTERS, bookById } from "@/data/books";
+import { AVATAR_ICONS, avatarIconByKey } from "@/data/avatarIcons";
 import { SmallCaps } from "@/components/ui-lectio/SmallCaps";
 import { Rule } from "@/components/ui-lectio/Rule";
 import { EditorialButton } from "@/components/ui-lectio/EditorialButton";
