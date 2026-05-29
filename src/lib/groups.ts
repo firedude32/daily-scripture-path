@@ -99,12 +99,10 @@ export async function joinGroupByCode(
   const code = rawCode.trim().toUpperCase();
   if (code.length < 4) return { ok: false, reason: "Enter a valid code." };
 
-  const { data: group, error } = await supabase
-    .from("groups")
-    .select("*")
-    .eq("join_code", code)
-    .maybeSingle();
+  // Lookup goes through a SECURITY DEFINER RPC so join codes are not browseable.
+  const { data, error } = await supabase.rpc("find_group_by_code", { _code: code });
   if (error) return { ok: false, reason: error.message };
+  const group = (Array.isArray(data) ? data[0] : data) as Group | undefined;
   if (!group) return { ok: false, reason: "No group with that code." };
 
   const { error: insErr } = await supabase
@@ -114,7 +112,7 @@ export async function joinGroupByCode(
     if (insErr.code === "23505") return { ok: false, reason: "You're already in this group." };
     return { ok: false, reason: insErr.message };
   }
-  return { ok: true, group: group as Group };
+  return { ok: true, group };
 }
 
 export async function leaveGroup(currentUserId: string, groupId: string): Promise<void> {
