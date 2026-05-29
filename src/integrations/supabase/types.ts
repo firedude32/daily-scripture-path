@@ -300,10 +300,56 @@ export type Database = {
       }
     }
     Views: {
-      [_ in never]: never
+      public_profiles: {
+        Row: {
+          current_streak: number | null
+          id: string | null
+          last_read_date: string | null
+          name: string | null
+          username: string | null
+          xp: number | null
+        }
+        Insert: {
+          current_streak?: number | null
+          id?: string | null
+          last_read_date?: string | null
+          name?: string | null
+          username?: string | null
+          xp?: number | null
+        }
+        Update: {
+          current_streak?: number | null
+          id?: string | null
+          last_read_date?: string | null
+          name?: string | null
+          username?: string | null
+          xp?: number | null
+        }
+        Relationships: []
+      }
     }
     Functions: {
       books_completed_for: { Args: { _user_id: string }; Returns: number }
+      find_group_by_code: {
+        Args: { _code: string }
+        Returns: {
+          created_at: string
+          id: string
+          join_code: string
+          name: string
+          owner_id: string
+        }[]
+      }
+      find_profile_by_email: {
+        Args: { _email: string }
+        Returns: {
+          current_streak: number
+          id: string
+          name: string
+          username: string
+          xp: number
+        }[]
+      }
       is_group_member: {
         Args: { _group_id: string; _user_id: string }
         Returns: boolean

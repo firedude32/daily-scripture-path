@@ -99,12 +99,10 @@ export async function joinGroupByCode(
   const code = rawCode.trim().toUpperCase();
   if (code.length < 4) return { ok: false, reason: "Enter a valid code." };
 
-  const { data: group, error } = await supabase
-    .from("groups")
-    .select("*")
-    .eq("join_code", code)
-    .maybeSingle();
+  // Lookup goes through a SECURITY DEFINER RPC so join codes are not browseable.
+  const { data, error } = await supabase.rpc("find_group_by_code", { _code: code });
   if (error) return { ok: false, reason: error.message };
+  const group = (Array.isArray(data) ? data[0] : data) as Group | undefined;
   if (!group) return { ok: false, reason: "No group with that code." };
 
   const { error: insErr } = await supabase
@@ -114,7 +112,7 @@ export async function joinGroupByCode(
     if (insErr.code === "23505") return { ok: false, reason: "You're already in this group." };
     return { ok: false, reason: insErr.message };
   }
-  return { ok: true, group: group as Group };
+  return { ok: true, group };
 }
 
 export async function leaveGroup(currentUserId: string, groupId: string): Promise<void> {
@@ -142,7 +140,7 @@ export async function listGroupMembers(groupId: string): Promise<GroupMember[]> 
   if (ids.length === 0) return [];
 
   const { data: profiles, error: e2 } = await supabase
-    .from("profiles")
+    .from("public_profiles")
     .select("id, name, username, current_streak, xp")
     .in("id", ids);
   if (e2) throw e2;
@@ -151,13 +149,14 @@ export async function listGroupMembers(groupId: string): Promise<GroupMember[]> 
   for (const r of rows ?? []) joinedMap[r.user_id] = r.joined_at;
 
   return (profiles ?? [])
+    .filter((p) => !!p.id)
     .map((p) => ({
-      id: p.id,
-      name: p.name,
+      id: p.id as string,
+      name: p.name ?? "Friend",
       username: p.username,
       current_streak: p.current_streak ?? 0,
       xp: p.xp ?? 0,
-      joined_at: joinedMap[p.id] ?? "",
+      joined_at: joinedMap[p.id as string] ?? "",
     }))
     .sort((a, b) => b.xp - a.xp);
 }

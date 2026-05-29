@@ -150,12 +150,12 @@ export async function getUnclaimedReferrer(
     .maybeSingle();
   if (!me || !me.referred_by || me.referred_by_claimed) return null;
   const { data: ref } = await supabase
-    .from("profiles")
+    .from("public_profiles")
     .select("id, name")
     .eq("id", me.referred_by)
     .maybeSingle();
-  if (!ref) return null;
-  return { id: ref.id, name: ref.name };
+  if (!ref || !ref.id) return null;
+  return { id: ref.id, name: ref.name ?? "Friend" };
 }
 
 export async function markReferrerClaimed(userId: string): Promise<void> {
