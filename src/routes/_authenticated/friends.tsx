@@ -261,15 +261,13 @@ function FriendsPage() {
                         <PendingRow
                           key={r.other.id}
                           row={r}
-                          onAccept={async () => {
-                            await acceptFriendRequest(userId!, r.other.id);
-                            toast.success(`You and ${r.other.name} are now friends.`);
-                            void refresh();
+                          onAccept={() => {
+                            acceptFriend.mutate(r.other.id, {
+                              onSuccess: () =>
+                                toast.success(`You and ${r.other.name} are now friends.`),
+                            });
                           }}
-                          onDecline={async () => {
-                            await removeFriendship(userId!, r.other.id);
-                            void refresh();
-                          }}
+                          onDecline={() => removeFriend.mutate(r.other.id)}
                         />
                       ))}
                     </Section>
@@ -281,23 +279,22 @@ function FriendsPage() {
                         <GroupInviteRow
                           key={inv.id}
                           invite={inv}
-                          onAccept={async () => {
-                            try {
-                              const gid = await acceptGroupInvite(inv.id);
-                              toast.success(`Joined "${inv.group_name}".`);
-                              await refresh();
-                              // Open the group sheet so the user lands somewhere
-                              const fresh = await listMyGroups(userId!);
-                              const g = fresh.find((x) => x.id === gid);
-                              if (g) setOpenGroup(g);
-                            } catch (e) {
-                              toast.error((e as Error).message);
-                            }
+                          onAccept={() => {
+                            acceptInvite.mutate(inv.id, {
+                              onSuccess: async (gid) => {
+                                toast.success(`Joined "${inv.group_name}".`);
+                                // Refetch groups and open the new one.
+                                if (!userId) return;
+                                const fresh = await qc.fetchQuery({
+                                  queryKey: qk.groups(userId),
+                                  queryFn: () => listMyGroups(userId),
+                                });
+                                const g = fresh.find((x) => x.id === gid);
+                                if (g) setOpenGroup(g);
+                              },
+                            });
                           }}
-                          onDecline={async () => {
-                            await declineGroupInvite(inv.id);
-                            void refresh();
-                          }}
+                          onDecline={() => declineInvite.mutate(inv.id)}
                         />
                       ))}
                     </Section>
@@ -310,10 +307,7 @@ function FriendsPage() {
                           key={r.other.id}
                           row={r}
                           onOpen={() => setOpenFriend(r)}
-                          onRemove={async () => {
-                            await removeFriendship(userId!, r.other.id);
-                            void refresh();
-                          }}
+                          onRemove={() => removeFriend.mutate(r.other.id)}
                         />
                       ))}
                     </Section>
@@ -325,10 +319,7 @@ function FriendsPage() {
                         <SentRow
                           key={r.other.id}
                           row={r}
-                          onCancel={async () => {
-                            await removeFriendship(userId!, r.other.id);
-                            void refresh();
-                          }}
+                          onCancel={() => removeFriend.mutate(r.other.id)}
                         />
                       ))}
                     </Section>
