@@ -935,21 +935,19 @@ function GroupDetail({
   onChanged: () => void;
 }) {
   const { userId, user } = useAppState();
-  const [members, setMembers] = useState<GroupMember[] | null>(null);
+  const qc = useQueryClient();
   const [editingName, setEditingName] = useState(false);
   const [draftName, setDraftName] = useState(group.name);
   const [openInvite, setOpenInvite] = useState(false);
   const [openShare, setOpenShare] = useState(false);
   const isOwner = userId === group.owner_id;
 
-  const loadMembers = useCallback(() => {
-    void listGroupMembers(group.id).then(setMembers);
-  }, [group.id]);
-
-  useEffect(() => {
-    setMembers(null);
-    loadMembers();
-  }, [loadMembers]);
+  const membersQ = useQuery({
+    queryKey: qk.groupMembers(group.id),
+    queryFn: () => listGroupMembers(group.id),
+    staleTime: 30_000,
+  });
+  const members = membersQ.data ?? null;
 
   useEffect(() => {
     setDraftName(group.name);
@@ -968,10 +966,20 @@ function GroupDetail({
     if (!userId) return;
     if (isOwner) {
       if (!confirm("Delete this group for everyone?")) return;
-      await deleteGroup(group.id);
+      try {
+        await deleteGroup(group.id);
+      } catch (e) {
+        toast.error((e as Error).message);
+        return;
+      }
     } else {
       if (!confirm("Leave this group?")) return;
-      await leaveGroup(userId, group.id);
+      try {
+        await leaveGroup(userId, group.id);
+      } catch (e) {
+        toast.error((e as Error).message);
+        return;
+      }
     }
     onLeft();
   };
@@ -1002,16 +1010,30 @@ function GroupDetail({
     }
   };
 
-  const handleRemoveMember = async (m: GroupMember) => {
-    if (!confirm(`Remove ${m.name} from this group?`)) return;
-    try {
-      await removeGroupMember(group.id, m.id);
-      toast.success(`${m.name} removed.`);
-      loadMembers();
-    } catch (e) {
+  const removeMember = useMutation({
+    mutationFn: (memberId: string) => removeGroupMember(group.id, memberId),
+    onMutate: async (memberId) => {
+      await qc.cancelQueries({ queryKey: qk.groupMembers(group.id) });
+      const prev = qc.getQueryData<GroupMember[]>(qk.groupMembers(group.id));
+      qc.setQueryData<GroupMember[]>(qk.groupMembers(group.id), (old) =>
+        (old ?? []).filter((m) => m.id !== memberId),
+      );
+      return { prev };
+    },
+    onError: (e, _v, ctx) => {
+      if (ctx?.prev) qc.setQueryData(qk.groupMembers(group.id), ctx.prev);
       toast.error((e as Error).message);
-    }
+    },
+    onSettled: () => qc.invalidateQueries({ queryKey: qk.groupMembers(group.id) }),
+  });
+
+  const handleRemoveMember = (m: GroupMember) => {
+    if (!confirm(`Remove ${m.name} from this group?`)) return;
+    removeMember.mutate(m.id, {
+      onSuccess: () => toast.success(`${m.name} removed.`),
+    });
   };
+
 
   const shareLink = userId
     ? buildGroupJoinLink({ joinCode: group.join_code, username: user.username, userId })
