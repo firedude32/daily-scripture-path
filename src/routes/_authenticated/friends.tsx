@@ -1128,9 +1128,15 @@ function GroupDetail({
       <div className="mt-6">
         <SmallCaps>Leaderboard</SmallCaps>
         {members === null ? (
-          <p className="mt-3 font-body italic text-[color:var(--color-ink-muted)]" style={{ fontSize: 13 }}>
-            Loading members…
-          </p>
+          <div className="mt-3 space-y-2">
+            {[0, 1, 2].map((i) => (
+              <div
+                key={i}
+                className="h-14 rounded-[12px]"
+                style={{ background: "var(--color-paper-soft)", border: "1px solid var(--color-rule)", opacity: 0.55 }}
+              />
+            ))}
+          </div>
         ) : members.length === 0 ? (
           <p className="mt-3 font-body italic text-[color:var(--color-ink-muted)]" style={{ fontSize: 13 }}>
             No members yet.
