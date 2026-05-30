@@ -382,7 +382,7 @@ function FriendsPage() {
           <AddFriendForm
             onSent={() => {
               setOpenAdd(false);
-              void refresh();
+              invalidateAll();
             }}
           />
         </BottomSheet>
@@ -391,7 +391,7 @@ function FriendsPage() {
           <CreateGroupForm
             onCreated={(g) => {
               setOpenCreate(false);
-              void refresh();
+              invalidateAll();
               setOpenGroup(g);
             }}
           />
@@ -401,7 +401,7 @@ function FriendsPage() {
           <JoinGroupForm
             onJoined={(g) => {
               setOpenJoin(false);
-              void refresh();
+              invalidateAll();
               setOpenGroup(g);
             }}
           />
@@ -417,14 +417,15 @@ function FriendsPage() {
             <GroupDetail
               group={openGroup}
               friends={accepted}
-              onChanged={refresh}
+              onChanged={invalidateAll}
               onLeft={() => {
                 setOpenGroup(null);
-                void refresh();
+                invalidateAll();
               }}
             />
           )}
         </BottomSheet>
+
 
         <BottomSheet
           open={!!openFriend}
