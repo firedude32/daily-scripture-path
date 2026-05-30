@@ -47,41 +47,59 @@ export const Route = createFileRoute("/_authenticated/friends")({
   component: FriendsPage,
 });
 
+// Query keys — exported shape so mutations can target them precisely.
+const qk = {
+  friends: (uid: string) => ["friends", uid] as const,
+  groups: (uid: string) => ["groups", uid] as const,
+  groupInvites: (uid: string) => ["group-invites", uid] as const,
+  groupMembers: (gid: string) => ["group-members", gid] as const,
+};
+
 function FriendsPage() {
   const { userId } = useAppState();
+  const qc = useQueryClient();
   const [tab, setTab] = useState<"friends" | "groups">("friends");
   const [openAdd, setOpenAdd] = useState(false);
   const [openCreate, setOpenCreate] = useState(false);
   const [openJoin, setOpenJoin] = useState(false);
-  const [rows, setRows] = useState<FriendRow[]>([]);
-  const [groups, setGroups] = useState<Group[]>([]);
-  const [groupInvites, setGroupInvites] = useState<IncomingGroupInvite[]>([]);
-  const [loading, setLoading] = useState(true);
   const [openGroup, setOpenGroup] = useState<Group | null>(null);
   const [openFriend, setOpenFriend] = useState<FriendRow | null>(null);
 
-  const refresh = useCallback(async () => {
-    if (!userId) return;
-    setLoading(true);
-    try {
-      const [r, g, gi] = await Promise.all([
-        listFriendships(userId),
-        listMyGroups(userId),
-        listIncomingGroupInvites(userId),
-      ]);
-      setRows(r);
-      setGroups(g);
-      setGroupInvites(gi);
-    } catch (e) {
-      console.error(e);
-    } finally {
-      setLoading(false);
-    }
-  }, [userId]);
+  const friendsQ = useQuery({
+    queryKey: userId ? qk.friends(userId) : ["friends", "anon"],
+    queryFn: () => listFriendships(userId!),
+    enabled: !!userId,
+    staleTime: 60_000,
+  });
+  const groupsQ = useQuery({
+    queryKey: userId ? qk.groups(userId) : ["groups", "anon"],
+    queryFn: () => listMyGroups(userId!),
+    enabled: !!userId,
+    staleTime: 60_000,
+  });
+  const invitesQ = useQuery({
+    queryKey: userId ? qk.groupInvites(userId) : ["group-invites", "anon"],
+    queryFn: () => listIncomingGroupInvites(userId!),
+    enabled: !!userId,
+    staleTime: 30_000,
+  });
 
-  useEffect(() => {
-    void refresh();
-  }, [refresh]);
+  const rows = friendsQ.data ?? [];
+  const groups = groupsQ.data ?? [];
+  const groupInvites = invitesQ.data ?? [];
+  // Only show skeleton when we have no cached data yet. Background refetches
+  // never blank the screen.
+  const loading =
+    (friendsQ.isLoading && !friendsQ.data) ||
+    (groupsQ.isLoading && !groupsQ.data) ||
+    (invitesQ.isLoading && !invitesQ.data);
+
+  const invalidateAll = () => {
+    if (!userId) return;
+    qc.invalidateQueries({ queryKey: qk.friends(userId) });
+    qc.invalidateQueries({ queryKey: qk.groups(userId) });
+    qc.invalidateQueries({ queryKey: qk.groupInvites(userId) });
+  };
 
   // Keep the currently-open group in sync with refreshed list (e.g. after rename)
   useEffect(() => {
@@ -91,6 +109,87 @@ function FriendsPage() {
       setOpenGroup(fresh);
     }
   }, [groups, openGroup]);
+
+  // --- Optimistic mutations ---
+  const acceptFriend = useMutation({
+    mutationFn: (otherId: string) => acceptFriendRequest(userId!, otherId),
+    onMutate: async (otherId) => {
+      if (!userId) return;
+      await qc.cancelQueries({ queryKey: qk.friends(userId) });
+      const prev = qc.getQueryData<FriendRow[]>(qk.friends(userId));
+      qc.setQueryData<FriendRow[]>(qk.friends(userId), (old) =>
+        (old ?? []).map((r) =>
+          r.other.id === otherId
+            ? { ...r, friendship: { ...r.friendship, status: "accepted" }, isIncoming: false }
+            : r,
+        ),
+      );
+      return { prev };
+    },
+    onError: (e, _v, ctx) => {
+      if (userId && ctx?.prev) qc.setQueryData(qk.friends(userId), ctx.prev);
+      toast.error((e as Error).message);
+    },
+    onSettled: () => userId && qc.invalidateQueries({ queryKey: qk.friends(userId) }),
+  });
+
+  const removeFriend = useMutation({
+    mutationFn: (otherId: string) => removeFriendship(userId!, otherId),
+    onMutate: async (otherId) => {
+      if (!userId) return;
+      await qc.cancelQueries({ queryKey: qk.friends(userId) });
+      const prev = qc.getQueryData<FriendRow[]>(qk.friends(userId));
+      qc.setQueryData<FriendRow[]>(qk.friends(userId), (old) =>
+        (old ?? []).filter((r) => r.other.id !== otherId),
+      );
+      return { prev };
+    },
+    onError: (e, _v, ctx) => {
+      if (userId && ctx?.prev) qc.setQueryData(qk.friends(userId), ctx.prev);
+      toast.error((e as Error).message);
+    },
+    onSettled: () => userId && qc.invalidateQueries({ queryKey: qk.friends(userId) }),
+  });
+
+  const acceptInvite = useMutation({
+    mutationFn: (inviteId: string) => acceptGroupInvite(inviteId),
+    onMutate: async (inviteId) => {
+      if (!userId) return;
+      await qc.cancelQueries({ queryKey: qk.groupInvites(userId) });
+      const prev = qc.getQueryData<IncomingGroupInvite[]>(qk.groupInvites(userId));
+      qc.setQueryData<IncomingGroupInvite[]>(qk.groupInvites(userId), (old) =>
+        (old ?? []).filter((i) => i.id !== inviteId),
+      );
+      return { prev };
+    },
+    onError: (e, _v, ctx) => {
+      if (userId && ctx?.prev) qc.setQueryData(qk.groupInvites(userId), ctx.prev);
+      toast.error((e as Error).message);
+    },
+    onSettled: () => {
+      if (!userId) return;
+      qc.invalidateQueries({ queryKey: qk.groupInvites(userId) });
+      qc.invalidateQueries({ queryKey: qk.groups(userId) });
+    },
+  });
+
+  const declineInvite = useMutation({
+    mutationFn: (inviteId: string) => declineGroupInvite(inviteId),
+    onMutate: async (inviteId) => {
+      if (!userId) return;
+      await qc.cancelQueries({ queryKey: qk.groupInvites(userId) });
+      const prev = qc.getQueryData<IncomingGroupInvite[]>(qk.groupInvites(userId));
+      qc.setQueryData<IncomingGroupInvite[]>(qk.groupInvites(userId), (old) =>
+        (old ?? []).filter((i) => i.id !== inviteId),
+      );
+      return { prev };
+    },
+    onError: (e, _v, ctx) => {
+      if (userId && ctx?.prev) qc.setQueryData(qk.groupInvites(userId), ctx.prev);
+      toast.error((e as Error).message);
+    },
+    onSettled: () => userId && qc.invalidateQueries({ queryKey: qk.groupInvites(userId) }),
+  });
 
   const accepted = useMemo(
     () =>
