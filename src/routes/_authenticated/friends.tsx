@@ -1,5 +1,6 @@
 import { createFileRoute } from "@tanstack/react-router";
-import { useCallback, useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
+import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { Plus, Check, X, Flame, Users, Copy, ChevronRight, Pencil, RefreshCw, Trash2 } from "lucide-react";
 import { PhoneFrame } from "@/components/PhoneFrame";
 import { Screen } from "@/components/Screen";
@@ -46,41 +47,59 @@ export const Route = createFileRoute("/_authenticated/friends")({
   component: FriendsPage,
 });
 
+// Query keys — exported shape so mutations can target them precisely.
+const qk = {
+  friends: (uid: string) => ["friends", uid] as const,
+  groups: (uid: string) => ["groups", uid] as const,
+  groupInvites: (uid: string) => ["group-invites", uid] as const,
+  groupMembers: (gid: string) => ["group-members", gid] as const,
+};
+
 function FriendsPage() {
   const { userId } = useAppState();
+  const qc = useQueryClient();
   const [tab, setTab] = useState<"friends" | "groups">("friends");
   const [openAdd, setOpenAdd] = useState(false);
   const [openCreate, setOpenCreate] = useState(false);
   const [openJoin, setOpenJoin] = useState(false);
-  const [rows, setRows] = useState<FriendRow[]>([]);
-  const [groups, setGroups] = useState<Group[]>([]);
-  const [groupInvites, setGroupInvites] = useState<IncomingGroupInvite[]>([]);
-  const [loading, setLoading] = useState(true);
   const [openGroup, setOpenGroup] = useState<Group | null>(null);
   const [openFriend, setOpenFriend] = useState<FriendRow | null>(null);
 
-  const refresh = useCallback(async () => {
-    if (!userId) return;
-    setLoading(true);
-    try {
-      const [r, g, gi] = await Promise.all([
-        listFriendships(userId),
-        listMyGroups(userId),
-        listIncomingGroupInvites(userId),
-      ]);
-      setRows(r);
-      setGroups(g);
-      setGroupInvites(gi);
-    } catch (e) {
-      console.error(e);
-    } finally {
-      setLoading(false);
-    }
-  }, [userId]);
+  const friendsQ = useQuery({
+    queryKey: userId ? qk.friends(userId) : ["friends", "anon"],
+    queryFn: () => listFriendships(userId!),
+    enabled: !!userId,
+    staleTime: 60_000,
+  });
+  const groupsQ = useQuery({
+    queryKey: userId ? qk.groups(userId) : ["groups", "anon"],
+    queryFn: () => listMyGroups(userId!),
+    enabled: !!userId,
+    staleTime: 60_000,
+  });
+  const invitesQ = useQuery({
+    queryKey: userId ? qk.groupInvites(userId) : ["group-invites", "anon"],
+    queryFn: () => listIncomingGroupInvites(userId!),
+    enabled: !!userId,
+    staleTime: 30_000,
+  });
 
-  useEffect(() => {
-    void refresh();
-  }, [refresh]);
+  const rows = friendsQ.data ?? [];
+  const groups = groupsQ.data ?? [];
+  const groupInvites = invitesQ.data ?? [];
+  // Only show skeleton when we have no cached data yet. Background refetches
+  // never blank the screen.
+  const loading =
+    (friendsQ.isLoading && !friendsQ.data) ||
+    (groupsQ.isLoading && !groupsQ.data) ||
+    (invitesQ.isLoading && !invitesQ.data);
+
+  const invalidateAll = () => {
+    if (!userId) return;
+    qc.invalidateQueries({ queryKey: qk.friends(userId) });
+    qc.invalidateQueries({ queryKey: qk.groups(userId) });
+    qc.invalidateQueries({ queryKey: qk.groupInvites(userId) });
+  };
 
   // Keep the currently-open group in sync with refreshed list (e.g. after rename)
   useEffect(() => {
@@ -90,6 +109,87 @@ function FriendsPage() {
       setOpenGroup(fresh);
     }
   }, [groups, openGroup]);
+
+  // --- Optimistic mutations ---
+  const acceptFriend = useMutation({
+    mutationFn: (otherId: string) => acceptFriendRequest(userId!, otherId),
+    onMutate: async (otherId) => {
+      if (!userId) return;
+      await qc.cancelQueries({ queryKey: qk.friends(userId) });
+      const prev = qc.getQueryData<FriendRow[]>(qk.friends(userId));
+      qc.setQueryData<FriendRow[]>(qk.friends(userId), (old) =>
+        (old ?? []).map((r) =>
+          r.other.id === otherId
+            ? { ...r, friendship: { ...r.friendship, status: "accepted" }, isIncoming: false }
+            : r,
+        ),
+      );
+      return { prev };
+    },
+    onError: (e, _v, ctx) => {
+      if (userId && ctx?.prev) qc.setQueryData(qk.friends(userId), ctx.prev);
+      toast.error((e as Error).message);
+    },
+    onSettled: () => userId && qc.invalidateQueries({ queryKey: qk.friends(userId) }),
+  });
+
+  const removeFriend = useMutation({
+    mutationFn: (otherId: string) => removeFriendship(userId!, otherId),
+    onMutate: async (otherId) => {
+      if (!userId) return;
+      await qc.cancelQueries({ queryKey: qk.friends(userId) });
+      const prev = qc.getQueryData<FriendRow[]>(qk.friends(userId));
+      qc.setQueryData<FriendRow[]>(qk.friends(userId), (old) =>
+        (old ?? []).filter((r) => r.other.id !== otherId),
+      );
+      return { prev };
+    },
+    onError: (e, _v, ctx) => {
+      if (userId && ctx?.prev) qc.setQueryData(qk.friends(userId), ctx.prev);
+      toast.error((e as Error).message);
+    },
+    onSettled: () => userId && qc.invalidateQueries({ queryKey: qk.friends(userId) }),
+  });
+
+  const acceptInvite = useMutation({
+    mutationFn: (inviteId: string) => acceptGroupInvite(inviteId),
+    onMutate: async (inviteId) => {
+      if (!userId) return;
+      await qc.cancelQueries({ queryKey: qk.groupInvites(userId) });
+      const prev = qc.getQueryData<IncomingGroupInvite[]>(qk.groupInvites(userId));
+      qc.setQueryData<IncomingGroupInvite[]>(qk.groupInvites(userId), (old) =>
+        (old ?? []).filter((i) => i.id !== inviteId),
+      );
+      return { prev };
+    },
+    onError: (e, _v, ctx) => {
+      if (userId && ctx?.prev) qc.setQueryData(qk.groupInvites(userId), ctx.prev);
+      toast.error((e as Error).message);
+    },
+    onSettled: () => {
+      if (!userId) return;
+      qc.invalidateQueries({ queryKey: qk.groupInvites(userId) });
+      qc.invalidateQueries({ queryKey: qk.groups(userId) });
+    },
+  });
+
+  const declineInvite = useMutation({
+    mutationFn: (inviteId: string) => declineGroupInvite(inviteId),
+    onMutate: async (inviteId) => {
+      if (!userId) return;
+      await qc.cancelQueries({ queryKey: qk.groupInvites(userId) });
+      const prev = qc.getQueryData<IncomingGroupInvite[]>(qk.groupInvites(userId));
+      qc.setQueryData<IncomingGroupInvite[]>(qk.groupInvites(userId), (old) =>
+        (old ?? []).filter((i) => i.id !== inviteId),
+      );
+      return { prev };
+    },
+    onError: (e, _v, ctx) => {
+      if (userId && ctx?.prev) qc.setQueryData(qk.groupInvites(userId), ctx.prev);
+      toast.error((e as Error).message);
+    },
+    onSettled: () => userId && qc.invalidateQueries({ queryKey: qk.groupInvites(userId) }),
+  });
 
   const accepted = useMemo(
     () =>
@@ -161,15 +261,13 @@ function FriendsPage() {
                         <PendingRow
                           key={r.other.id}
                           row={r}
-                          onAccept={async () => {
-                            await acceptFriendRequest(userId!, r.other.id);
-                            toast.success(`You and ${r.other.name} are now friends.`);
-                            void refresh();
+                          onAccept={() => {
+                            acceptFriend.mutate(r.other.id, {
+                              onSuccess: () =>
+                                toast.success(`You and ${r.other.name} are now friends.`),
+                            });
                           }}
-                          onDecline={async () => {
-                            await removeFriendship(userId!, r.other.id);
-                            void refresh();
-                          }}
+                          onDecline={() => removeFriend.mutate(r.other.id)}
                         />
                       ))}
                     </Section>
@@ -181,23 +279,22 @@ function FriendsPage() {
                         <GroupInviteRow
                           key={inv.id}
                           invite={inv}
-                          onAccept={async () => {
-                            try {
-                              const gid = await acceptGroupInvite(inv.id);
-                              toast.success(`Joined "${inv.group_name}".`);
-                              await refresh();
-                              // Open the group sheet so the user lands somewhere
-                              const fresh = await listMyGroups(userId!);
-                              const g = fresh.find((x) => x.id === gid);
-                              if (g) setOpenGroup(g);
-                            } catch (e) {
-                              toast.error((e as Error).message);
-                            }
+                          onAccept={() => {
+                            acceptInvite.mutate(inv.id, {
+                              onSuccess: async (gid) => {
+                                toast.success(`Joined "${inv.group_name}".`);
+                                // Refetch groups and open the new one.
+                                if (!userId) return;
+                                const fresh = await qc.fetchQuery({
+                                  queryKey: qk.groups(userId),
+                                  queryFn: () => listMyGroups(userId),
+                                });
+                                const g = fresh.find((x) => x.id === gid);
+                                if (g) setOpenGroup(g);
+                              },
+                            });
                           }}
-                          onDecline={async () => {
-                            await declineGroupInvite(inv.id);
-                            void refresh();
-                          }}
+                          onDecline={() => declineInvite.mutate(inv.id)}
                         />
                       ))}
                     </Section>
@@ -210,10 +307,7 @@ function FriendsPage() {
                           key={r.other.id}
                           row={r}
                           onOpen={() => setOpenFriend(r)}
-                          onRemove={async () => {
-                            await removeFriendship(userId!, r.other.id);
-                            void refresh();
-                          }}
+                          onRemove={() => removeFriend.mutate(r.other.id)}
                         />
                       ))}
                     </Section>
@@ -225,10 +319,7 @@ function FriendsPage() {
                         <SentRow
                           key={r.other.id}
                           row={r}
-                          onCancel={async () => {
-                            await removeFriendship(userId!, r.other.id);
-                            void refresh();
-                          }}
+                          onCancel={() => removeFriend.mutate(r.other.id)}
                         />
                       ))}
                     </Section>
@@ -291,7 +382,7 @@ function FriendsPage() {
           <AddFriendForm
             onSent={() => {
               setOpenAdd(false);
-              void refresh();
+              invalidateAll();
             }}
           />
         </BottomSheet>
@@ -300,7 +391,7 @@ function FriendsPage() {
           <CreateGroupForm
             onCreated={(g) => {
               setOpenCreate(false);
-              void refresh();
+              invalidateAll();
               setOpenGroup(g);
             }}
           />
@@ -310,7 +401,7 @@ function FriendsPage() {
           <JoinGroupForm
             onJoined={(g) => {
               setOpenJoin(false);
-              void refresh();
+              invalidateAll();
               setOpenGroup(g);
             }}
           />
@@ -326,14 +417,15 @@ function FriendsPage() {
             <GroupDetail
               group={openGroup}
               friends={accepted}
-              onChanged={refresh}
+              onChanged={invalidateAll}
               onLeft={() => {
                 setOpenGroup(null);
-                void refresh();
+                invalidateAll();
               }}
             />
           )}
         </BottomSheet>
+
 
         <BottomSheet
           open={!!openFriend}
@@ -843,21 +935,19 @@ function GroupDetail({
   onChanged: () => void;
 }) {
   const { userId, user } = useAppState();
-  const [members, setMembers] = useState<GroupMember[] | null>(null);
+  const qc = useQueryClient();
   const [editingName, setEditingName] = useState(false);
   const [draftName, setDraftName] = useState(group.name);
   const [openInvite, setOpenInvite] = useState(false);
   const [openShare, setOpenShare] = useState(false);
   const isOwner = userId === group.owner_id;
 
-  const loadMembers = useCallback(() => {
-    void listGroupMembers(group.id).then(setMembers);
-  }, [group.id]);
-
-  useEffect(() => {
-    setMembers(null);
-    loadMembers();
-  }, [loadMembers]);
+  const membersQ = useQuery({
+    queryKey: qk.groupMembers(group.id),
+    queryFn: () => listGroupMembers(group.id),
+    staleTime: 30_000,
+  });
+  const members = membersQ.data ?? null;
 
   useEffect(() => {
     setDraftName(group.name);
@@ -876,10 +966,20 @@ function GroupDetail({
     if (!userId) return;
     if (isOwner) {
       if (!confirm("Delete this group for everyone?")) return;
-      await deleteGroup(group.id);
+      try {
+        await deleteGroup(group.id);
+      } catch (e) {
+        toast.error((e as Error).message);
+        return;
+      }
     } else {
       if (!confirm("Leave this group?")) return;
-      await leaveGroup(userId, group.id);
+      try {
+        await leaveGroup(userId, group.id);
+      } catch (e) {
+        toast.error((e as Error).message);
+        return;
+      }
     }
     onLeft();
   };
@@ -910,16 +1010,30 @@ function GroupDetail({
     }
   };
 
-  const handleRemoveMember = async (m: GroupMember) => {
-    if (!confirm(`Remove ${m.name} from this group?`)) return;
-    try {
-      await removeGroupMember(group.id, m.id);
-      toast.success(`${m.name} removed.`);
-      loadMembers();
-    } catch (e) {
+  const removeMember = useMutation({
+    mutationFn: (memberId: string) => removeGroupMember(group.id, memberId),
+    onMutate: async (memberId) => {
+      await qc.cancelQueries({ queryKey: qk.groupMembers(group.id) });
+      const prev = qc.getQueryData<GroupMember[]>(qk.groupMembers(group.id));
+      qc.setQueryData<GroupMember[]>(qk.groupMembers(group.id), (old) =>
+        (old ?? []).filter((m) => m.id !== memberId),
+      );
+      return { prev };
+    },
+    onError: (e, _v, ctx) => {
+      if (ctx?.prev) qc.setQueryData(qk.groupMembers(group.id), ctx.prev);
       toast.error((e as Error).message);
-    }
+    },
+    onSettled: () => qc.invalidateQueries({ queryKey: qk.groupMembers(group.id) }),
+  });
+
+  const handleRemoveMember = (m: GroupMember) => {
+    if (!confirm(`Remove ${m.name} from this group?`)) return;
+    removeMember.mutate(m.id, {
+      onSuccess: () => toast.success(`${m.name} removed.`),
+    });
   };
+
 
   const shareLink = userId
     ? buildGroupJoinLink({ joinCode: group.join_code, username: user.username, userId })
@@ -1014,9 +1128,15 @@ function GroupDetail({
       <div className="mt-6">
         <SmallCaps>Leaderboard</SmallCaps>
         {members === null ? (
-          <p className="mt-3 font-body italic text-[color:var(--color-ink-muted)]" style={{ fontSize: 13 }}>
-            Loading members…
-          </p>
+          <div className="mt-3 space-y-2">
+            {[0, 1, 2].map((i) => (
+              <div
+                key={i}
+                className="h-14 rounded-[12px]"
+                style={{ background: "var(--color-paper-soft)", border: "1px solid var(--color-rule)", opacity: 0.55 }}
+              />
+            ))}
+          </div>
         ) : members.length === 0 ? (
           <p className="mt-3 font-body italic text-[color:var(--color-ink-muted)]" style={{ fontSize: 13 }}>
             No members yet.
