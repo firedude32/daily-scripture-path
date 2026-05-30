@@ -277,13 +277,18 @@ type ProfilePatch = Partial<{
 async function persistProfile(patch: ProfilePatch) {
   const userId = memoryState.userId;
   if (!userId) return;
-  await supabase.from("profiles").update(patch).eq("id", userId);
+  const { error } = await supabase.from("profiles").update(patch).eq("id", userId);
+  if (error) {
+    // Quiet failure toast — optimistic UI already painted, this just informs.
+    const { toast } = await import("sonner");
+    toast.error("Couldn't sync that change. We'll retry next time.");
+  }
 }
 
 async function persistBookProgress(bookId: string, bp: BookProgress) {
   const userId = memoryState.userId;
   if (!userId) return;
-  await supabase.from("book_progress").upsert(
+  const { error } = await supabase.from("book_progress").upsert(
     {
       user_id: userId,
       book_id: bookId,
@@ -293,7 +298,12 @@ async function persistBookProgress(bookId: string, bp: BookProgress) {
     },
     { onConflict: "user_id,book_id" },
   );
+  if (error) {
+    const { toast } = await import("sonner");
+    toast.error("Couldn't save reading progress. We'll retry next time.");
+  }
 }
+
 
 // ---------- Domain helpers ----------
 
