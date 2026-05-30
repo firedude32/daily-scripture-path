@@ -1,80 +1,78 @@
-## Scope
+# Polish pass: skeletons, caching, optimistic UI
 
-Features 1–4 already exist. This plan covers (a) adding share to the existing book + rank celebrations, (b) adding a lightweight share-only modal for streak / Gospel / NT / Bible milestones, (c) removing the daily summary share sheet, and (d) a new Admin "Celebrations" tab so every state is testable.
+I went through each route and asked "does this idea actually make Lectio feel better, given the design philosophy of calm and patience?" — not everything below should ship. Here's what I'd do and what I'd skip.
 
-## 1. Server-rendered share cards
+## Guiding rule
 
-New server route `src/routes/api/public/share-card.$kind.ts` using `@vercel/og` (Satori) to render PNGs.
+The store already hydrates once at `_authenticated` mount and keeps everything in memory via `useSyncExternalStore`. So 90% of screens (home, progress, profile, analytics, read, quiz) are **already instant** after first load. Skeletons and caching only matter on the few screens that hit Supabase per-mount: **friends/groups**, and **invites/leaderboards**. That's where the work goes.
 
-- Kinds: `book`, `rank`, `streak`, `gospel`, `nt`, `bible`.
-- Query params include `title`, `subtitle`, `tier`, `streak`, `books`, `size` (`story` = 1080×1920, `square` = 1080×1080).
-- Layout: centered focal element (book/rank/milestone name in display serif + a single Lucide-style SVG glyph), small Lectio wordmark + supporting stats (streak days, books read) along sides/bottom. Lectio parchment palette, hairline gold rule, generous whitespace.
-- Fonts: load Cormorant Garamond + Inter via Satori `fetch` from Google Fonts at request time (cached by Worker).
-- Endpoint is public (no PII), returns `image/png` with long cache headers.
+Optimistic UI matters for tap-driven actions that currently feel laggy: marking a chapter, friend/group mutations, settings toggles.
 
-Install: `bun add @vercel/og` (Worker-compatible per Vercel docs; uses WASM Satori + Resvg). Verify build; if Resvg-WASM is blocked on Workers, fall back to `satori` + `@resvg/resvg-wasm` directly with the WASM imported as URL asset.
+---
 
-## 2. Share helper
+## 1. Skeletons — selective, not blanket
 
-`src/lib/share.ts` — `shareMilestone({ kind, params })`:
-- Builds two URLs (story + square).
-- Fetches the story PNG as a `File`.
-- Calls `navigator.share({ files, title, text })` if `canShare({ files })`; otherwise opens the PNG in a new tab and copies a fallback caption.
+**Add skeletons on:**
+- `_authenticated.tsx` hydration gate — replace the "Loading…" text with a low-key skeleton of the home screen layout (header strip, chapter card, streak row). This is the only full-screen wait a user sees.
+- `friends.tsx` — list of friend rows + group cards while `loadAll()` runs. Currently shows nothing/blank.
+- Group detail sheet — member list skeleton while `listGroupMembers` runs.
+- Friend profile sheet — stat blocks skeleton while friend data loads.
 
-## 3. Celebration screen share buttons
+**Skip skeletons on:**
+- Home, progress, analytics, profile, read, quiz — store is already hydrated, no async wait.
+- Celebration / share modals — they open from in-memory state.
+- Admin — internal tool.
 
-- `celebration.book.tsx`: add a "Share" `EditorialButton variant="secondary"` below Done. Wires to `shareMilestone({ kind: 'book', params: { bookId, tier, streak, booksCompleted } })`.
-- `celebration.rank.tsx`: same, kind `rank`, params `{ rankName, blurb }`.
+Skeleton style: warm parchment surface, hairline borders, no shimmer (shimmer breaks the calm tone). A single subtle opacity pulse at ~2s cadence at most.
 
-## 4. Streak / Gospel / NT / Bible share modal
+## 2. Caching — TanStack Query for the Supabase-backed lists only
 
-New `src/components/MilestoneShareModal.tsx` — a `BottomSheet` with: eyebrow ("Quietly"), milestone title, a small preview thumbnail (the square card via `<img src=...>`), one Share button, one Dismiss.
+Right now `friends.tsx`, group sheets, and invites re-fetch on every mount via `useState` + `useEffect`. Navigating away and back triggers a network round-trip and a blank state.
 
-Triggered from a new helper `src/lib/milestones.ts` that, after each reading session, inspects the new state vs prior:
-- Day 7 streak crossed → kind `streak`, days=7.
-- Day 30 streak crossed → kind `streak`, days=30.
-- Final chapter of Matthew/Mark/Luke/John just completed → kind `gospel`, name.
-- Last NT book completed → kind `nt`.
-- All 66 books completed ≥1 → kind `bible`.
+**Introduce TanStack Query** (already in the stack) for:
+- `listFriendships(userId)` → `['friends', userId]`, staleTime 60s
+- `listGroups(userId)` → `['groups', userId]`, staleTime 60s
+- `listGroupMembers(groupId)` → `['group-members', groupId]`, staleTime 30s
+- `listIncomingGroupInvites(userId)` → `['group-invites', userId]`, staleTime 30s
+- `getFriendProfile(friendId)` / friend stats → `['friend-profile', id]`, staleTime 60s
+- Leaderboard query on home/friends → `['leaderboard', scope]`, staleTime 60s
 
-Triggers run after the existing book celebration / rank-up navigation, surfacing the modal on the next Home render via a `pendingMilestone` field on the store. Only one fires per session; rank/book celebrations take precedence and the milestone surfaces after they're dismissed.
+Result: tabbing between Friends and Home and back returns instantly with last data, refetches in background. Matches the "quiet companion" feel — never a blank flash.
 
-## 5. Remove daily summary share sheet
+**Do NOT cache via Query:**
+- The main app store (profile/sessions/book_progress) — already in-memory, would duplicate state.
+- One-shot mutations (signOut, quiz submit).
 
-`src/routes/_authenticated/summary.tsx`: delete the `Share2` icon, `shareOpen` state, the `BottomSheet`, the `ShareBtn` component, and related imports. Keep the rest of the summary intact.
+**Persist Query cache to sessionStorage** so cold reloads in the same session stay instant. Not localStorage — we don't want stale friend stats across days.
 
-## 6. Admin "Celebrations" tab
+## 3. Optimistic UI — only where the user clearly drives the change
 
-New tab in `src/routes/_authenticated/admin.tsx` (added to the tab list and rendered via a `CelebrationsTab` component). Buttons:
+**Add optimistic updates for:**
+- **Chapter completion** (`recordSession` in `store.ts`) — already partially optimistic (local state updates immediately, Supabase writes in background). Audit and confirm: streak bump, XP, daily count all paint before the network completes. If the insert fails, surface a quiet toast and roll back the session row only (not XP/streak — too jarring).
+- **Settings toggles** (daily goal, reminder time, translation, progress view, avatar) — already optimistic in `setState` calls, persist runs after. Just add a quiet failure toast.
+- **Username set** — currently awaits round-trip. Keep awaited (uniqueness check needs server response), but show inline spinner instead of blocking the whole sheet.
+- **Friend remove / group leave / group rename** — remove the row from the cached list immediately, rollback on error.
+- **Group invite accept/decline** — remove from invite list immediately, refetch groups in background.
+- **Acknowledge silver/gold** — already local-first.
 
-- **Book completion** — book picker (default Mark) + tier toggle Green / Silver / Gold → sets `pendingCelebration` and navigates `/celebration/book`.
-- **Rank-up** — rank index picker (0–9) → sets `pendingRankUp` and navigates `/celebration/rank`.
-- **Silver/Gold unlock** — sets `silverGoldUnlocked = true`, `silverGoldAcknowledged = false`, `pendingCelebration` (Mark/gold) → navigates `/celebration/book` (modal fires after Done).
-- **Today's Note variants** — 6 buttons (`left_off`, `another_look`, `on_chapter`, `record`, `book_note`, `favorite`). Each writes a tiny `forceTodaysNoteVariant` field on the store; `TodaysNote.tsx` honors it if set (dev/admin only) and navigates to `/`.
-- **Milestone share modals** — 5 buttons: Day 7, Day 30, Gospel (Mark), NT, Bible. Each sets `pendingMilestone` and navigates `/`.
-- **Share card preview** — for each kind, two anchor links open the story/square PNG endpoints directly so the designed card itself is reviewable.
+**Do NOT add optimistic UI for:**
+- **Friend add by email** — needs server confirmation (does the user exist?). Show pending state instead.
+- **Group create / join by code** — same reason; needs the returned group object.
+- **Quiz submission** — correctness comes from the quiz data, not the server, but the resulting session record needs to land before navigating to the summary screen with real XP numbers. Keep the small await; it's <100ms with the in-memory model.
 
-All admin actions are local store mutations + navigation, no DB writes.
+## Technical details
 
-## 7. Store additions (`src/state/store.ts`)
+- Wire `QueryClientProvider` in `__root.tsx` if not already there; put `queryClient` in router context per the `tanstack-query-integration` pattern. Use `defaultPreloadStaleTime: 0`.
+- Skeletons: one new `<Skeleton>` primitive in `src/components/ui-lectio/Skeleton.tsx` (parchment bg, hairline border, optional pulse). Reuse across all skeleton states.
+- Convert `friends.tsx` data calls from `useState`+`useEffect` to `useQuery` (not `useSuspenseQuery` — we want the skeleton, not suspense fallback). Mutations use `useMutation` with `onMutate`/`onError` for optimistic rollback and `onSettled` for invalidation.
+- Invalidation map: friend mutations invalidate `['friends']`; group mutations invalidate `['groups']` and `['group-members', id]`.
+- Persistence: add `@tanstack/query-sync-storage-persister` + `persistQueryClient` against `sessionStorage`, key prefix `lectio-cache-v1`.
+- No changes to the app store's shape or to any other route file.
 
-- `pendingMilestone: { kind, params } | null` + `setPendingMilestone` / `clearPendingMilestone`.
-- `forceTodaysNoteVariant: VariantKey | null` + setter (admin-only override; cleared after one read).
+## What I'm intentionally NOT doing
 
-## Technical notes
-
-```text
-src/routes/api/public/share-card.$kind.ts     server route, returns PNG
-src/lib/share.ts                              navigator.share wrapper
-src/lib/milestones.ts                         detects + queues milestones
-src/components/MilestoneShareModal.tsx        bottom sheet UI
-src/state/store.ts                            pendingMilestone + force variant
-src/routes/_authenticated/admin.tsx           + Celebrations tab
-src/routes/_authenticated/celebration.book.tsx + Share button
-src/routes/_authenticated/celebration.rank.tsx + Share button
-src/routes/_authenticated/summary.tsx         remove share sheet
-src/routes/_authenticated/index.tsx           render MilestoneShareModal when pending
-src/components/TodaysNote.tsx                 honor forceTodaysNoteVariant
-```
-
-Risk: if `@vercel/og` fails on Cloudflare Workers in this template, fall back to a client-rendered `html2canvas` approach in `src/lib/share.ts` without changing the call sites. Decided after first build attempt.
+- No skeletons on already-hydrated screens — adds visual noise for zero gain.
+- No optimistic UI for server-validated actions — silently rolling back a "friend added" feels worse than a 400ms wait.
+- No shimmer animation — clashes with the calm aesthetic.
+- No localStorage persistence of friend/group data — stale social data is worse than a 1s refetch.
+- No prefetching on hover — mobile app, no hover, and route data is mostly already in memory.
