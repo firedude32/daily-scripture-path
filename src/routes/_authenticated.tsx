@@ -57,11 +57,13 @@ function HydrationSkeleton() {
 function AuthenticatedLayout() {
   useHydrateStore();
   const { hydrated } = useAppState();
+  const pathname = useRouterState({ select: (s) => s.location.pathname });
   if (!hydrated) return <HydrationSkeleton />;
   return (
     <>
       <Outlet />
       <MilestoneShareModal />
+      {pathname === "/" && <AddToHomeScreenSheet />}
     </>
   );
 }
