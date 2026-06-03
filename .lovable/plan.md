@@ -1,78 +1,74 @@
-# Polish pass: skeletons, caching, optimistic UI
+## Goal
 
-I went through each route and asked "does this idea actually make Lectio feel better, given the design philosophy of calm and patience?" — not everything below should ship. Here's what I'd do and what I'd skip.
+The first few times a signed-in user opens Lectio in a mobile browser (and isn't already running it as an installed PWA), show a calm, dismissible prompt that explains — in device-appropriate language — how to add Lectio to their home screen. It should feel like the rest of the app: parchment surface, hairline border, serif headline, no urgency.
 
-## Guiding rule
+## When it shows
 
-The store already hydrates once at `_authenticated` mount and keeps everything in memory via `useSyncExternalStore`. So 90% of screens (home, progress, profile, analytics, read, quiz) are **already instant** after first load. Skeletons and caching only matter on the few screens that hit Supabase per-mount: **friends/groups**, and **invites/leaderboards**. That's where the work goes.
+Show only when ALL are true:
+- On a phone-sized viewport (mobile UA or width < 768).
+- Not already launched as an installed app (`display-mode: standalone` is false and `navigator.standalone` is not true).
+- The user has been shown it fewer than 3 times.
+- They haven't tapped "Don't show again."
+- Not on the auth/onboarding routes — only after they reach `/_authenticated/` (home).
+- At least ~6 seconds after the home screen mounts on that visit (so it never competes with the daily CTA), and never on the same calendar day twice.
 
-Optimistic UI matters for tap-driven actions that currently feel laggy: marking a chapter, friend/group mutations, settings toggles.
+Counter and "dismissed forever" flag live in `localStorage` (`lectio.a2hs.v1`: `{ shownCount, lastShownDate, dismissed, installedDetected }`). If we detect the app is now running standalone, set `installedDetected: true` and never prompt again.
 
----
+We also listen for the Chrome/Android `beforeinstallprompt` event. When that fires we stash it and the prompt uses a real "Install" button instead of instructions. On `appinstalled`, set `installedDetected: true`.
 
-## 1. Skeletons — selective, not blanket
+## Device detection
 
-**Add skeletons on:**
-- `_authenticated.tsx` hydration gate — replace the "Loading…" text with a low-key skeleton of the home screen layout (header strip, chapter card, streak row). This is the only full-screen wait a user sees.
-- `friends.tsx` — list of friend rows + group cards while `loadAll()` runs. Currently shows nothing/blank.
-- Group detail sheet — member list skeleton while `listGroupMembers` runs.
-- Friend profile sheet — stat blocks skeleton while friend data loads.
+A small helper `src/lib/platform.ts` returns one of: `ios-safari`, `ios-other` (Chrome/Firefox/Edge on iOS — all WebKit, all use the same Share → Add to Home Screen flow), `ipados` (treated like iOS Safari; detected via `navigator.maxTouchPoints > 1` on Mac UA), `android-chrome` (covers Chrome, Edge, Brave, Samsung Internet — all support `beforeinstallprompt`), `android-firefox` (manual menu instructions), `desktop` (skip the prompt), `unknown` (skip).
 
-**Skip skeletons on:**
-- Home, progress, analytics, profile, read, quiz — store is already hydrated, no async wait.
-- Celebration / share modals — they open from in-memory state.
-- Admin — internal tool.
+Detection uses `navigator.userAgent` + `navigator.userAgentData` when available, plus the standalone checks above. No external library.
 
-Skeleton style: warm parchment surface, hairline borders, no shimmer (shimmer breaks the calm tone). A single subtle opacity pulse at ~2s cadence at most.
+## Instruction copy per device
 
-## 2. Caching — TanStack Query for the Supabase-backed lists only
+Tone: quiet, instructional, no exclamation marks. Headline is always "Keep Lectio close." Sub: "Add it to your home screen so it's one tap away."
 
-Right now `friends.tsx`, group sheets, and invites re-fetch on every mount via `useState` + `useEffect`. Navigating away and back triggers a network round-trip and a blank state.
+- **iOS Safari / iPadOS / iOS Chrome-Firefox-Edge** (all WebKit, identical flow):
+  Step 1 — Tap the Share icon `⎙` at the bottom of Safari.
+  Step 2 — Scroll and tap "Add to Home Screen."
+  Step 3 — Tap "Add."
+  Note for non-Safari iOS browsers: "On iPhone, this only works in Safari. Open lectio.live in Safari to add it." with a "Copy link" button.
+- **Android Chrome / Edge / Brave / Samsung Internet** (when `beforeinstallprompt` fired):
+  Single primary button: "Install Lectio." Tapping calls `prompt()` on the saved event.
+- **Android Chrome / Edge** (event didn't fire — e.g. already dismissed natively, or unsupported build):
+  Step 1 — Tap the ⋮ menu (top right).
+  Step 2 — Tap "Add to Home screen" (or "Install app").
+  Step 3 — Tap "Add."
+- **Android Firefox**:
+  Step 1 — Tap the ⋮ menu.
+  Step 2 — Tap "Install."
+- **Desktop / unknown**: don't show the prompt.
 
-**Introduce TanStack Query** (already in the stack) for:
-- `listFriendships(userId)` → `['friends', userId]`, staleTime 60s
-- `listGroups(userId)` → `['groups', userId]`, staleTime 60s
-- `listGroupMembers(groupId)` → `['group-members', groupId]`, staleTime 30s
-- `listIncomingGroupInvites(userId)` → `['group-invites', userId]`, staleTime 30s
-- `getFriendProfile(friendId)` / friend stats → `['friend-profile', id]`, staleTime 60s
-- Leaderboard query on home/friends → `['leaderboard', scope]`, staleTime 60s
+Each variant ends with two actions: "Maybe later" (closes; counts toward the 3-shown limit) and "Don't show again" (sets `dismissed: true`).
 
-Result: tabbing between Friends and Home and back returns instantly with last data, refetches in background. Matches the "quiet companion" feel — never a blank flash.
+## UI
 
-**Do NOT cache via Query:**
-- The main app store (profile/sessions/book_progress) — already in-memory, would duplicate state.
-- One-shot mutations (signOut, quiz submit).
+New component `src/components/AddToHomeScreenSheet.tsx` — a bottom sheet using the existing `BottomSheet` primitive in `src/components/ui-lectio/BottomSheet.tsx`. Layout:
+- `SmallCaps` eyebrow: "A small ritual"
+- Serif headline: "Keep Lectio close."
+- Body: instruction list (numbered, generous spacing, serif numerals)
+- For iOS, render a small inline SVG of the iOS Share glyph beside step 1; for Android, the ⋮ glyph
+- Footer: two `EditorialButton`s — `secondary` "Maybe later", `link`-style "Don't show again"
 
-**Persist Query cache to sessionStorage** so cold reloads in the same session stay instant. Not localStorage — we don't want stale friend stats across days.
+Mount it once in `src/routes/_authenticated.tsx` alongside `MilestoneShareModal` so it can appear over any authenticated screen but never on auth/onboarding/celebration-only flows. Internally it self-gates on route (`useRouterState`) and only opens on `/`.
 
-## 3. Optimistic UI — only where the user clearly drives the change
+## Manifest
 
-**Add optimistic updates for:**
-- **Chapter completion** (`recordSession` in `store.ts`) — already partially optimistic (local state updates immediately, Supabase writes in background). Audit and confirm: streak bump, XP, daily count all paint before the network completes. If the insert fails, surface a quiet toast and roll back the session row only (not XP/streak — too jarring).
-- **Settings toggles** (daily goal, reminder time, translation, progress view, avatar) — already optimistic in `setState` calls, persist runs after. Just add a quiet failure toast.
-- **Username set** — currently awaits round-trip. Keep awaited (uniqueness check needs server response), but show inline spinner instead of blocking the whole sheet.
-- **Friend remove / group leave / group rename** — remove the row from the cached list immediately, rollback on error.
-- **Group invite accept/decline** — remove from invite list immediately, refetch groups in background.
-- **Acknowledge silver/gold** — already local-first.
+`public/manifest.webmanifest` already has `display: standalone`, name, theme color, and a 512×512 icon. We'll add a 192×192 icon entry (Android prefers it) — confirm `public/images/lectio-icon.png` is large enough to also be referenced at 192, or fall back to a single `purpose: "any maskable"` entry. No `start_url`/`scope` changes (those are sticky after install per the PWA guidance). No service worker — manifest-only, per the PWA skill's home-screen path.
 
-**Do NOT add optimistic UI for:**
-- **Friend add by email** — needs server confirmation (does the user exist?). Show pending state instead.
-- **Group create / join by code** — same reason; needs the returned group object.
-- **Quiz submission** — correctness comes from the quiz data, not the server, but the resulting session record needs to land before navigating to the summary screen with real XP numbers. Keep the small await; it's <100ms with the in-memory model.
+## Files
 
-## Technical details
+- New: `src/lib/platform.ts` — device + standalone detection.
+- New: `src/lib/a2hs.ts` — localStorage gating, `beforeinstallprompt` capture, `appinstalled` listener (module-level singleton initialized once).
+- New: `src/components/AddToHomeScreenSheet.tsx` — the sheet UI.
+- Edit: `src/routes/_authenticated.tsx` — mount the sheet.
+- Edit: `public/manifest.webmanifest` — add 192px icon if needed.
 
-- Wire `QueryClientProvider` in `__root.tsx` if not already there; put `queryClient` in router context per the `tanstack-query-integration` pattern. Use `defaultPreloadStaleTime: 0`.
-- Skeletons: one new `<Skeleton>` primitive in `src/components/ui-lectio/Skeleton.tsx` (parchment bg, hairline border, optional pulse). Reuse across all skeleton states.
-- Convert `friends.tsx` data calls from `useState`+`useEffect` to `useQuery` (not `useSuspenseQuery` — we want the skeleton, not suspense fallback). Mutations use `useMutation` with `onMutate`/`onError` for optimistic rollback and `onSettled` for invalidation.
-- Invalidation map: friend mutations invalidate `['friends']`; group mutations invalidate `['groups']` and `['group-members', id]`.
-- Persistence: add `@tanstack/query-sync-storage-persister` + `persistQueryClient` against `sessionStorage`, key prefix `lectio-cache-v1`.
-- No changes to the app store's shape or to any other route file.
+No store changes, no Supabase changes, no service worker.
 
-## What I'm intentionally NOT doing
+## Open question
 
-- No skeletons on already-hydrated screens — adds visual noise for zero gain.
-- No optimistic UI for server-validated actions — silently rolling back a "friend added" feels worse than a 400ms wait.
-- No shimmer animation — clashes with the calm aesthetic.
-- No localStorage persistence of friend/group data — stale social data is worse than a 1s refetch.
-- No prefetching on hover — mobile app, no hover, and route data is mostly already in memory.
+The "first few times" limit — is **3 separate visits** the right number, or do you want fewer/more (e.g. just once, or up to 5)? I'll default to 3 unless you say otherwise.
