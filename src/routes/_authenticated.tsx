@@ -3,6 +3,8 @@ import { supabase } from "@/integrations/supabase/client";
 import { useHydrateStore, useAppState } from "@/state/store";
 import { MilestoneShareModal } from "@/components/MilestoneShareModal";
 import { Skeleton, SkeletonText } from "@/components/ui-lectio/Skeleton";
+import { AddToHomeScreenSheet } from "@/components/AddToHomeScreenSheet";
+import { useRouterState } from "@tanstack/react-router";
 
 
 export const Route = createFileRoute("/_authenticated")({
