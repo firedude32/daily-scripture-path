@@ -379,11 +379,14 @@ function Empty() {
         When someone invites you to be a friend or join a group, it'll show up here.
       </p>
       <div className="mt-8">
-        <Link to="/friends">
-          <EditorialButton variant="secondary" size="sm">
-            Back to Friends
-          </EditorialButton>
-        </Link>
+        <EditorialButton
+          variant="secondary"
+          size="sm"
+          fullWidth={false}
+          onClick={() => navigate({ to: "/friends" })}
+        >
+          Back to Friends
+        </EditorialButton>
       </div>
     </div>
   );
