@@ -1,4 +1,4 @@
-import { createFileRoute } from "@tanstack/react-router";
+import { createFileRoute, Link } from "@tanstack/react-router";
 import { useEffect, useMemo, useState } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { Plus, Check, X, Flame, Users, Copy, ChevronRight, Pencil, RefreshCw, Trash2 } from "lucide-react";
@@ -209,13 +209,30 @@ function FriendsPage() {
         <div className="px-7 pt-14 pb-10">
           <div className="flex items-center justify-between">
             <SmallCaps>Friends</SmallCaps>
-            <button
-              onClick={() => setOpenAdd(true)}
-              className="p-2 -mr-2 text-[color:var(--color-ink)] hover:text-[color:var(--color-gold)] transition-colors"
-              aria-label="Add friend"
-            >
-              <Plus size={18} strokeWidth={1.5} />
-            </button>
+            <div className="flex items-center gap-1">
+              <Link
+                to="/friends/requests"
+                className="relative px-2 py-2 -mr-1 font-ui uppercase tracking-[0.14em] text-[color:var(--color-ink-muted)] hover:text-[color:var(--color-ink)]"
+                style={{ fontSize: 11 }}
+                aria-label="Friend requests"
+              >
+                Requests
+                {(incoming.length + groupInvites.length) > 0 && (
+                  <span
+                    aria-hidden
+                    className="absolute top-1 -right-0.5 rounded-full"
+                    style={{ width: 6, height: 6, background: "var(--color-gold)" }}
+                  />
+                )}
+              </Link>
+              <button
+                onClick={() => setOpenAdd(true)}
+                className="p-2 -mr-2 text-[color:var(--color-ink)] hover:text-[color:var(--color-gold)] transition-colors"
+                aria-label="Add friend"
+              >
+                <Plus size={18} strokeWidth={1.5} />
+              </button>
+            </div>
           </div>
 
           <div className="mt-5 flex items-center gap-7 border-b" style={{ borderColor: "var(--color-rule)" }}>

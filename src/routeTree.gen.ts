@@ -24,6 +24,7 @@ import { Route as AuthenticatedOnboardingRouteImport } from './routes/_authentic
 import { Route as AuthenticatedFriendsRouteImport } from './routes/_authenticated/friends'
 import { Route as AuthenticatedAnalyticsRouteImport } from './routes/_authenticated/analytics'
 import { Route as AuthenticatedAdminRouteImport } from './routes/_authenticated/admin'
+import { Route as AuthenticatedFriendsRequestsRouteImport } from './routes/_authenticated/friends.requests'
 import { Route as AuthenticatedCelebrationRankRouteImport } from './routes/_authenticated/celebration.rank'
 import { Route as AuthenticatedCelebrationBookRouteImport } from './routes/_authenticated/celebration.book'
 import { Route as ApiPublicShareCardKindRouteImport } from './routes/api/public/share-card.$kind'
@@ -102,6 +103,12 @@ const AuthenticatedAdminRoute = AuthenticatedAdminRouteImport.update({
   path: '/admin',
   getParentRoute: () => AuthenticatedRoute,
 } as any)
+const AuthenticatedFriendsRequestsRoute =
+  AuthenticatedFriendsRequestsRouteImport.update({
+    id: '/requests',
+    path: '/requests',
+    getParentRoute: () => AuthenticatedFriendsRoute,
+  } as any)
 const AuthenticatedCelebrationRankRoute =
   AuthenticatedCelebrationRankRouteImport.update({
     id: '/celebration/rank',
@@ -127,7 +134,7 @@ export interface FileRoutesByFullPath {
   '/signup': typeof SignupRoute
   '/admin': typeof AuthenticatedAdminRoute
   '/analytics': typeof AuthenticatedAnalyticsRoute
-  '/friends': typeof AuthenticatedFriendsRoute
+  '/friends': typeof AuthenticatedFriendsRouteWithChildren
   '/onboarding': typeof AuthenticatedOnboardingRoute
   '/profile': typeof AuthenticatedProfileRoute
   '/progress': typeof AuthenticatedProgressRoute
@@ -137,6 +144,7 @@ export interface FileRoutesByFullPath {
   '/summary': typeof AuthenticatedSummaryRoute
   '/celebration/book': typeof AuthenticatedCelebrationBookRoute
   '/celebration/rank': typeof AuthenticatedCelebrationRankRoute
+  '/friends/requests': typeof AuthenticatedFriendsRequestsRoute
   '/api/public/share-card/$kind': typeof ApiPublicShareCardKindRoute
 }
 export interface FileRoutesByTo {
@@ -145,7 +153,7 @@ export interface FileRoutesByTo {
   '/signup': typeof SignupRoute
   '/admin': typeof AuthenticatedAdminRoute
   '/analytics': typeof AuthenticatedAnalyticsRoute
-  '/friends': typeof AuthenticatedFriendsRoute
+  '/friends': typeof AuthenticatedFriendsRouteWithChildren
   '/onboarding': typeof AuthenticatedOnboardingRoute
   '/profile': typeof AuthenticatedProfileRoute
   '/progress': typeof AuthenticatedProgressRoute
@@ -156,6 +164,7 @@ export interface FileRoutesByTo {
   '/': typeof AuthenticatedIndexRoute
   '/celebration/book': typeof AuthenticatedCelebrationBookRoute
   '/celebration/rank': typeof AuthenticatedCelebrationRankRoute
+  '/friends/requests': typeof AuthenticatedFriendsRequestsRoute
   '/api/public/share-card/$kind': typeof ApiPublicShareCardKindRoute
 }
 export interface FileRoutesById {
@@ -166,7 +175,7 @@ export interface FileRoutesById {
   '/signup': typeof SignupRoute
   '/_authenticated/admin': typeof AuthenticatedAdminRoute
   '/_authenticated/analytics': typeof AuthenticatedAnalyticsRoute
-  '/_authenticated/friends': typeof AuthenticatedFriendsRoute
+  '/_authenticated/friends': typeof AuthenticatedFriendsRouteWithChildren
   '/_authenticated/onboarding': typeof AuthenticatedOnboardingRoute
   '/_authenticated/profile': typeof AuthenticatedProfileRoute
   '/_authenticated/progress': typeof AuthenticatedProgressRoute
@@ -177,6 +186,7 @@ export interface FileRoutesById {
   '/_authenticated/': typeof AuthenticatedIndexRoute
   '/_authenticated/celebration/book': typeof AuthenticatedCelebrationBookRoute
   '/_authenticated/celebration/rank': typeof AuthenticatedCelebrationRankRoute
+  '/_authenticated/friends/requests': typeof AuthenticatedFriendsRequestsRoute
   '/api/public/share-card/$kind': typeof ApiPublicShareCardKindRoute
 }
 export interface FileRouteTypes {
@@ -198,6 +208,7 @@ export interface FileRouteTypes {
     | '/summary'
     | '/celebration/book'
     | '/celebration/rank'
+    | '/friends/requests'
     | '/api/public/share-card/$kind'
   fileRoutesByTo: FileRoutesByTo
   to:
@@ -217,6 +228,7 @@ export interface FileRouteTypes {
     | '/'
     | '/celebration/book'
     | '/celebration/rank'
+    | '/friends/requests'
     | '/api/public/share-card/$kind'
   id:
     | '__root__'
@@ -237,6 +249,7 @@ export interface FileRouteTypes {
     | '/_authenticated/'
     | '/_authenticated/celebration/book'
     | '/_authenticated/celebration/rank'
+    | '/_authenticated/friends/requests'
     | '/api/public/share-card/$kind'
   fileRoutesById: FileRoutesById
 }
@@ -355,6 +368,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedAdminRouteImport
       parentRoute: typeof AuthenticatedRoute
     }
+    '/_authenticated/friends/requests': {
+      id: '/_authenticated/friends/requests'
+      path: '/requests'
+      fullPath: '/friends/requests'
+      preLoaderRoute: typeof AuthenticatedFriendsRequestsRouteImport
+      parentRoute: typeof AuthenticatedFriendsRoute
+    }
     '/_authenticated/celebration/rank': {
       id: '/_authenticated/celebration/rank'
       path: '/celebration/rank'
@@ -379,10 +399,21 @@ declare module '@tanstack/react-router' {
   }
 }
 
+interface AuthenticatedFriendsRouteChildren {
+  AuthenticatedFriendsRequestsRoute: typeof AuthenticatedFriendsRequestsRoute
+}
+
+const AuthenticatedFriendsRouteChildren: AuthenticatedFriendsRouteChildren = {
+  AuthenticatedFriendsRequestsRoute: AuthenticatedFriendsRequestsRoute,
+}
+
+const AuthenticatedFriendsRouteWithChildren =
+  AuthenticatedFriendsRoute._addFileChildren(AuthenticatedFriendsRouteChildren)
+
 interface AuthenticatedRouteChildren {
   AuthenticatedAdminRoute: typeof AuthenticatedAdminRoute
   AuthenticatedAnalyticsRoute: typeof AuthenticatedAnalyticsRoute
-  AuthenticatedFriendsRoute: typeof AuthenticatedFriendsRoute
+  AuthenticatedFriendsRoute: typeof AuthenticatedFriendsRouteWithChildren
   AuthenticatedOnboardingRoute: typeof AuthenticatedOnboardingRoute
   AuthenticatedProfileRoute: typeof AuthenticatedProfileRoute
   AuthenticatedProgressRoute: typeof AuthenticatedProgressRoute
@@ -398,7 +429,7 @@ interface AuthenticatedRouteChildren {
 const AuthenticatedRouteChildren: AuthenticatedRouteChildren = {
   AuthenticatedAdminRoute: AuthenticatedAdminRoute,
   AuthenticatedAnalyticsRoute: AuthenticatedAnalyticsRoute,
-  AuthenticatedFriendsRoute: AuthenticatedFriendsRoute,
+  AuthenticatedFriendsRoute: AuthenticatedFriendsRouteWithChildren,
   AuthenticatedOnboardingRoute: AuthenticatedOnboardingRoute,
   AuthenticatedProfileRoute: AuthenticatedProfileRoute,
   AuthenticatedProgressRoute: AuthenticatedProgressRoute,
