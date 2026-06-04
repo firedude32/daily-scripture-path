@@ -1,4 +1,4 @@
-import { createFileRoute, Link } from "@tanstack/react-router";
+import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { Check, X, Users, ChevronLeft } from "lucide-react";
 import { PhoneFrame } from "@/components/PhoneFrame";
@@ -363,6 +363,7 @@ function Skel() {
 }
 
 function Empty() {
+  const navigate = useNavigate();
   return (
     <div className="mt-16 text-center">
       <SmallCaps tone="gold">All Clear</SmallCaps>
@@ -379,11 +380,14 @@ function Empty() {
         When someone invites you to be a friend or join a group, it'll show up here.
       </p>
       <div className="mt-8">
-        <Link to="/friends">
-          <EditorialButton variant="secondary" size="sm">
-            Back to Friends
-          </EditorialButton>
-        </Link>
+        <EditorialButton
+          variant="secondary"
+          size="sm"
+          fullWidth={false}
+          onClick={() => navigate({ to: "/friends" })}
+        >
+          Back to Friends
+        </EditorialButton>
       </div>
     </div>
   );
