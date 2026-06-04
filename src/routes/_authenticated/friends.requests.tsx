@@ -363,6 +363,7 @@ function Skel() {
 }
 
 function Empty() {
+  const navigate = useNavigate();
   return (
     <div className="mt-16 text-center">
       <SmallCaps tone="gold">All Clear</SmallCaps>
