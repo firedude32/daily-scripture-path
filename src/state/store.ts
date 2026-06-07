@@ -62,11 +62,18 @@ export interface AppState {
   forceTodaysNoteVariant: string | null;
 }
 
-function todayKey(d = new Date()): string {
-  // Local-date YYYY-MM-DD so reading at 10pm doesn't count for tomorrow (UTC).
-  const y = d.getFullYear();
-  const m = String(d.getMonth() + 1).padStart(2, "0");
-  const day = String(d.getDate()).padStart(2, "0");
+// Logical "day" boundary is 1am local, not midnight. A reading session
+// completed between 00:00 and 00:59 still counts toward the previous
+// calendar day — a grace period for late-night readers. Applied to every
+// timestamp the store touches (live writes and historical hydration), so
+// past sessions are reclassified automatically.
+export const DAY_BOUNDARY_HOUR = 1;
+
+function todayKey(d: Date = new Date()): string {
+  const shifted = new Date(d.getTime() - DAY_BOUNDARY_HOUR * 60 * 60 * 1000);
+  const y = shifted.getFullYear();
+  const m = String(shifted.getMonth() + 1).padStart(2, "0");
+  const day = String(shifted.getDate()).padStart(2, "0");
   return `${y}-${m}-${day}`;
 }
 
