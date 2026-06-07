@@ -173,6 +173,44 @@ function buildDailyCounts(sessions: ReadingSession[]): Record<string, number> {
   return counts;
 }
 
+/** Recompute current + longest streaks from dailyCounts using the shifted
+ * day boundary. Streak is alive if the most recent read was today or
+ * yesterday (logical days). */
+function computeStreaksFromCounts(counts: Record<string, number>): {
+  current: number;
+  longest: number;
+  lastReadDate: string | null;
+} {
+  const days = Object.keys(counts)
+    .filter((k) => (counts[k] ?? 0) > 0)
+    .sort();
+  if (days.length === 0) return { current: 0, longest: 0, lastReadDate: null };
+
+  let longest = 1;
+  let run = 1;
+  for (let i = 1; i < days.length; i++) {
+    if (daysBetween(days[i - 1], days[i]) === 1) {
+      run += 1;
+    } else {
+      run = 1;
+    }
+    if (run > longest) longest = run;
+  }
+
+  const last = days[days.length - 1];
+  const gapToToday = daysBetween(last, todayKey());
+  let current = 0;
+  if (gapToToday <= 1) {
+    // walk back from `last` collecting consecutive days
+    current = 1;
+    for (let i = days.length - 2; i >= 0; i--) {
+      if (daysBetween(days[i], days[i + 1]) === 1) current += 1;
+      else break;
+    }
+  }
+  return { current, longest, lastReadDate: last };
+}
+
 let hydratingFor: string | null = null;
 
 export async function hydrateFromSupabase(): Promise<void> {
@@ -232,9 +270,20 @@ export async function hydrateFromSupabase(): Promise<void> {
       avatarIcon: (profile as { avatar_icon?: string | null } | null)?.avatar_icon ?? null,
     },
     xp: profile?.xp ?? 0,
-    currentStreak: effectiveStreak(profile?.last_read_date ?? null, profile?.current_streak ?? 0),
-    longestStreak: profile?.longest_streak ?? 0,
-    lastReadDate: profile?.last_read_date ?? null,
+    // Recompute streaks from session history so the 1-hour grace period
+    // applies retroactively, overriding any stale values in the profile row.
+    currentStreak: (() => {
+      const counts = buildDailyCounts(sessions);
+      return computeStreaksFromCounts(counts).current;
+    })(),
+    longestStreak: Math.max(
+      profile?.longest_streak ?? 0,
+      computeStreaksFromCounts(buildDailyCounts(sessions)).longest,
+    ),
+    lastReadDate:
+      computeStreaksFromCounts(buildDailyCounts(sessions)).lastReadDate ??
+      profile?.last_read_date ??
+      null,
     dailyCounts: buildDailyCounts(sessions),
     bookProgress,
     sessions,
