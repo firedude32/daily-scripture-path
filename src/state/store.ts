@@ -270,9 +270,20 @@ export async function hydrateFromSupabase(): Promise<void> {
       avatarIcon: (profile as { avatar_icon?: string | null } | null)?.avatar_icon ?? null,
     },
     xp: profile?.xp ?? 0,
-    currentStreak: effectiveStreak(profile?.last_read_date ?? null, profile?.current_streak ?? 0),
-    longestStreak: profile?.longest_streak ?? 0,
-    lastReadDate: profile?.last_read_date ?? null,
+    // Recompute streaks from session history so the 1-hour grace period
+    // applies retroactively, overriding any stale values in the profile row.
+    currentStreak: (() => {
+      const counts = buildDailyCounts(sessions);
+      return computeStreaksFromCounts(counts).current;
+    })(),
+    longestStreak: Math.max(
+      profile?.longest_streak ?? 0,
+      computeStreaksFromCounts(buildDailyCounts(sessions)).longest,
+    ),
+    lastReadDate:
+      computeStreaksFromCounts(buildDailyCounts(sessions)).lastReadDate ??
+      profile?.last_read_date ??
+      null,
     dailyCounts: buildDailyCounts(sessions),
     bookProgress,
     sessions,
