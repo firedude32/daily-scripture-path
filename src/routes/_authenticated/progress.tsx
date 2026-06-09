@@ -379,7 +379,7 @@ function PaceChart({ state }: { state: ReturnType<typeof useAppState> }) {
     for (let d = 0; d < 7; d++) {
       const day = new Date(today);
       day.setDate(today.getDate() - (w * 7 + d));
-      const key = todayKey(day);
+      const key = dateKey(day);
       total += state.dailyCounts[key] ?? 0;
     }
     buckets.push(total);
