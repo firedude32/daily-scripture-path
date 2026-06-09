@@ -18,7 +18,7 @@ export function CalendarHeatmap({
 }) {
   const state = useAppState();
   const today = new Date();
-  const todayK = todayKey(today);
+  const todayK = dateKey(today);
 
   const monthList: { year: number; month: number }[] = [];
   for (let i = months - 1; i >= 0; i--) {
