@@ -1,4 +1,4 @@
-import { useAppState, todayKey } from "@/state/store";
+import { useAppState, dateKey } from "@/state/store";
 
 /**
  * Calendar-style reading view. Renders the most recent `months` calendar
@@ -18,7 +18,7 @@ export function CalendarHeatmap({
 }) {
   const state = useAppState();
   const today = new Date();
-  const todayK = todayKey(today);
+  const todayK = dateKey(today);
 
   const monthList: { year: number; month: number }[] = [];
   for (let i = months - 1; i >= 0; i--) {
@@ -80,7 +80,7 @@ function MonthGrid({
   for (let i = 0; i < startWeekday; i++) cells.push(null);
   for (let d = 1; d <= daysInMonth; d++) {
     const date = new Date(year, month, d);
-    const key = todayKey(date);
+    const key = dateKey(date);
     const future = date > today;
     cells.push({
       day: d,

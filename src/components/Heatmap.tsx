@@ -1,4 +1,4 @@
-import { useAppState, todayKey } from "@/state/store";
+import { useAppState, dateKey } from "@/state/store";
 
 /**
  * GitHub-style heatmap. Renders `weeks` columns of 7 days ending today.
@@ -31,7 +31,7 @@ export function Heatmap({
       if (day > today) {
         col.push({ date: "", count: -1 });
       } else {
-        const key = todayKey(day);
+        const key = dateKey(day);
         col.push({ date: key, count: state.dailyCounts[key] ?? 0 });
       }
     }

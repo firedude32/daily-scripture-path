@@ -77,6 +77,17 @@ function todayKey(d: Date = new Date()): string {
   return `${y}-${m}-${day}`;
 }
 
+/** Raw local Y-M-D for a specific calendar day. Unlike todayKey(), this does
+ * NOT apply the DAY_BOUNDARY_HOUR shift — use it whenever you're iterating
+ * calendar dates (heatmaps, week buckets, etc.), not converting an instant
+ * timestamp into its logical reading day. */
+function dateKey(d: Date): string {
+  const y = d.getFullYear();
+  const m = String(d.getMonth() + 1).padStart(2, "0");
+  const day = String(d.getDate()).padStart(2, "0");
+  return `${y}-${m}-${day}`;
+}
+
 function daysBetween(a: string, b: string): number {
   return Math.round(
     (new Date(b).getTime() - new Date(a).getTime()) / 86400000,
@@ -707,7 +718,7 @@ export function lastNDayCounts(state: AppState, n: number): { date: string; coun
   for (let i = n - 1; i >= 0; i--) {
     const d = new Date(today);
     d.setDate(today.getDate() - i);
-    const k = todayKey(d);
+    const k = dateKey(d);
     out.push({ date: k, count: state.dailyCounts[k] ?? 0 });
   }
   return out;
@@ -757,4 +768,4 @@ export function totalReadingDays(state: AppState): number {
   return Object.keys(state.dailyCounts).filter((k) => (state.dailyCounts[k] ?? 0) > 0).length;
 }
 
-export { todayKey, daysBetween };
+export { todayKey, dateKey, daysBetween };
