@@ -12,7 +12,7 @@ import {
   totalChaptersRead,
   bookTier,
   setProgressView,
-  todayKey,
+  dateKey,
 } from "@/state/store";
 import { BOOKS, NT_CHAPTERS, OT_CHAPTERS, type Book, bookById } from "@/data/books";
 import { setReadOverride } from "@/lib/readOverride";
