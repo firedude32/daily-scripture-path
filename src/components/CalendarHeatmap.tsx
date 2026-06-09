@@ -80,7 +80,7 @@ function MonthGrid({
   for (let i = 0; i < startWeekday; i++) cells.push(null);
   for (let d = 1; d <= daysInMonth; d++) {
     const date = new Date(year, month, d);
-    const key = todayKey(date);
+    const key = dateKey(date);
     const future = date > today;
     cells.push({
       day: d,
