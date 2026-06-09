@@ -31,7 +31,7 @@ export function recentChaptersPerDay(state: AppState, days = 14): number {
   for (let i = 0; i < days; i++) {
     const d = new Date(today);
     d.setDate(today.getDate() - i);
-    const k = todayKey(d);
+    const k = dateKey(d);
     total += state.dailyCounts[k] ?? 0;
   }
   if (total === 0) return 0;
