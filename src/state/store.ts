@@ -718,7 +718,7 @@ export function lastNDayCounts(state: AppState, n: number): { date: string; coun
   for (let i = n - 1; i >= 0; i--) {
     const d = new Date(today);
     d.setDate(today.getDate() - i);
-    const k = todayKey(d);
+    const k = dateKey(d);
     out.push({ date: k, count: state.dailyCounts[k] ?? 0 });
   }
   return out;
