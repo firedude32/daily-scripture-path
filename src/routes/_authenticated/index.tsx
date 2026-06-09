@@ -20,7 +20,7 @@ import {
   nextChapterFor,
   chaptersReadToday,
   acknowledgeSilverGold,
-  todayKey,
+  dateKey,
 } from "@/state/store";
 import { bookById } from "@/data/books";
 import {
