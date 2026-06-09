@@ -1,4 +1,4 @@
-import { useAppState, todayKey } from "@/state/store";
+import { useAppState, dateKey } from "@/state/store";
 
 /**
  * GitHub-style heatmap. Renders `weeks` columns of 7 days ending today.
