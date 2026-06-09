@@ -31,7 +31,7 @@ export function Heatmap({
       if (day > today) {
         col.push({ date: "", count: -1 });
       } else {
-        const key = todayKey(day);
+        const key = dateKey(day);
         col.push({ date: key, count: state.dailyCounts[key] ?? 0 });
       }
     }
