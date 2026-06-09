@@ -1,4 +1,4 @@
-import { todayKey, type AppState } from "@/state/store";
+import { dateKey, type AppState } from "@/state/store";
 import { BOOKS, bookById } from "@/data/books";
 
 export const GOSPEL_IDS = ["mat", "mrk", "luk", "jhn"];
