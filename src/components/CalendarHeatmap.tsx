@@ -1,4 +1,4 @@
-import { useAppState, todayKey } from "@/state/store";
+import { useAppState, dateKey } from "@/state/store";
 
 /**
  * Calendar-style reading view. Renders the most recent `months` calendar
