@@ -199,6 +199,8 @@ function ProfilePage() {
               <Rule />
               <NavItem label="Export Your Data (CSV)" onClick={() => exportAll(state)} />
               <Rule />
+              <Link to="/beta" className="block"><NavItem label="A Note for Beta Readers" /></Link>
+              <Rule />
               <Link to="/resources" className="block"><NavItem label="Other Resources" /></Link>
               <Rule />
               <NavItem label="Account Settings" onClick={() => setSheet("account")} />
