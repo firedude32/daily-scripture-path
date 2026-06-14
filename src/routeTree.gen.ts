@@ -22,6 +22,7 @@ import { Route as AuthenticatedProgressRouteImport } from './routes/_authenticat
 import { Route as AuthenticatedProfileRouteImport } from './routes/_authenticated/profile'
 import { Route as AuthenticatedOnboardingRouteImport } from './routes/_authenticated/onboarding'
 import { Route as AuthenticatedFriendsRouteImport } from './routes/_authenticated/friends'
+import { Route as AuthenticatedBetaRouteImport } from './routes/_authenticated/beta'
 import { Route as AuthenticatedAnalyticsRouteImport } from './routes/_authenticated/analytics'
 import { Route as AuthenticatedAdminRouteImport } from './routes/_authenticated/admin'
 import { Route as AuthenticatedFriendsRequestsRouteImport } from './routes/_authenticated/friends.requests'
@@ -93,6 +94,11 @@ const AuthenticatedFriendsRoute = AuthenticatedFriendsRouteImport.update({
   path: '/friends',
   getParentRoute: () => AuthenticatedRoute,
 } as any)
+const AuthenticatedBetaRoute = AuthenticatedBetaRouteImport.update({
+  id: '/beta',
+  path: '/beta',
+  getParentRoute: () => AuthenticatedRoute,
+} as any)
 const AuthenticatedAnalyticsRoute = AuthenticatedAnalyticsRouteImport.update({
   id: '/analytics',
   path: '/analytics',
@@ -134,6 +140,7 @@ export interface FileRoutesByFullPath {
   '/signup': typeof SignupRoute
   '/admin': typeof AuthenticatedAdminRoute
   '/analytics': typeof AuthenticatedAnalyticsRoute
+  '/beta': typeof AuthenticatedBetaRoute
   '/friends': typeof AuthenticatedFriendsRouteWithChildren
   '/onboarding': typeof AuthenticatedOnboardingRoute
   '/profile': typeof AuthenticatedProfileRoute
@@ -153,6 +160,7 @@ export interface FileRoutesByTo {
   '/signup': typeof SignupRoute
   '/admin': typeof AuthenticatedAdminRoute
   '/analytics': typeof AuthenticatedAnalyticsRoute
+  '/beta': typeof AuthenticatedBetaRoute
   '/friends': typeof AuthenticatedFriendsRouteWithChildren
   '/onboarding': typeof AuthenticatedOnboardingRoute
   '/profile': typeof AuthenticatedProfileRoute
@@ -175,6 +183,7 @@ export interface FileRoutesById {
   '/signup': typeof SignupRoute
   '/_authenticated/admin': typeof AuthenticatedAdminRoute
   '/_authenticated/analytics': typeof AuthenticatedAnalyticsRoute
+  '/_authenticated/beta': typeof AuthenticatedBetaRoute
   '/_authenticated/friends': typeof AuthenticatedFriendsRouteWithChildren
   '/_authenticated/onboarding': typeof AuthenticatedOnboardingRoute
   '/_authenticated/profile': typeof AuthenticatedProfileRoute
@@ -198,6 +207,7 @@ export interface FileRouteTypes {
     | '/signup'
     | '/admin'
     | '/analytics'
+    | '/beta'
     | '/friends'
     | '/onboarding'
     | '/profile'
@@ -217,6 +227,7 @@ export interface FileRouteTypes {
     | '/signup'
     | '/admin'
     | '/analytics'
+    | '/beta'
     | '/friends'
     | '/onboarding'
     | '/profile'
@@ -238,6 +249,7 @@ export interface FileRouteTypes {
     | '/signup'
     | '/_authenticated/admin'
     | '/_authenticated/analytics'
+    | '/_authenticated/beta'
     | '/_authenticated/friends'
     | '/_authenticated/onboarding'
     | '/_authenticated/profile'
@@ -354,6 +366,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedFriendsRouteImport
       parentRoute: typeof AuthenticatedRoute
     }
+    '/_authenticated/beta': {
+      id: '/_authenticated/beta'
+      path: '/beta'
+      fullPath: '/beta'
+      preLoaderRoute: typeof AuthenticatedBetaRouteImport
+      parentRoute: typeof AuthenticatedRoute
+    }
     '/_authenticated/analytics': {
       id: '/_authenticated/analytics'
       path: '/analytics'
@@ -413,6 +432,7 @@ const AuthenticatedFriendsRouteWithChildren =
 interface AuthenticatedRouteChildren {
   AuthenticatedAdminRoute: typeof AuthenticatedAdminRoute
   AuthenticatedAnalyticsRoute: typeof AuthenticatedAnalyticsRoute
+  AuthenticatedBetaRoute: typeof AuthenticatedBetaRoute
   AuthenticatedFriendsRoute: typeof AuthenticatedFriendsRouteWithChildren
   AuthenticatedOnboardingRoute: typeof AuthenticatedOnboardingRoute
   AuthenticatedProfileRoute: typeof AuthenticatedProfileRoute
@@ -429,6 +449,7 @@ interface AuthenticatedRouteChildren {
 const AuthenticatedRouteChildren: AuthenticatedRouteChildren = {
   AuthenticatedAdminRoute: AuthenticatedAdminRoute,
   AuthenticatedAnalyticsRoute: AuthenticatedAnalyticsRoute,
+  AuthenticatedBetaRoute: AuthenticatedBetaRoute,
   AuthenticatedFriendsRoute: AuthenticatedFriendsRouteWithChildren,
   AuthenticatedOnboardingRoute: AuthenticatedOnboardingRoute,
   AuthenticatedProfileRoute: AuthenticatedProfileRoute,
@@ -456,13 +477,3 @@ const rootRouteChildren: RootRouteChildren = {
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)
   ._addFileTypes<FileRouteTypes>()
-
-import type { getRouter } from './router.tsx'
-import type { startInstance } from './start.ts'
-declare module '@tanstack/react-start' {
-  interface Register {
-    ssr: true
-    router: Awaited<ReturnType<typeof getRouter>>
-    config: Awaited<ReturnType<typeof startInstance.getOptions>>
-  }
-}
